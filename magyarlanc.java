@@ -1,7 +1,15 @@
+mkdir -p data && cat > data/Data.java <<'EOF'
+package data;
+
+public class Data
+{
+    private Data()
+    {
+    }
+}
+EOF
 mkdir -p edu/stanford/nlp/tagger/maxent && cat > edu/stanford/nlp/tagger/maxent/SzteMaxentTagger.java <<'EOF'
 package edu.stanford.nlp.tagger.maxent;
-
-import hu.u_szeged.pos.morphology.HungarianMorphology;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +17,8 @@ import java.util.List;
 
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.TaggedWord;
+
+import szte.pos.morphology.HungarianMorphology;
 
 public class SzteMaxentTagger extends MaxentTagger
 {
@@ -73,7 +83,7 @@ EOF
 mkdir -p edu/stanford/nlp/tagger/maxent && cat > edu/stanford/nlp/tagger/maxent/SzteTestSentence.java <<'EOF'
 package edu.stanford.nlp.tagger.maxent;
 
-import hu.u_szeged.pos.morphology.HungarianMorphology;
+import szte.pos.morphology.HungarianMorphology;
 
 public class SzteTestSentence extends TestSentence
 {
@@ -109,8 +119,8 @@ public class SzteTestSentence extends TestSentence
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/nooj && cat > hu/u_szeged/converter/nooj/Dep2Nooj.java <<'EOF'
-package hu.u_szeged.converter.nooj;
+mkdir -p szte/converter/nooj && cat > szte/converter/nooj/Dep2Nooj.java <<'EOF'
+package szte.converter.nooj;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -292,10 +302,8 @@ public class Dep2Nooj
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Conll2007To2009.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
-
-import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/Conll2007To2009.java <<'EOF'
+package szte.converter.webcorpus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -305,6 +313,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+
+import szte.pos.converter.MSDToCoNLLFeatures;
 
 public class Conll2007To2009
 {
@@ -394,17 +404,14 @@ public class Conll2007To2009
         // convert("./data/webcorpus/faq.conll", "./data/webcorpus/faq.conll-2009");
         // convert("./data/webcorpus/web.conll", "./data/webcorpus/web.conll-2009");
 
-        convert("./data/webcorpus_1222/face_1222.conll", "./data/webcorpus_1222/face_1222.conll-2009");
-        convert("./data/webcorpus_1222/faq_1222.conll", "./data/webcorpus_1222/faq_1222.conll-2009");
-        convert("./data/webcorpus_1222/web_1222.conll", "./data/webcorpus_1222/web_1222.conll-2009");
+        // convert("./data/webcorpus_1222/face_1222.conll", "./data/webcorpus_1222/face_1222.conll-2009");
+        // convert("./data/webcorpus_1222/faq_1222.conll", "./data/webcorpus_1222/faq_1222.conll-2009");
+        // convert("./data/webcorpus_1222/web_1222.conll", "./data/webcorpus_1222/web_1222.conll-2009");
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Converter.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.pos.converter.MSDReducer;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/Converter.java <<'EOF'
+package szte.converter.webcorpus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -429,6 +436,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import szte.magyarlanc.MorAna;
+import szte.pos.converter.MSDReducer;
 
 public class Converter
 {
@@ -1124,10 +1134,8 @@ public class Converter
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/DepPrediction.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
-
-import hu.u_szeged.dep.parser.MateParserWrapper;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/DepPrediction.java <<'EOF'
+package szte.converter.webcorpus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -1139,6 +1147,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+
+import szte.dep.parser.MateParserWrapper;
 
 public class DepPrediction
 {
@@ -1271,16 +1281,16 @@ public class DepPrediction
 
     public static void main(String[] args)
     {
-        read("./data/webcorpus_1222/faq_1222.dep.test");
-        parse();
+        // read("./data/webcorpus_1222/faq_1222.dep.test");
+        // parse();
         // write("./data/webcorpus/web.conll2007");
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Eval.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/Eval.java <<'EOF'
+package szte.converter.webcorpus;
 
-import hu.u_szeged.magyarlanc.Magyarlanc;
+import szte.magyarlanc.Magyarlanc;
 
 public class Eval
 {
@@ -1289,8 +1299,8 @@ public class Eval
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Test.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/Test.java <<'EOF'
+package szte.converter.webcorpus;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -1336,14 +1346,8 @@ public class Test
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/TrainResources.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
-
-import hu.u_szeged.dep.parser.MateParserWrapper;
-import hu.u_szeged.magyarlanc.Magyarlanc;
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.pos.converter.CoNLLFeaturesToMSD;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/TrainResources.java <<'EOF'
+package szte.converter.webcorpus;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -1365,6 +1369,12 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import szte.dep.parser.MateParserWrapper;
+import szte.magyarlanc.Magyarlanc;
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.pos.converter.CoNLLFeaturesToMSD;
 
 public class TrainResources
 {
@@ -1990,11 +2000,11 @@ public class TrainResources
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/TwitterQuestion.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/TwitterQuestion.java <<'EOF'
+package szte.converter.webcorpus;
 
-import hu.u_szeged.magyarlanc.Magyarlanc;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.Magyarlanc;
+import szte.magyarlanc.resource.ResourceHolder;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -2211,8 +2221,8 @@ public class TwitterQuestion
     }
 }
 EOF
-mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/TwitterUtil.java <<'EOF'
-package hu.u_szeged.converter.webcorpus;
+mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/TwitterUtil.java <<'EOF'
+package szte.converter.webcorpus;
 
 public class TwitterUtil
 {
@@ -2236,10 +2246,10 @@ public class TwitterUtil
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/parser && cat > hu/u_szeged/dep/parser/MateParserWrapper.java <<'EOF'
-package hu.u_szeged.dep.parser;
+mkdir -p szte/dep/parser && cat > szte/dep/parser/MateParserWrapper.java <<'EOF'
+package szte.dep.parser;
 
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.ResourceHolder;
 import is2.data.SentenceData09;
 
 import java.util.List;
@@ -2406,8 +2416,8 @@ public class MateParserWrapper
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/CoNLL2009Sentence.java <<'EOF'
-package hu.u_szeged.dep.removevirtual;
+mkdir -p szte/dep/removevirtual && cat > szte/dep/removevirtual/CoNLL2009Sentence.java <<'EOF'
+package szte.dep.removevirtual;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2793,10 +2803,10 @@ public class CoNLL2009Sentence
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/CorrectPUNCT.java <<'EOF'
-package hu.u_szeged.dep.removevirtual;
+mkdir -p szte/dep/removevirtual && cat > szte/dep/removevirtual/CorrectPUNCT.java <<'EOF'
+package szte.dep.removevirtual;
 
-import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
+import szte.pos.converter.MSDToCoNLLFeatures;
 
 import java.util.Arrays;
 import java.util.List;
@@ -2871,8 +2881,8 @@ public class CorrectPUNCT
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/RemoveVirtualNodes.java <<'EOF'
-package hu.u_szeged.dep.removevirtual;
+mkdir -p szte/dep/removevirtual && cat > szte/dep/removevirtual/RemoveVirtualNodes.java <<'EOF'
+package szte.dep.removevirtual;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -2921,10 +2931,10 @@ public class RemoveVirtualNodes
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/Util.java <<'EOF'
-package hu.u_szeged.dep.removevirtual;
+mkdir -p szte/dep/removevirtual && cat > szte/dep/removevirtual/Util.java <<'EOF'
+package szte.dep.removevirtual;
 
-import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
+import szte.pos.converter.MSDToCoNLLFeatures;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -3079,8 +3089,8 @@ public class Util
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/util && cat > hu/u_szeged/dep/util/EmptyNodeEvaluator.java <<'EOF'
-package hu.u_szeged.dep.util;
+mkdir -p szte/dep/util && cat > szte/dep/util/EmptyNodeEvaluator.java <<'EOF'
+package szte.dep.util;
 
 public class EmptyNodeEvaluator
 {
@@ -3092,8 +3102,8 @@ public class EmptyNodeEvaluator
     public static final String SEPARATOR = "@";
 }
 EOF
-mkdir -p hu/u_szeged/dep/util && cat > hu/u_szeged/dep/util/RemoveEmptyNodes.java <<'EOF'
-package hu.u_szeged.dep.util;
+mkdir -p szte/dep/util && cat > szte/dep/util/RemoveEmptyNodes.java <<'EOF'
+package szte.dep.util;
 
 import java.io.*;
 import java.util.*;
@@ -3307,11 +3317,11 @@ public class RemoveEmptyNodes
     }
 }
 EOF
-mkdir -p hu/u_szeged/dep/whatswrong && cat > hu/u_szeged/dep/whatswrong/WhatsWrongWrapper.java <<'EOF'
-package hu.u_szeged.dep.whatswrong;
+mkdir -p szte/dep/whatswrong && cat > szte/dep/whatswrong/WhatsWrongWrapper.java <<'EOF'
+package szte.dep.whatswrong;
 
-import hu.u_szeged.dep.parser.MateParserWrapper;
-import hu.u_szeged.magyarlanc.Magyarlanc;
+import szte.dep.parser.MateParserWrapper;
+import szte.magyarlanc.Magyarlanc;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -3474,10 +3484,10 @@ public class WhatsWrongWrapper
     }
 }
 EOF
-mkdir -p hu/u_szeged/eval && cat > hu/u_szeged/eval/Eval.java <<'EOF'
-package hu.u_szeged.eval;
+mkdir -p szte/eval && cat > szte/eval/Eval.java <<'EOF'
+package szte.eval;
 
-import hu.u_szeged.magyarlanc.Magyarlanc;
+import szte.magyarlanc.Magyarlanc;
 
 public class Eval
 {
@@ -3486,12 +3496,12 @@ public class Eval
     }
 }
 EOF
-mkdir -p hu/u_szeged/gui && cat > hu/u_szeged/gui/GUI.java <<'EOF'
-package hu.u_szeged.gui;
+mkdir -p szte/gui && cat > szte/gui/GUI.java <<'EOF'
+package szte.gui;
 
-import hu.u_szeged.dep.whatswrong.WhatsWrongWrapper;
-import hu.u_szeged.magyarlanc.Magyarlanc;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+import szte.dep.whatswrong.WhatsWrongWrapper;
+import szte.magyarlanc.Magyarlanc;
+import szte.magyarlanc.resource.ResourceHolder;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -3608,8 +3618,8 @@ public class GUI
     }
 }
 EOF
-mkdir -p hu/u_szeged/gui && cat > hu/u_szeged/gui/GUIUtil.java <<'EOF'
-package hu.u_szeged.gui;
+mkdir -p szte/gui && cat > szte/gui/GUIUtil.java <<'EOF'
+package szte.gui;
 
 import java.awt.Component;
 import java.awt.Toolkit;
@@ -3624,8 +3634,8 @@ public class GUIUtil
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/Eval.java <<'EOF'
-package hu.u_szeged.magyarlanc;
+mkdir -p szte/magyarlanc && cat > szte/magyarlanc/Eval.java <<'EOF'
+package szte.magyarlanc;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -3704,14 +3714,14 @@ public class Eval
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/HunLemMor.java <<'EOF'
-package hu.u_szeged.magyarlanc;
+mkdir -p szte/magyarlanc && cat > szte/magyarlanc/HunLemMor.java <<'EOF'
+package szte.magyarlanc;
 
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.pos.guesser.CompoundWord;
-import hu.u_szeged.pos.guesser.HyphenicGuesser;
-import hu.u_szeged.pos.guesser.HyphenicWord;
-import hu.u_szeged.pos.guesser.NumberGuesser;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.pos.guesser.CompoundWord;
+import szte.pos.guesser.HyphenicGuesser;
+import szte.pos.guesser.HyphenicWord;
+import szte.pos.guesser.NumberGuesser;
 
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
@@ -3731,7 +3741,7 @@ public class HunLemMor
         Set<MorAna> morAnas = new TreeSet<MorAna>();
 
         // irasjelek
-        if (hu.u_szeged.magyarlanc.resource.Util.isPunctation(word))
+        if (szte.magyarlanc.resource.Util.isPunctation(word))
         {
             // a legfontosabb irasjelek lemmaja maga az irasjel, POS kodja szinten
             // maga az irasjel lesz
@@ -3863,18 +3873,18 @@ public class HunLemMor
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/MagyarlacTest.java <<'EOF'
-package hu.u_szeged.magyarlanc;
+mkdir -p szte/magyarlanc && cat > szte/magyarlanc/MagyarlancTest.java <<'EOF'
+package szte.magyarlanc;
 
-public class MagyarlacTest
+public class MagyarlancTest
 {
     public static void main(String[] args)
     {
         // Magyarlanc.main("-mode tokenized -input d:/test.txt -output d:/out.txt".split(" "));
 
-        Magyarlanc.main("-mode depparse -input d:/Dialogus2_el.txt -output d:/Dialogus2_el.txt.dep_out".split(" "));
+        // Magyarlanc.main("-mode depparse -input d:/Dialogus2_el.txt -output d:/Dialogus2_el.txt.dep_out".split(" "));
 
-        Magyarlanc.main("-mode morphparse -input d:/Dialogus2_el.txt -output d:/Dialogus2_el.txt.morph_out".split(" "));
+        // Magyarlanc.main("-mode morphparse -input d:/Dialogus2_el.txt -output d:/Dialogus2_el.txt.morph_out".split(" "));
 
         // System.err.println(Magyarlanc.morphParse("méretek: 200 cm x 80 cm x 10 cm"));
 
@@ -3882,15 +3892,15 @@ public class MagyarlacTest
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/Magyarlanc.java <<'EOF'
-package hu.u_szeged.magyarlanc;
+mkdir -p szte/magyarlanc && cat > szte/magyarlanc/Magyarlanc.java <<'EOF'
+package szte.magyarlanc;
 
-import hu.u_szeged.converter.nooj.Dep2Nooj;
-import hu.u_szeged.dep.parser.MateParserWrapper;
-import hu.u_szeged.gui.GUI;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.magyarlanc.resource.Util;
-import hu.u_szeged.magyarlanc.util.SafeReader;
+import szte.converter.nooj.Dep2Nooj;
+import szte.dep.parser.MateParserWrapper;
+import szte.gui.GUI;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.Util;
+import szte.magyarlanc.util.SafeReader;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -4376,8 +4386,8 @@ public class Magyarlanc
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/MorAna.java <<'EOF'
-package hu.u_szeged.magyarlanc;
+mkdir -p szte/magyarlanc && cat > szte/magyarlanc/MorAna.java <<'EOF'
+package szte.magyarlanc;
 
 import java.io.Serializable;
 
@@ -4448,10 +4458,10 @@ public class MorAna implements Comparable<MorAna>, Serializable
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/resource && cat > hu/u_szeged/magyarlanc/resource/ResourceBuilder.java <<'EOF'
-package hu.u_szeged.magyarlanc.resource;
+mkdir -p szte/magyarlanc/resource && cat > szte/magyarlanc/resource/ResourceBuilder.java <<'EOF'
+package szte.magyarlanc.resource;
 
-import hu.u_szeged.magyarlanc.MorAna;
+import szte.magyarlanc.MorAna;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -4672,7 +4682,7 @@ public class ResourceBuilder
         // virtualis node-ok eltavolitasa
         try
         {
-            hu.u_szeged.dep.util.RemoveEmptyNodes.processFile(file, file + ".removed-virtuals");
+            szte.dep.util.RemoveEmptyNodes.processFile(file, file + ".removed-virtuals");
         }
         catch (IOException e)
         {
@@ -5082,29 +5092,31 @@ public class ResourceBuilder
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/resource && cat > hu/u_szeged/magyarlanc/resource/ResourceHolder.java <<'EOF'
-package hu.u_szeged.magyarlanc.resource;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.pos.converter.CoNLLFeaturesToMSD;
-import hu.u_szeged.pos.converter.KRToMSD;
-import hu.u_szeged.pos.converter.MSDReducer;
-import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
-import hu.u_szeged.splitter.HunSplitter;
-import is2.parser.Options;
-import is2.parser.Parser;
+mkdir -p szte/magyarlanc/resource && cat > szte/magyarlanc/resource/ResourceHolder.java <<'EOF'
+package szte.magyarlanc.resource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.ibatis.io.Resources;
-
-import rfsa.RFSA;
 import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.DefaultWordTokenizer;
 import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.WordTokenizer;
 import edu.stanford.nlp.tagger.maxent.SzteMaxentTagger;
+
+import is2.parser.Options;
+import is2.parser.Parser;
+
+import rfsa.RFSA;
+
+import szte.magyarlanc.MorAna;
+import szte.pos.converter.CoNLLFeaturesToMSD;
+import szte.pos.converter.KRToMSD;
+import szte.pos.converter.MSDReducer;
+import szte.pos.converter.MSDToCoNLLFeatures;
+import szte.splitter.HunSplitter;
+
+import data.Data;
 
 public class ResourceHolder
 {
@@ -5263,7 +5275,7 @@ public class ResourceHolder
         {
             try
             {
-                rfsa = RFSA.read(Resources.getResourceAsStream(RFS), ResourceHolder.getEncoding());
+                rfsa = RFSA.read(Data.class.getResourceAsStream(RFS), ResourceHolder.getEncoding());
             }
             catch (FileNotFoundException e)
             {
@@ -5488,10 +5500,8 @@ public class ResourceHolder
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/resource && cat > hu/u_szeged/magyarlanc/resource/Util.java <<'EOF'
-package hu.u_szeged.magyarlanc.resource;
-
-import hu.u_szeged.magyarlanc.MorAna;
+mkdir -p szte/magyarlanc/resource && cat > szte/magyarlanc/resource/Util.java <<'EOF'
+package szte.magyarlanc.resource;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -5512,7 +5522,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.ibatis.io.Resources;
+import szte.magyarlanc.MorAna;
+
+import data.Data;
 
 public class Util
 {
@@ -5559,7 +5571,7 @@ public class Util
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Resources.getResourceAsStream(file), ResourceHolder.getEncoding()));
+            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
             while ((line = reader.readLine()) != null)
             {
                 morAnas = new TreeSet<MorAna>();
@@ -5591,7 +5603,7 @@ public class Util
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Resources.getResourceAsStream(file), ResourceHolder.getEncoding()));
+            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
             while ((line = reader.readLine()) != null)
             {
                 splitted = line.split("\t");
@@ -5615,7 +5627,7 @@ public class Util
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Resources.getResourceAsStream(file), ResourceHolder.getEncoding()));
+            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
             while ((line = reader.readLine()) != null)
             {
                 stopwords.add(line);
@@ -5638,7 +5650,7 @@ public class Util
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Resources.getResourceAsStream(file), ResourceHolder.getEncoding()));
+            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
 
             while ((line = reader.readLine()) != null)
             {
@@ -5718,7 +5730,7 @@ public class Util
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Resources.getResourceAsStream(file), ResourceHolder.getEncoding()));
+            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
             while ((line = reader.readLine()) != null)
             {
                 splitted = line.split("\t");
@@ -5844,8 +5856,8 @@ public class Util
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/Settings.java <<'EOF'
-package hu.u_szeged.magyarlanc;
+mkdir -p szte/magyarlanc && cat > szte/magyarlanc/Settings.java <<'EOF'
+package szte.magyarlanc;
 
 public class Settings
 {
@@ -5854,8 +5866,8 @@ public class Settings
     public static final String DEFAULT_SEPARATOR = "\t";
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/CorpusStats.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/CorpusStats.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.util.List;
 import java.util.Map;
@@ -5900,98 +5912,8 @@ public class CorpusStats
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/Ethnography.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-//import java.util.TreeMap;
-
-public class Ethnography
-{
-    private Map<String, String> dictionary = null;
-
-    public void setDictionary(Map<String, String> dictionary)
-    {
-        this.dictionary = dictionary;
-    }
-
-    public Map<String, String> getDictionary()
-    {
-        return dictionary;
-    }
-
-    private Map<String, String> readDictionary(String dictionaryFile)
-    {
-        BufferedReader reader = null;
-        String line = null;
-        String[] splitted = null;
-
-        Map<String, String> dictionary = null;
-        //dictionary = new TreeMap<String, String>();
-
-        try
-        {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(dictionaryFile), "UTF-8"));
-            while ((line = reader.readLine()) != null)
-            {
-                splitted = line.split("\t");
-                if (!splitted[0].equalsIgnoreCase(splitted[1]))
-                    dictionary.put(splitted[0], splitted[1]);
-            }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return dictionary;
-    }
-
-    public Ethnography(String dictionaryFile)
-    {
-        this.setDictionary(this.readDictionary(dictionaryFile));
-    }
-
-    public String getStandardForm(String nonStandardForm)
-    {
-        try
-        {
-            return this.getDictionary().get(nonStandardForm);
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
-    }
-
-    public static void main(String[] args)
-    {
-        Ethnography ethnography = new Ethnography("./data/ethno.lex");
-        System.out.println(ethnography.getStandardForm("acskó"));
-    }
-}
-EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/Eval.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
-
-import hu.u_szeged.dep.parser.MateParserWrapper;
-import hu.u_szeged.magyarlanc.Magyarlanc;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import is2.parser.Parser;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/Eval.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -6009,6 +5931,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import is2.parser.Parser;
+
+import szte.dep.parser.MateParserWrapper;
+import szte.magyarlanc.Magyarlanc;
+import szte.magyarlanc.resource.ResourceHolder;
 
 public class Eval
 {
@@ -6619,12 +6547,8 @@ public class Eval
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/FxDepParse.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
-
-import is2.data.SentenceData09;
-import is2.parser.Options;
-import is2.parser.Parser;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/FxDepParse.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -6638,6 +6562,10 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.LinkedList;
 import java.util.List;
+
+import is2.data.SentenceData09;
+import is2.parser.Options;
+import is2.parser.Parser;
 
 public class FxDepParse
 {
@@ -6830,7 +6758,7 @@ public class FxDepParse
         // virtualis node-ok eltavolitasa
         try
         {
-            hu.u_szeged.dep.util.RemoveEmptyNodes.processFile(WORK_DIR + file, WORK_DIR + REMOVED_EMPTY_NODES + file);
+            szte.dep.util.RemoveEmptyNodes.processFile(WORK_DIR + file, WORK_DIR + REMOVED_EMPTY_NODES + file);
         }
         catch (IOException e)
         {
@@ -7301,8 +7229,8 @@ public class FxDepParse
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/FXIAA.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/FXIAA.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -7480,8 +7408,8 @@ public class FXIAA
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/SafeReader.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/SafeReader.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -7536,13 +7464,8 @@ public class SafeReader
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/SzK25.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
-
-import hu.u_szeged.magyarlanc.Magyarlanc;
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.magyarlanc.resource.Util;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/SzK25.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -7569,12 +7492,16 @@ import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.ibatis.io.Resources;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import szte.magyarlanc.Magyarlanc;
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.Util;
 
 public class SzK25
 {
@@ -8673,11 +8600,8 @@ public class SzK25
     public static void main(String args[])
     {
         // String[] courpus = new String[] { "nv", "mh", "hvg", "np", "cwszt", "win2000", "utas", "pfred", "newsml" };
-
         // String[] courpus = new String[] { "1984" };
-
         // String[] courpus = new String[] { "10elb", "10erv", "8oelb" };
-
         // String[] courpus = new String[] { "gazdtar", "szerzj" };
 
         // for (String c : courpus) {
@@ -8698,14 +8622,8 @@ public class SzK25
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/Tools.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
-
-import hu.u_szeged.magyarlanc.HunLemMor;
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.pos.converter.CoNLLFeaturesToMSD;
-import hu.u_szeged.pos.converter.MSDReducer;
-import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/Tools.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -8725,6 +8643,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import edu.northwestern.at.utils.MapUtils;
+
+import szte.magyarlanc.HunLemMor;
+import szte.magyarlanc.MorAna;
+import szte.pos.converter.CoNLLFeaturesToMSD;
+import szte.pos.converter.MSDReducer;
+import szte.pos.converter.MSDToCoNLLFeatures;
 
 public class Tools
 {
@@ -9482,12 +9406,8 @@ public class Tools
     }
 }
 EOF
-mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/TrainTest.java <<'EOF'
-package hu.u_szeged.magyarlanc.util;
-
-import hu.u_szeged.dep.parser.MateParserWrapper;
-import is2.parser.Options;
-import is2.parser.Parser;
+mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/TrainTest.java <<'EOF'
+package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -9504,6 +9424,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import is2.parser.Options;
+import is2.parser.Parser;
+
+import szte.dep.parser.MateParserWrapper;
 
 public class TrainTest
 {
@@ -9855,7 +9780,7 @@ public class TrainTest
         // virtualis node-ok eltavolitasa
         try
         {
-            hu.u_szeged.dep.util.RemoveEmptyNodes.processFile(WORK_DIR + CORPUS2_DIR
+            szte.dep.util.RemoveEmptyNodes.processFile(WORK_DIR + CORPUS2_DIR
                     + file, WORK_DIR + CORPUS2_DIR + REMOVED_EMPTY_NODES + file);
         }
         catch (IOException e)
@@ -10127,8 +10052,8 @@ public class TrainTest
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/CoNLLFeaturesToMSD.java <<'EOF'
-package hu.u_szeged.pos.converter;
+mkdir -p szte/pos/converter && cat > szte/pos/converter/CoNLLFeaturesToMSD.java <<'EOF'
+package szte.pos.converter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10414,17 +10339,17 @@ public class CoNLLFeaturesToMSD
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/KRToMSD.java <<'EOF'
-package hu.u_szeged.pos.converter;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.Settings;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+mkdir -p szte/pos/converter && cat > szte/pos/converter/KRToMSD.java <<'EOF'
+package szte.pos.converter;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.Settings;
+import szte.magyarlanc.resource.ResourceHolder;
 
 public class KRToMSD
 {
@@ -11739,8 +11664,8 @@ public class KRToMSD
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/KRUtils.java <<'EOF'
-package hu.u_szeged.pos.converter;
+mkdir -p szte/pos/converter && cat > szte/pos/converter/KRUtils.java <<'EOF'
+package szte.pos.converter;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -12121,8 +12046,8 @@ public class KRUtils
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/MSDReducer.java <<'EOF'
-package hu.u_szeged.pos.converter;
+mkdir -p szte/pos/converter && cat > szte/pos/converter/MSDReducer.java <<'EOF'
+package szte.pos.converter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12555,17 +12480,17 @@ public class MSDReducer
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/MSDToCoNLLFeatures.java <<'EOF'
-package hu.u_szeged.pos.converter;
-
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.magyarlanc.resource.Util;
+mkdir -p szte/pos/converter && cat > szte/pos/converter/MSDToCoNLLFeatures.java <<'EOF'
+package szte.pos.converter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.Util;
 
 public class MSDToCoNLLFeatures
 {
@@ -13589,7 +13514,7 @@ public class MSDToCoNLLFeatures
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/CompoundWord.java <<'EOF'
+mkdir -p szte/pos/guesser && cat > szte/pos/guesser/CompoundWord.java <<'EOF'
 /**
  * This file is part of magyarlanc 2.0.
  *
@@ -13612,15 +13537,14 @@ mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/CompoundWord.j
  * Richárd Farkas
  * rfarkas@inf.u-szeged.hu
  */
-
-package hu.u_szeged.pos.guesser;
-
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.pos.converter.KRUtils;
-import hu.u_szeged.pos.converter.KRUtils.KRPOS;
+package szte.pos.guesser;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.pos.converter.KRUtils;
+import szte.pos.converter.KRUtils.KRPOS;
 
 /**
  * összetett szavak elemzése
@@ -13841,7 +13765,7 @@ public class CompoundWord
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/HyphenicGuesser.java <<'EOF'
+mkdir -p szte/pos/guesser && cat > szte/pos/guesser/HyphenicGuesser.java <<'EOF'
 /**
  * Developed by:
  *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
@@ -13855,14 +13779,13 @@ mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/HyphenicGuesse
  *
  * http://creativecommons.org/licenses/by-sa/3.0/legalcode
  */
-
-package hu.u_szeged.pos.guesser;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+package szte.pos.guesser;
 
 import java.util.Set;
 import java.util.TreeSet;
+
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.resource.ResourceHolder;
 
 /**
  *
@@ -13901,14 +13824,14 @@ public class HyphenicGuesser
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/HyphenicWord.java <<'EOF'
-package hu.u_szeged.pos.guesser;
-
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.pos.converter.KRUtils;
+mkdir -p szte/pos/guesser && cat > szte/pos/guesser/HyphenicWord.java <<'EOF'
+package szte.pos.guesser;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.pos.converter.KRUtils;
 
 public class HyphenicWord
 {
@@ -14002,7 +13925,7 @@ public class HyphenicWord
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/MorPhonGuesser.java <<'EOF'
+mkdir -p szte/pos/guesser && cat > szte/pos/guesser/MorPhonGuesser.java <<'EOF'
 /**
  * Developed by:
  *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
@@ -14016,14 +13939,13 @@ mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/MorPhonGuesser
  *
  * http://creativecommons.org/licenses/by-sa/3.0/legalcode
  */
-
-package hu.u_szeged.pos.guesser;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+package szte.pos.guesser;
 
 import java.util.Set;
 import java.util.TreeSet;
+
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.resource.ResourceHolder;
 
 /**
  * A MorPhonGuesser osztaly egy ismeretlen (nem elemezheto) fonevi szoto es
@@ -14069,7 +13991,7 @@ public class MorPhonGuesser
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/NumberGuesser.java <<'EOF'
+mkdir -p szte/pos/guesser && cat > szte/pos/guesser/NumberGuesser.java <<'EOF'
 /**
  * Developed by:
  *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
@@ -14083,18 +14005,17 @@ mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/NumberGuesser.
  *
  * http://creativecommons.org/licenses/by-sa/3.0/legalcode
  */
-
-package hu.u_szeged.pos.guesser;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.Settings;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+package szte.pos.guesser;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.Settings;
+import szte.magyarlanc.resource.ResourceHolder;
 
 /**
  * Minden szammal kezdodo token elemzesét a NumberGuesser osztaly végzi,
@@ -14537,7 +14458,7 @@ public class NumberGuesser
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
                     stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d----s3-")));
-                    if (hu.u_szeged.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                    if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
                     {
                         stemSet.add(new MorAna(root + ".", nounToNoun(stem.getMsd(), Settings.DEFAULT_NOUN.substring(0, 2) + "------s3-")));
                     }
@@ -14552,7 +14473,7 @@ public class NumberGuesser
             if (stemSet.size() == 0)
             {
                 stemSet.add(new MorAna(matcher.group(2), "Mc-snd----s3"));
-                if (hu.u_szeged.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
                 {
                     stemSet.add(new MorAna(matcher.group(2) + ".", Settings.DEFAULT_NOUN + "---s3"));
                 }
@@ -14635,7 +14556,7 @@ public class NumberGuesser
                 {
                     stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mo---d-------")));
 
-                    if (hu.u_szeged.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                    if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
                     {
                         stemSet.add(new MorAna(root, stem.getMsd()));
                     }
@@ -14644,7 +14565,7 @@ public class NumberGuesser
             if (stemSet.size() == 0)
             {
                 stemSet.add(new MorAna(number, "Mo-snd"));
-                if (hu.u_szeged.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
                 {
                     stemSet.add(new MorAna(number, Settings.DEFAULT_NOUN));
                     stemSet.add(new MorAna(number, Settings.DEFAULT_NOUN + "---s3"));
@@ -14707,8 +14628,8 @@ public class NumberGuesser
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/mainpartofspeech && cat > hu/u_szeged/pos/mainpartofspeech/MainPartOfSpeech.java <<'EOF'
-package hu.u_szeged.pos.mainpartofspeech;
+mkdir -p szte/pos/mainpartofspeech && cat > szte/pos/mainpartofspeech/MainPartOfSpeech.java <<'EOF'
+package szte.pos.mainpartofspeech;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -14778,18 +14699,18 @@ public class MainPartOfSpeech
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/morphology && cat > hu/u_szeged/pos/morphology/HungarianMorphology.java <<'EOF'
-package hu.u_szeged.pos.morphology;
-
-import hu.u_szeged.magyarlanc.HunLemMor;
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+mkdir -p szte/pos/morphology && cat > szte/pos/morphology/HungarianMorphology.java <<'EOF'
+package szte.pos.morphology;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import edu.stanford.nlp.ling.TaggedWord;
+
+import szte.magyarlanc.HunLemMor;
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.resource.ResourceHolder;
 
 public class HungarianMorphology
 {
@@ -14857,10 +14778,8 @@ public class HungarianMorphology
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLPredicate.java <<'EOF'
-package hu.u_szeged.pos.util;
-
-import hu.u_szeged.magyarlanc.Magyarlanc;
+mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLPredicate.java <<'EOF'
+package szte.pos.util;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -14870,6 +14789,8 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+
+import szte.magyarlanc.Magyarlanc;
 
 public class CoNLLPredicate
 {
@@ -14938,8 +14859,8 @@ public class CoNLLPredicate
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLSentence.java <<'EOF'
-package hu.u_szeged.pos.util;
+mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLSentence.java <<'EOF'
+package szte.pos.util;
 
 public class CoNLLSentence
 {
@@ -15000,11 +14921,8 @@ public class CoNLLSentence
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLToCorpus.java <<'EOF'
-package hu.u_szeged.pos.util;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.pos.converter.CoNLLFeaturesToMSD;
+mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLToCorpus.java <<'EOF'
+package szte.pos.util;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -15017,6 +14935,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Map.Entry;
+
+import szte.magyarlanc.MorAna;
+import szte.pos.converter.CoNLLFeaturesToMSD;
 
 public class CoNLLToCorpus
 {
@@ -15093,10 +15014,8 @@ public class CoNLLToCorpus
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLToFreq.java <<'EOF'
-package hu.u_szeged.pos.util;
-
-import hu.u_szeged.pos.converter.CoNLLFeaturesToMSD;
+mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLToFreq.java <<'EOF'
+package szte.pos.util;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -15107,6 +15026,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+
+import szte.pos.converter.CoNLLFeaturesToMSD;
 
 public class CoNLLToFreq
 {
@@ -15179,8 +15100,8 @@ public class CoNLLToFreq
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLUtil.java <<'EOF'
-package hu.u_szeged.pos.util;
+mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLUtil.java <<'EOF'
+package szte.pos.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15307,8 +15228,8 @@ public class CoNLLUtil
     }
 }
 EOF
-mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/Objfx.java <<'EOF'
-package hu.u_szeged.pos.util;
+mkdir -p szte/pos/util && cat > szte/pos/util/Objfx.java <<'EOF'
+package szte.pos.util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -15563,8 +15484,8 @@ public class Objfx
     }
 }
 EOF
-mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/ForceSplit.java <<'EOF'
-package hu.u_szeged.splitter;
+mkdir -p szte/splitter && cat > szte/splitter/ForceSplit.java <<'EOF'
+package szte.splitter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15644,10 +15565,8 @@ public class ForceSplit
     }
 }
 EOF
-mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/HunSplitter.java <<'EOF'
-package hu.u_szeged.splitter;
-
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
+mkdir -p szte/splitter && cat > szte/splitter/HunSplitter.java <<'EOF'
+package szte.splitter;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -15657,6 +15576,8 @@ import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.Defau
 import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.SentenceSplitter;
 import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.DefaultWordTokenizer;
 import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.WordTokenizer;
+
+import szte.magyarlanc.resource.ResourceHolder;
 
 public class HunSplitter
 {
@@ -16275,8 +16196,8 @@ public class HunSplitter
     }
 }
 EOF
-mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/HunSplitterResources.java <<'EOF'
-package hu.u_szeged.splitter;
+mkdir -p szte/splitter && cat > szte/splitter/HunSplitterResources.java <<'EOF'
+package szte.splitter;
 
 public class HunSplitterResources
 {
@@ -16296,8 +16217,8 @@ public class HunSplitterResources
     public static final char[] FORCE_TOKEN_SEPARATORS = new char[] { ',', '.', ':' };
 }
 EOF
-mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/StringCleaner.java <<'EOF'
-package hu.u_szeged.splitter;
+mkdir -p szte/splitter && cat > szte/splitter/StringCleaner.java <<'EOF'
+package szte.splitter;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -16525,14 +16446,14 @@ public class StringCleaner
     }
 }
 EOF
-mkdir -p hu/u_szeged/train && cat > hu/u_szeged/train/MultiWordSplitter.java <<'EOF'
-package hu.u_szeged.train;
+mkdir -p szte/train && cat > szte/train/MultiWordSplitter.java <<'EOF'
+package szte.train;
 
 import java.util.Arrays;
 
-import hu.u_szeged.magyarlanc.Settings;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.magyarlanc.resource.Util;
+import szte.magyarlanc.Settings;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.Util;
 
 public class MultiWordSplitter
 {
@@ -16679,14 +16600,8 @@ public class MultiWordSplitter
     }
 }
 EOF
-mkdir -p hu/u_szeged/train && cat > hu/u_szeged/train/Train.java <<'EOF'
-package hu.u_szeged.train;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.Settings;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.magyarlanc.resource.Util;
-import hu.u_szeged.pos.converter.MSDReducer;
+mkdir -p szte/train && cat > szte/train/Train.java <<'EOF'
+package szte.train;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -16711,6 +16626,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.Settings;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.Util;
+import szte.pos.converter.MSDReducer;
 
 public class Train
 {
@@ -17297,12 +17218,8 @@ public class Train
     }
 }
 EOF
-mkdir -p hu/u_szeged/train && cat > hu/u_szeged/train/XMLtoTXT.java <<'EOF'
-package hu.u_szeged.train;
-
-import hu.u_szeged.magyarlanc.MorAna;
-import hu.u_szeged.magyarlanc.resource.ResourceHolder;
-import hu.u_szeged.magyarlanc.resource.Util;
+mkdir -p szte/train && cat > szte/train/XMLtoTXT.java <<'EOF'
+package szte.train;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17325,6 +17242,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import szte.magyarlanc.MorAna;
+import szte.magyarlanc.resource.ResourceHolder;
+import szte.magyarlanc.resource.Util;
 
 public class XMLtoTXT
 {
