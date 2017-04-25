@@ -163,18 +163,18 @@ public class Dep2Nooj
     {
         Map<String, Integer> map = new TreeMap<String, Integer>();
 
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         String token[] = null;
         String templabel = null;
         for (int i = 0; i < sentence.length; ++i)
         {
             token = sentence[i];
-            stringBuffer.append("<LU LEMMA=\"");
-            stringBuffer.append(token[2] + "\" ");
-            stringBuffer.append("CAT=\"");
-            stringBuffer.append(token[4] + "\" ");
-            stringBuffer.append("POS" + token[3]);
+            sb.append("<LU LEMMA=\"");
+            sb.append(token[2]).append("\" ");
+            sb.append("CAT=\"");
+            sb.append(token[4]).append("\" ");
+            sb.append("POS").append(token[3]);
             for (String gov : getGovs(i + 1, sentence))
             {
                 templabel = gov + "GOV";
@@ -184,7 +184,7 @@ public class Dep2Nooj
                 }
                 map.put(templabel, map.get(templabel) + 1);
                 int counter = map.get(templabel);
-                stringBuffer.append(" " + gov + counter + "GOV");
+                sb.append(" ").append(gov).append(counter).append("GOV");
             }
 
             if (!token[7].equals("ROOT"))
@@ -196,13 +196,13 @@ public class Dep2Nooj
                 }
                 map.put(templabel, map.get(templabel) + 1);
                 int counter = map.get(templabel);
-                stringBuffer.append(" " + token[7] + counter + "DEP");
+                sb.append(" ").append(token[7]).append(counter).append("DEP");
             }
 
-            stringBuffer.append(">" + token[1] + "</LU> ");
+            sb.append(">").append(token[1]).append("</LU> ");
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     private static String[][][] read(String file)
@@ -324,24 +324,13 @@ public class Conll2007To2009
     {
         BufferedReader reader = null;
         Writer writer = null;
-        String line = null;
-        String[] split = null;
-
-        String num;
-        String wordform;
-        String lemma;
-        String msd;
-        String parent;
-        String deprel;
-
-        StringBuffer conll2009 = null;
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), "utf-8"));
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "utf-8"));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().length() == 0)
                 {
@@ -349,19 +338,20 @@ public class Conll2007To2009
                 }
                 else
                 {
-                    conll2009 = new StringBuffer();
+                    String[] split = line.split("\t");
 
-                    split = line.split("\t");
-                    num = split[0];
-                    wordform = split[1];
-                    lemma = split[2];
-                    msd = split[3];
-                    parent = split[6];
-                    deprel = split[7];
+                    String num = split[0];
+                    String wordform = split[1];
+                    String lemma = split[2];
+                    String msd = split[3];
+                    String parent = split[6];
+                    String deprel = split[7];
+
+                    StringBuilder sb = new StringBuilder();
 
                     if (msd.equals("VAN") || msd.equals("ELL"))
                     {
-                        conll2009.append(num + "\t_\t_\t_\t" + msd + "\t" + msd + "\t_\t_\t");
+                        sb.append(num).append("\t_\t_\t_\t").append(msd).append("\t").append(msd).append("\t_\t_\t");
                     }
                     else
                     {
@@ -369,14 +359,12 @@ public class Conll2007To2009
                         {
                             msd = wordform;
                         }
-                        conll2009.append(num + "\t" + wordform + "\t" + lemma + "\t"
-                                + lemma + "\t" + msd.charAt(0) + "\t" + msd.charAt(0) + "\t");
-                        conll2009.append(msdToConllFeatures.convert(lemma, msd) + "\t"
-                                + msdToConllFeatures.convert(lemma, msd) + "\t");
+                        sb.append(num).append("\t").append(wordform).append("\t").append(lemma).append("\t").append(lemma).append("\t").append(msd.charAt(0)).append("\t").append(msd.charAt(0)).append("\t");
+                        sb.append(msdToConllFeatures.convert(lemma, msd)).append("\t").append(msdToConllFeatures.convert(lemma, msd)).append("\t");
                     }
-                    conll2009.append(parent + "\t" + parent + "\t" + deprel + "\t" + deprel);
+                    sb.append(parent).append("\t").append(parent).append("\t").append(deprel).append("\t").append(deprel);
 
-                    writer.write(conll2009.toString() + "\n");
+                    writer.write(sb.toString() + "\n");
                 }
             }
         }
@@ -508,9 +496,8 @@ public class Converter
 
     public static String getMsd(Node node)
     {
-        String msd = null;
+        String msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
 
-        msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
         return msd.substring(1, msd.length() - 1);
     }
 
@@ -529,21 +516,16 @@ public class Converter
 
     public static String wToTrain(Node node)
     {
-        String spelling = null;
-        String lemma = null;
-        String msd = null;
-        spelling = node.getChildNodes().item(0).getTextContent().trim();
+        StringBuilder sb = new StringBuilder();
 
-        StringBuffer stringBuffer = new StringBuffer();
+        String spelling = node.getChildNodes().item(0).getTextContent().trim();
 
-        NodeList nodes = null;
-
-        nodes = ((Element) node).getElementsByTagName("ana");
+        NodeList nodes = ((Element) node).getElementsByTagName("ana");
 
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            lemma = getLemma(nodes.item(i));
-            msd = getMsd(nodes.item(i));
+            String lemma = getLemma(nodes.item(i));
+            String msd = getMsd(nodes.item(i));
 
             if (PUNCT.contains(lemma))
             {
@@ -554,29 +536,24 @@ public class Converter
                 msd = "K";
             }
 
-            stringBuffer.append(spelling + WORDFORM_LEMMA_SEPARATOR + lemma + LEMMA_MSD_SEPARATOR + msd);
+            sb.append(spelling).append(WORDFORM_LEMMA_SEPARATOR).append(lemma).append(LEMMA_MSD_SEPARATOR).append(msd);
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static void wToFullLex(Node node)
     {
         Set<MorAna> morAnas = new TreeSet<MorAna>();
 
-        String spelling = null;
-        String lemma = null;
-        String msd = null;
-        spelling = node.getChildNodes().item(0).getTextContent().trim();
+        String spelling = node.getChildNodes().item(0).getTextContent().trim();
 
-        NodeList nodes = null;
-
-        nodes = ((Element) node).getElementsByTagName("anav");
+        NodeList nodes = ((Element) node).getElementsByTagName("anav");
 
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            lemma = getLemma(nodes.item(i));
-            msd = getMsd(nodes.item(i));
+            String lemma = getLemma(nodes.item(i));
+            String msd = getMsd(nodes.item(i));
 
             if (PUNCT.contains(lemma))
             {
@@ -604,39 +581,39 @@ public class Converter
 
     public static String splitToTrainString(String[][] split)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (String[] s : split)
         {
-            stringBuffer.append(s[0]);
-            stringBuffer.append(WORDFORM_LEMMA_SEPARATOR);
-            stringBuffer.append(s[1]);
-            stringBuffer.append(LEMMA_MSD_SEPARATOR);
-            stringBuffer.append(s[2]);
-            stringBuffer.append('\n');
+            sb.append(s[0]);
+            sb.append(WORDFORM_LEMMA_SEPARATOR);
+            sb.append(s[1]);
+            sb.append(LEMMA_MSD_SEPARATOR);
+            sb.append(s[2]);
+            sb.append('\n');
         }
 
-        return stringBuffer.toString().trim();
+        return sb.toString().trim();
     }
 
     public static String cToTrain(Node node)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         String c = node.getTextContent();
 
-        stringBuffer.append(c);
-        stringBuffer.append(WORDFORM_LEMMA_SEPARATOR);
-        stringBuffer.append(c);
-        stringBuffer.append(LEMMA_MSD_SEPARATOR);
+        sb.append(c);
+        sb.append(WORDFORM_LEMMA_SEPARATOR);
+        sb.append(c);
+        sb.append(LEMMA_MSD_SEPARATOR);
 
         // if (!ResourceHolder.getPunctations().contains(c)) {
-        // stringBuffer.append("K");
+        // sb.append("K");
         // } else {
-        // stringBuffer.append(c);
+        // sb.append(c);
         // }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static String choiceToTrain(Node node)
@@ -689,16 +666,15 @@ public class Converter
 
     public static List<Node> getNodes(Node node, String... tagNames)
     {
-        NodeList childNodes = ((Element) node).getChildNodes();
-
         List<Node> nodes = new LinkedList<Node>();
 
-        Node tempNode = null;
-        String tempNodeName = null;
+        NodeList childNodes = ((Element) node).getChildNodes();
+
         for (int i = 0; i < childNodes.getLength(); ++i)
         {
-            tempNode = childNodes.item(i);
-            tempNodeName = tempNode.getNodeName();
+            Node tempNode = childNodes.item(i);
+            String tempNodeName = tempNode.getNodeName();
+
             for (String tagName : tagNames)
             {
                 if (tempNodeName.equals(tagName))
@@ -736,7 +712,7 @@ public class Converter
 
     private static String sentenceNodeToTrain(Node sentenceNode)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         String trainNode = null;
 
@@ -746,18 +722,16 @@ public class Converter
 
             if (trainNode != null)
             {
-                stringBuffer.append(trainNode);
-                stringBuffer.append("\n");
+                sb.append(trainNode);
+                sb.append("\n");
             }
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     private static void convert(String corpusPath, String trainFile, String testFile)
     {
-        StringBuffer xml = null;
-
         BufferedWriter trainWriter = null;
         BufferedWriter testWriter = null;
 
@@ -777,7 +751,7 @@ public class Converter
 
         for (String corpus : CORPUSES)
         {
-            xml = new StringBuffer(corpusPath);
+            StringBuilder xml = new StringBuilder(corpusPath);
             xml.append(corpus + XML_EXTENSION);
             divNodes = readXml(xml.toString());
 
@@ -844,32 +818,28 @@ public class Converter
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), UTF_ENCODING));
-
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), UTF_ENCODING));
-            String line = null;
-            String[] split = null;
 
-            StringBuffer stringBuffer = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
-            String reducedMsd = null;
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                split = line.split("\t");
+                String[] split = line.split("\t");
                 if (split.length == 3)
                 {
-                    stringBuffer.append(split[0]);
-                    stringBuffer.append(STANFORD_TRAIN_WORDFORM_MSD_SEPARATOR);
+                    sb.append(split[0]);
+                    sb.append(STANFORD_TRAIN_WORDFORM_MSD_SEPARATOR);
 
-                    reducedMsd = MSD_REDUCER.reduce(split[2]);
-                    stringBuffer.append(reducedMsd);
+                    String reducedMsd = MSD_REDUCER.reduce(split[2]);
+                    sb.append(reducedMsd);
                     msdCodes.add(reducedMsd);
 
-                    stringBuffer.append(STANFORD_TRAIN_TOKEN_SEPARATOR);
+                    sb.append(STANFORD_TRAIN_TOKEN_SEPARATOR);
                 }
                 else
                 {
-                    writer.write(stringBuffer.toString().trim() + '\n');
-                    stringBuffer = new StringBuffer();
+                    writer.write(sb.toString().trim() + '\n');
+                    sb = new StringBuilder();
                 }
             }
         }
@@ -1009,20 +979,17 @@ public class Converter
      */
     public static Map<String, Set<MorAna>> getLex(String file)
     {
-        BufferedReader reader = null;
-
         Map<String, Set<MorAna>> lexicon = new TreeMap<String, Set<MorAna>>();
+
+        BufferedReader reader = null;
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_ENCODING));
 
-            String line = null;
-            String[] split = null;
-
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                split = line.split(WORDFORM_LEMMA_SEPARATOR);
+                String[] split = line.split(WORDFORM_LEMMA_SEPARATOR);
 
                 if (split.length == 3)
                 {
@@ -1055,20 +1022,17 @@ public class Converter
 
     public static Map<String, Integer> getFreq(String file)
     {
-        BufferedReader reader = null;
-
         Map<String, Integer> frequencies = new TreeMap<String, Integer>();
+
+        BufferedReader reader = null;
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_ENCODING));
 
-            String line = null;
-            String[] split = null;
-
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                split = line.split(WORDFORM_LEMMA_SEPARATOR);
+                String[] split = line.split(WORDFORM_LEMMA_SEPARATOR);
 
                 if (split.length == 3)
                 {
@@ -1163,22 +1127,15 @@ public class DepPrediction
     {
         BufferedReader reader = null;
 
-        String line = null;
-        String[] split = null;
-
-        List<String> form = null;
-        List<String> lemma = null;
-        List<String> msd = null;
-
-        form = new ArrayList<String>();
-        lemma = new ArrayList<String>();
-        msd = new ArrayList<String>();
+        List<String> form = new ArrayList<String>();
+        List<String> lemma = new ArrayList<String>();
+        List<String> msd = new ArrayList<String>();
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if ("".equals(line.trim()))
                 {
@@ -1192,7 +1149,7 @@ public class DepPrediction
                 }
                 else
                 {
-                    split = line.split("\t");
+                    String[] split = line.split("\t");
 
                     form.add(split[0]);
                     lemma.add(split[1]);
@@ -1467,11 +1424,10 @@ public class TrainResources
      */
     public static boolean isContainsVirtual(List<String> sentence)
     {
-        String[] split = null;
-
         for (String token : sentence)
         {
-            split = token.split("\t");
+            String[] split = token.split("\t");
+
             if (split[4].equals("VAN") || split[4].equals("ELL"))
             {
                 return true;
@@ -1498,11 +1454,7 @@ public class TrainResources
 
     public static void writePosTrain(List<List<String>> sentences, String out)
     {
-        String[] split = null;
-
         Writer writer = null;
-        String wordForm = null;
-        String msd = null;
 
         try
         {
@@ -1514,10 +1466,10 @@ public class TrainResources
                 {
                     for (String token : sentence)
                     {
-                        split = token.split("\t");
-                        wordForm = split[1];
+                        String[] split = token.split("\t");
+                        String wordForm = split[1];
 
-                        msd = CFTM.convert(split[4], split[6]);
+                        String msd = CFTM.convert(split[4], split[6]);
                         writer.write(wordForm + "@" + ResourceHolder.getMSDReducer().reduce(msd) + " ");
                     }
                     writer.write("\n");
@@ -1543,25 +1495,19 @@ public class TrainResources
 
     public static void writeCorpus(List<List<String>> sentences, String out)
     {
-        String[] split = null;
-
-        String wordForm = null;
-        String lemma = null;
-        String msd = null;
-
         Map<String, Set<MorAna>> corpus = new TreeMap<String, Set<MorAna>>();
-
-        MorAna morAna = null;
 
         for (List<String> sentence : sentences)
         {
             for (String token : sentence)
             {
-                split = token.split("\t");
-                wordForm = split[1];
-                lemma = split[2];
-                msd = CFTM.convert(split[4], split[6]);
-                morAna = new MorAna(lemma, msd);
+                String[] split = token.split("\t");
+
+                String wordForm = split[1];
+                String lemma = split[2];
+                String msd = CFTM.convert(split[4], split[6]);
+
+                MorAna morAna = new MorAna(lemma, msd);
 
                 if (!corpus.containsKey(wordForm))
                     corpus.put(wordForm, new TreeSet<MorAna>());
@@ -1571,6 +1517,7 @@ public class TrainResources
         }
 
         Writer writer = null;
+
         try
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
@@ -1604,20 +1551,15 @@ public class TrainResources
 
     public static void writeFreq(List<List<String>> sentences, String out)
     {
-        String[] split = null;
-        Writer writer = null;
-
-        String msd = null;
-
         Map<String, Integer> freq = new TreeMap<String, Integer>();
 
         for (List<String> sentence : sentences)
         {
             for (String token : sentence)
             {
-                split = token.split("\t");
+                String[] split = token.split("\t");
 
-                msd = CFTM.convert(split[4], split[6]);
+                String msd = CFTM.convert(split[4], split[6]);
 
                 if (msd.equals("O"))
                 {
@@ -1635,12 +1577,13 @@ public class TrainResources
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
 
             for (Entry<String, Integer> enrty : freq.entrySet())
             {
                 writer.write(enrty.getKey() + "\t" + enrty.getValue() + "\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -1660,13 +1603,7 @@ public class TrainResources
 
     public static void writePosTest(List<List<String>> sentences, String out)
     {
-        String[] split = null;
-
         Writer writer = null;
-        String wordForm = null;
-        String lemma = null;
-
-        String msd = null;
 
         try
         {
@@ -1678,10 +1615,11 @@ public class TrainResources
                 {
                     for (String token : sentence)
                     {
-                        split = token.split("\t");
-                        wordForm = split[1];
-                        lemma = split[2];
-                        msd = CFTM.convert(split[4], split[6]);
+                        String[] split = token.split("\t");
+
+                        String wordForm = split[1];
+                        String lemma = split[2];
+                        String msd = CFTM.convert(split[4], split[6]);
 
                         writer.write(wordForm + "\t" + lemma + "\t" + msd + "\n");
                     }
@@ -1710,17 +1648,7 @@ public class TrainResources
     {
         // 1 A a a T T SubPOS=f SubPOS=f 3 3 DET DET _ _
 
-        String[] split = null;
         Writer writer = null;
-
-        String id = null;
-        String form = null;
-        String lemma = null;
-        String POS = null;
-        String feature = null;
-
-        String head = null;
-        String label = null;
 
         try
         {
@@ -1730,17 +1658,17 @@ public class TrainResources
             {
                 for (String token : sentence)
                 {
-                    split = token.split("\t");
+                    String[] split = token.split("\t");
 
-                    id = split[0];
-                    form = split[1];
-                    lemma = split[2];
+                    String id = split[0];
+                    String form = split[1];
+                    String lemma = split[2];
                     // splitted[3];
-                    POS = split[4];
-                    feature = split[6];
+                    String POS = split[4];
+                    String feature = split[6];
 
-                    head = split[8];
-                    label = split[10];
+                    String head = split[8];
+                    String label = split[10];
 
                     writer.write(id + "\t" + form + "\t" + lemma + "\t" + lemma + "\t"
                             + POS + "\t" + POS + "\t" + feature + "\t" + feature + "\t"
@@ -1770,18 +1698,13 @@ public class TrainResources
 
     public static void generate()
     {
-        List<List<String>> filteredSentences = null;
-
-        List<List<String>> trainSentences = null;
-        List<List<String>> testSentences = null;
-
         for (String file : new String[] { "web_1222", "face_1222", "faq_1222" })
         {
-            trainSentences = new ArrayList<List<String>>();
-            testSentences = new ArrayList<List<String>>();
+            List<List<String>> trainSentences = new ArrayList<List<String>>();
+            List<List<String>> testSentences = new ArrayList<List<String>>();
 
             // virtualis node-okat tartalmazo mondatok elhagyasa
-            filteredSentences = filterSentences(readSentences("./data/webcorpus_1222/" + file + ".conll-2009"));
+            List<List<String>> filteredSentences = filterSentences(readSentences("./data/webcorpus_1222/" + file + ".conll-2009"));
 
             Set<Integer> ids = new TreeSet<Integer>();
             for (int i = 0; i < filteredSentences.size(); ++i)
@@ -1845,47 +1768,29 @@ public class TrainResources
         int headIndex = 8;
         int relIndex = 10;
 
-        // reader
         BufferedReader reader = null;
-
         Writer writer = null;
 
-        String line = null;
-        String[] split = null;
+        List<String> wordForm = new ArrayList<String>();
+        List<String> lemma = new ArrayList<String>();
+        List<String> pos = new ArrayList<String>();
+        List<String> feat = new ArrayList<String>();
 
-        List<String> wordForm = null;
-        List<String> lemma = null;
-        List<String> pos = null;
-        List<String> feat = null;
+        List<String> msd = new ArrayList<String>();
 
-        List<String> msd = null;
-
-        List<String> head = null;
-        List<String> rel = null;
-
-        wordForm = new ArrayList<String>();
-        lemma = new ArrayList<String>();
-        pos = new ArrayList<String>();
-        feat = new ArrayList<String>();
-
-        msd = new ArrayList<String>();
-
-        head = new ArrayList<String>();
-        rel = new ArrayList<String>();
-
-        String[][] pred = null;
+        List<String> head = new ArrayList<String>();
+        List<String> rel = new ArrayList<String>();
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
-
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if ("".equals(line.trim()))
                 {
-                    pred = MateParserWrapper.parseSentence(wordForm, lemma, msd, pos, feat);
+                    String[][] pred = MateParserWrapper.parseSentence(wordForm, lemma, msd, pos, feat);
 
                     if (pred != null)
                     {
@@ -1910,7 +1815,7 @@ public class TrainResources
                 }
                 else
                 {
-                    split = line.split("\t");
+                    String[] split = line.split("\t");
 
                     wordForm.add(split[wordFormIndex]);
                     lemma.add(split[lemmaIndex]);
@@ -1958,8 +1863,6 @@ public class TrainResources
     {
         List<List<String>> sentences = readSentences(file);
 
-        String[] splitted = null;
-
         int counter = 0;
 
         int las = 0;
@@ -1969,7 +1872,7 @@ public class TrainResources
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
                 if (splitted[1].equals(splitted[2]))
                 {
                     ++uas;
@@ -2444,19 +2347,19 @@ public class CoNLL2009Sentence
 
     public String toString()
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < this.getTokens().length; ++i)
         {
-            stringBuffer.append(tokens[i][0]);
+            sb.append(tokens[i][0]);
             for (int j = 1; j < tokens[i].length; ++j)
             {
-                stringBuffer.append("\t" + tokens[i][j]);
+                sb.append("\t").append(tokens[i][j]);
             }
-            stringBuffer.append("\n");
+            sb.append("\n");
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public void removeVirtuals()
@@ -2711,15 +2614,13 @@ public class CoNLL2009Sentence
 
     private void removeVirtualNodes()
     {
-        StringBuffer stringBuffer = null;
-
         // fontos, hogy ezek nem a valodi id-k, ha tobb virtualis van!!!
         for (int i : this.getVirtualIndexes())
         {
             for (int j : getChildrenIndexes(i))
             {
-                stringBuffer = new StringBuffer(getNodeRel(tokens[i])).append("-" + getNodePOS(tokens[i])).append("-" + getNodeRel(tokens[j]));
-                setNodeRel(tokens[j], stringBuffer.toString());
+                StringBuilder sb = new StringBuilder(getNodeRel(tokens[i])).append("-" + getNodePOS(tokens[i])).append("-" + getNodeRel(tokens[j]));
+                setNodeRel(tokens[j], sb.toString());
                 setNodeParentId(tokens[j], getNodeParentId(tokens[i]));
             }
             renumberIds(i);
@@ -2896,16 +2797,13 @@ public class RemoveVirtualNodes
 {
     public static void main(String[] args)
     {
-        String file = null;
+        String file = "./data/objfx/10fold/law.0.test";
+
         CoNLL2009Sentence coNLL2009Sentence = null;
-
-        file = "./data/objfx/10fold/law.0.test";
-
-        Writer writer = null;
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/objfx/10fold/law.0.test.virtual"), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/objfx/10fold/law.0.test.virtual"), "UTF-8"));
 
             // for (String[][] sentence : Util.readCoNLL2009(file)) {
             // coNLL2009Sentence = new CoNLL2009Sentence(sentence);
@@ -2966,19 +2864,14 @@ public class Util
      */
     public static String[][][] readCoNLL2009(String file, String encoding)
     {
-        BufferedReader bufferedReader = null;
-        String line = null;
-        List<String[]> sentence = null;
-        List<String[][]> sentences = null;
-
-        sentence = new ArrayList<String[]>();
-        sentences = new ArrayList<String[][]>();
+        List<String[]> sentence = new ArrayList<String[]>();
+        List<String[][]> sentences = new ArrayList<String[][]>();
 
         try
         {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
 
-            while ((line = bufferedReader.readLine()) != null)
+            for (String line; (line = bufferedReader.readLine()) != null; )
             {
                 if (!line.equals(""))
                 {
@@ -3009,11 +2902,9 @@ public class Util
 
     public static void writeCoNLL2009(String[][][] sentences, String file, String encoding)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
 
             for (String[][] sentence : sentences)
             {
@@ -3117,9 +3008,10 @@ public class RemoveEmptyNodes
     {
         BufferedReader input = new BufferedReader(new InputStreamReader(new FileInputStream(in), "UTF-8"));
         BufferedWriter output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
-        String line;
+
         List<String[]> sentence = new LinkedList<String[]>();
-        while ((line = input.readLine()) != null)
+
+        for (String line; (line = input.readLine()) != null; )
         {
             if (line.isEmpty())
             {
@@ -3132,6 +3024,7 @@ public class RemoveEmptyNodes
             else
                 sentence.add(line.split("\t"));
         }
+
         output.flush();
         output.close();
     }
@@ -3141,9 +3034,10 @@ public class RemoveEmptyNodes
     {
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
         BufferedWriter output = new BufferedWriter(new OutputStreamWriter(System.out, "UTF-8"));
-        String line;
+
         List<String[]> sentence = new LinkedList<String[]>();
-        while ((line = input.readLine()) != null)
+
+        for (String line; (line = input.readLine()) != null; )
         {
             if (line.isEmpty())
             {
@@ -3156,6 +3050,7 @@ public class RemoveEmptyNodes
             else
                 sentence.add(line.split("\t"));
         }
+
         output.flush();
         output.close();
     }
@@ -3164,8 +3059,8 @@ public class RemoveEmptyNodes
     {
         int parentcolumn = usePredicted ? EmptyNodeEvaluator.PRED_PARENT_COLUMN : EmptyNodeEvaluator.GS_PARENT_COLUMN;
         int labelcolumn = usePredicted ? EmptyNodeEvaluator.PRED_LABEL_COLUMN : EmptyNodeEvaluator.GS_LABEL_COLUMN;
-        int e;
-        while ((e = firstEmptyNode(sentence)) > 0)
+
+        for (int e; (e = firstEmptyNode(sentence)) > 0; )
         {
             String parent = sentence.get(e - 1)[parentcolumn];
             for (String[] w : sentence)
@@ -4098,18 +3993,18 @@ public class Magyarlanc
 
     public static String sentenceAsString(String[][] array)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < array.length; ++i)
         {
             for (int j = 0; j < array[i].length; ++j)
             {
-                stringBuffer.append(array[i][j] + "\t");
+                sb.append(array[i][j]).append("\t");
             }
-            stringBuffer.append("\n");
+            sb.append("\n");
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static void eval(String testFile)
@@ -4556,7 +4451,6 @@ public class ResourceBuilder
         Writer writer = null;
 
         String[] splitted = null;
-        StringBuilder stringBuilder = null;
         try
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
@@ -4581,13 +4475,13 @@ public class ResourceBuilder
                     // Nn-
                     if (MSD.startsWith("N"))
                     {
-                        stringBuilder = new StringBuilder(MSD);
-                        stringBuilder.setCharAt(1, 'n');
-                        MSD = stringBuilder.toString();
+                        StringBuilder sb = new StringBuilder(MSD);
+                        sb.setCharAt(1, 'n');
+                        MSD = sb.toString();
 
-                        stringBuilder = new StringBuilder(feature);
-                        stringBuilder.setCharAt(7, 'n');
-                        feature = stringBuilder.toString();
+                        sb = new StringBuilder(feature);
+                        sb.setCharAt(7, 'n');
+                        feature = sb.toString();
                     }
 
                     writer.write(id + "\t" + form + "\t" + lemma + "\t" + MSD + "\t"
@@ -5778,7 +5672,7 @@ public class Util
 
     public static String readFileToString(String filePath, String cEncoding)
     {
-        StringBuffer fileData = new StringBuffer(1000);
+        StringBuilder sb = new StringBuilder(1 << 10);
         try
         {
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), cEncoding));
@@ -5787,7 +5681,7 @@ public class Util
             while ((numRead = reader.read(buf)) != -1)
             {
                 String readData = String.valueOf(buf, 0, numRead);
-                fileData.append(readData);
+                sb.append(readData);
                 buf = new char[1024];
             }
             reader.close();
@@ -5798,7 +5692,7 @@ public class Util
             return new String();
         }
 
-        return fileData.toString();
+        return sb.toString();
     }
 
     /**
@@ -5812,16 +5706,15 @@ public class Util
     public static String[][] readTokenizedFile(String filenName, String encoding)
     {
         BufferedReader reader = null;
-        String line = null;
 
         List<String[]> sentences = new ArrayList<String[]>();
-
         List<String> tokens = new ArrayList<String>();
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(filenName), encoding));
-            while ((line = reader.readLine()) != null)
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().length() == 0)
                 {
@@ -5879,12 +5772,11 @@ public class CorpusStats
     {
         Map<String, Integer> stat = new TreeMap<String, Integer>();
 
-        String[] splitted = null;
         for (List<String> sentence : document)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
                 // if (splitted[4].equals("VAN") || splitted[4].equals("ELL")) {
                 if (!stat.containsKey(splitted[columnIndex]))
                     stat.put(splitted[columnIndex], 0);
@@ -7618,14 +7510,14 @@ public class SzK25
      */
     private static String sallow(String[] parts, String separator)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (String part : parts)
         {
-            stringBuffer.append(part + separator);
+            sb.append(part).append(separator);
         }
 
-        return stringBuffer.toString().trim();
+        return sb.toString().trim();
     }
 
     /**
@@ -7677,28 +7569,26 @@ public class SzK25
 
         lines = new String[splittedWordForm.length];
 
-        StringBuffer stringBuffer = null;
-
         for (int i = 0; i < splittedWordForm.length; ++i)
         {
-            stringBuffer = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int j = 0; j < WORD_FORM_INDEX; ++j)
             {
-                stringBuffer.append(splittedLine[j] + "\t");
+                sb.append(splittedLine[j]).append("\t");
             }
-            stringBuffer.append(splittedWordForm[i] + "\t");
-            stringBuffer.append(splittedLemma[i] + "\t");
+            sb.append(splittedWordForm[i]).append("\t");
+            sb.append(splittedLemma[i]).append("\t");
             if (i < splittedWordForm.length - 1)
             {
                 // default MSD for the last token
-                stringBuffer.append(DEFAULT_ADJECTIVE_MSD);
+                sb.append(DEFAULT_ADJECTIVE_MSD);
             }
             else
             {
                 // original MSD for the last token
-                stringBuffer.append(splittedLine[MSD_INDEX]);
+                sb.append(splittedLine[MSD_INDEX]);
             }
-            lines[i] = stringBuffer.toString();
+            lines[i] = sb.toString();
         }
 
         return lines;
@@ -7726,35 +7616,33 @@ public class SzK25
 
         lines = new String[splittedWordForm.length];
 
-        StringBuffer stringBuffer = null;
-
         for (int i = 0; i < splittedWordForm.length; ++i)
         {
-            stringBuffer = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int j = 0; j < WORD_FORM_INDEX; ++j)
             {
-                stringBuffer.append(splittedLine[j] + "\t");
+                sb.append(splittedLine[j]).append("\t");
             }
-            stringBuffer.append(splittedWordForm[i] + "\t");
-            stringBuffer.append(splittedLemma[i] + "\t");
+            sb.append(splittedWordForm[i]).append("\t");
+            sb.append(splittedLemma[i]).append("\t");
             if (i < splittedWordForm.length - 1)
             {
                 if (splittedLine[WORD_FORM_INDEX].contains(","))
                 {
                     // fraction
-                    stringBuffer.append(DEFAULT_NUMERAL_FRACTION_MSD);
+                    sb.append(DEFAULT_NUMERAL_FRACTION_MSD);
                 }
                 else
                 {
-                    stringBuffer.append(DEFAULT_NUMERAL_MSD);
+                    sb.append(DEFAULT_NUMERAL_MSD);
                 }
             }
             else
             {
                 // original MSD for the last token
-                stringBuffer.append(splittedLine[MSD_INDEX]);
+                sb.append(splittedLine[MSD_INDEX]);
             }
-            lines[i] = stringBuffer.toString();
+            lines[i] = sb.toString();
         }
 
         return lines;
@@ -7783,27 +7671,26 @@ public class SzK25
 
         lines = new String[splittedWordForm.length];
 
-        StringBuffer stringBuffer = null;
         // System.err.println(line);
         for (int i = 0; i < splittedWordForm.length; ++i)
         {
-            stringBuffer = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int j = 0; j < WORD_FORM_INDEX; ++j)
             {
-                stringBuffer.append(splittedLine[j] + "\t");
+                sb.append(splittedLine[j]).append("\t");
             }
-            stringBuffer.append(splittedWordForm[i] + "\t");
-            stringBuffer.append(splittedLemma[i] + "\t");
+            sb.append(splittedWordForm[i]).append("\t");
+            sb.append(splittedLemma[i]).append("\t");
             if (i < splittedWordForm.length - 1)
             {
-                stringBuffer.append(DEFAULT_NOUN_MSD + "\t");
+                sb.append(DEFAULT_NOUN_MSD).append("\t");
             }
             else
             {
                 // original MSD for the last token
-                stringBuffer.append(splittedLine[MSD_INDEX]);
+                sb.append(splittedLine[MSD_INDEX]);
             }
-            lines[i] = stringBuffer.toString();
+            lines[i] = sb.toString();
         }
 
         return lines;
@@ -7935,13 +7822,9 @@ public class SzK25
      */
     private static String getMsd(Node node)
     {
-        String msd = null;
+        String msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
 
-        msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
-
-        msd = msd.substring(1, msd.length() - 1);
-
-        return msd;
+        return msd.substring(1, msd.length() - 1);
     }
 
     /**
@@ -8215,7 +8098,6 @@ public class SzK25
     private static void writeTest(String[][] sentences, String out)
     {
         Writer writer = null;
-        String msd = null;
         try
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
@@ -8224,8 +8106,7 @@ public class SzK25
             {
                 for (String token : sentence)
                 {
-                    msd = token.split("\t")[MSD_INDEX].replace("Np", "Nn");
-                    msd = msd.replace("Nc", "Nn");
+                    String msd = token.split("\t")[MSD_INDEX].replace("Np", "Nn").replace("Nc", "Nn");
 
                     writer.write(token.split("\t")[WORD_FORM_INDEX].replace(" ", "_")
                         + "\t" + token.split("\t")[LEMMA_INDEX].replace(" ", "_") + "\t"
@@ -8246,21 +8127,18 @@ public class SzK25
     {
         Map<String, Set<MorAna>> lexicon = new TreeMap<String, Set<MorAna>>();
 
-        String msd = null;
-        String[] split = null;
         for (String[] sentence : sentences)
         {
             for (String token : sentence)
             {
-                split = token.split("\t");
+                String[] split = token.split("\t");
 
                 if (!lexicon.containsKey(split[WORD_FORM_INDEX]))
                 {
                     lexicon.put(split[WORD_FORM_INDEX], new TreeSet<MorAna>());
                 }
 
-                msd = split[MSD_INDEX].replace("Np", "Nn");
-                msd = msd.replace("Nc", "Nn");
+                String msd = split[MSD_INDEX].replace("Np", "Nn").replace("Nc", "Nn");
 
                 lexicon.get(split[WORD_FORM_INDEX]).add(new MorAna(split[LEMMA_INDEX], msd));
             }
@@ -8271,11 +8149,10 @@ public class SzK25
 
     public static void writeLexiconToFile(Map<String, Set<MorAna>> lexicon, String out)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+
             for (Map.Entry<String, Set<MorAna>> entry : lexicon.entrySet())
             {
                 writer.write(entry.getKey());
@@ -8299,16 +8176,13 @@ public class SzK25
     {
         Map<String, Integer> freqs = new TreeMap<String, Integer>();
 
-        String[] split = null;
-        String msd = null;
         for (String[] sentence : sentences)
         {
             for (String token : sentence)
             {
-                split = token.split("\t");
+                String[] split = token.split("\t");
 
-                msd = split[MSD_INDEX].replace("Np", "Nn");
-                msd = msd.replace("Nc", "Nn");
+                String msd = split[MSD_INDEX].replace("Np", "Nn").replace("Nc", "Nn");
 
                 if (!freqs.containsKey(msd))
                 {
@@ -8319,14 +8193,15 @@ public class SzK25
             }
         }
 
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+
             for (Map.Entry<String, Integer> entry : freqs.entrySet())
             {
-                writer.write(entry.getKey() + "\t" + entry.getValue());
+                writer.write(entry.getKey());
+                writer.write("\t");
+                writer.write(entry.getValue());
                 writer.write("\n");
             }
 
@@ -8441,13 +8316,14 @@ public class SzK25
 
     public static void merge(String path, String[] files, String extension, String out)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
+
         for (String file : files)
         {
-            stringBuffer.append(readFileToString(path + file + extension, "UTF-8"));
+            sb.append(readFileToString(path + file + extension, "UTF-8"));
         }
 
-        writeStringToFile(stringBuffer.toString(), out, "UTF-8");
+        writeStringToFile(sb.toString(), out, "UTF-8");
     }
 
     public static void mergeFrequencies(String path, String[] files, String extension, String out)
@@ -8476,15 +8352,15 @@ public class SzK25
 
     public static void writeMapToFile(Map<String, Integer> map, File file, String separator, String encoding)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+
             for (Entry<String, Integer> entry : map.entrySet())
             {
                 writer.write(entry.getKey() + separator + entry.getValue() + "\n");
             }
+
             writer.close();
         }
         catch (IOException e)
@@ -8495,11 +8371,9 @@ public class SzK25
 
     public static void writeStringToFile(String s, File file, String encoding)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
             writer.write(s);
             writer.close();
         }
@@ -8525,19 +8399,17 @@ public class SzK25
      */
     public static String readFileToString(File file, String encoding)
     {
-        BufferedReader reader = null;
+        StringBuilder sb = new StringBuilder();
 
-        StringBuffer stringBuffer = new StringBuffer();
-
-        String line = null;
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                stringBuffer.append(line + "\n");
+                sb.append(line).append("\n");
             }
+
             reader.close();
         }
         catch (IOException e)
@@ -8545,7 +8417,7 @@ public class SzK25
             e.printStackTrace();
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static void mergeLexicons(String path, String[] files, String extension, String out)
@@ -8657,19 +8529,17 @@ public class Tools
 
     public static String readFileToString(String file, String encoding)
     {
-        StringBuffer stringBuffer = null;
-        BufferedReader reader = null;
-        stringBuffer = new StringBuffer(1000);
+        StringBuilder sb = new StringBuilder(1000);
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
             char[] buf = new char[1024];
             int numRead = 0;
             while ((numRead = reader.read(buf)) != -1)
             {
                 String readData = String.valueOf(buf, 0, numRead);
-                stringBuffer.append(readData);
+                sb.append(readData);
                 buf = new char[1024];
             }
             reader.close();
@@ -8679,25 +8549,20 @@ public class Tools
             e.printStackTrace();
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static List<List<String>> readFile(String file)
     {
-        List<String> sentence = null;
-        List<List<String>> document = null;
-        BufferedReader reader = null;
-        String line = null;
-
-        sentence = new LinkedList<String>();
-        document = new LinkedList<List<String>>();
+        List<String> sentence = new LinkedList<String>();
+        List<List<String>> document = new LinkedList<List<String>>();
 
         int tokenCounter = 0;
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.equals(""))
                 {
@@ -8742,6 +8607,7 @@ public class Tools
         }
 
         System.err.println(documents.size() + " documents\t" + tokens + " tokens\t" + sentences + " sentences");
+
         return documents;
     }
 
@@ -8759,11 +8625,9 @@ public class Tools
 
     public static void write(String out, List<List<List<String>>> documents)
     {
-        Writer writer = null;
-        String[] splitted = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF8"));
 
             for (List<List<String>> document : documents)
             {
@@ -8771,7 +8635,7 @@ public class Tools
                 {
                     for (String line : sentence)
                     {
-                        splitted = line.split("\t");
+                        String[] splitted = line.split("\t");
 
                         writer.write(splitted[0]);
                         for (int i = 1; i < 12; ++i)
@@ -8801,10 +8665,7 @@ public class Tools
 
     public static Map<String, Integer> verbStat(List<List<List<String>>> documents)
     {
-        Map<String, Integer> verbStat = null;
-        String[] splitted = null;
-
-        verbStat = new TreeMap<String, Integer>();
+        Map<String, Integer> verbStat = new TreeMap<String, Integer>();
 
         for (List<List<String>> document : documents)
         {
@@ -8812,7 +8673,7 @@ public class Tools
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
+                    String[] splitted = token.split("\t");
                     if (splitted[4].equals("V") && splitted[6].startsWith("SubPOS=m"))
                     {
                         if (!verbStat.containsKey(splitted[2]))
@@ -8873,33 +8734,31 @@ public class Tools
 
     public static void writePosTrain(List<List<String>> sentences, String file)
     {
-        String[] splitted = null;
-        Writer writer = null;
-
         Set<String> reduced = new TreeSet<String>();
 
         CoNLLFeaturesToMSD coNLLFeaturesToMSD = new CoNLLFeaturesToMSD();
         MSDReducer msdReducer = new MSDReducer();
 
-        String MSD = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+
             for (List<String> sentence : sentences)
             {
                 for (String line : sentence)
                 {
-                    splitted = line.split("\t");
+                    String[] splitted = line.split("\t");
                     if (!splitted[4].equals("ELL") && !splitted[4].equals("VAN"))
                     {
-                        MSD = coNLLFeaturesToMSD.convert(splitted[4], splitted[6]);
+                        String msd = coNLLFeaturesToMSD.convert(splitted[4], splitted[6]);
 
-                        writer.write(splitted[1] + "@" + msdReducer.reduce(MSD) + " ");
+                        writer.write(splitted[1] + "@" + msdReducer.reduce(msd) + " ");
                         reduced.add(splitted[13]);
                     }
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -8924,10 +8783,6 @@ public class Tools
 
     public static void validate()
     {
-        String path = null;
-        String[] files = null;
-        String extension = null;
-
         MSDToCoNLLFeatures msdToCoNLLFeatures = null;
         CoNLLFeaturesToMSD coNLLFeaturesToMSD = null;
 
@@ -8950,16 +8805,16 @@ public class Tools
             e.printStackTrace();
         }
 
-        path = "./data/conll/msd/";
+        String path = "./data/conll/msd/";
 
-        files = new String[] { "8oelb", /*
-                                         * "10elb", "10erv", "1984", "cwszt",
-                                         * "gazdtar", "hvg", "mh", "newsml", "np",
-                                         * "nv", "pfred", "szerzj", "utas",
-                                         * "win2000"
-                                         */};
+        String[] files = new String[] { "8oelb", /*
+                                      * "10elb", "10erv", "1984", "cwszt",
+                                      * "gazdtar", "hvg", "mh", "newsml", "np",
+                                      * "nv", "pfred", "szerzj", "utas",
+                                      * "win2000"
+                                      */};
 
-              extension = ".conll-2009-msd";
+        String extension = ".conll-2009-msd";
 
         List<List<List<String>>> documents = readFiles(fileList(path, files, extension));
 
@@ -9084,33 +8939,23 @@ public class Tools
 
         MSDReducer msdReducer = new MSDReducer();
 
-        String[] splitted = null;
-        String oldFetures = null;
-        String oldReduced = null;
-        String newFeatures = null;
-        String newReduced = null;
-
-        String oldPFetures = null;
-        String oldPReduced = null;
-        String newPFeatures = null;
-        String newPReduced = null;
-
         for (List<String> sentence : document)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
 
-                oldFetures = splitted[6];
-                oldPFetures = splitted[7];
+                String oldFetures = splitted[6];
+                String oldPFetures = splitted[7];
 
-                newFeatures = msdToCoNLLFeatures.convert(splitted[2], splitted[12]);
-                newPFeatures = msdToCoNLLFeatures.convert(splitted[3], splitted[14]);
+                String newFeatures = msdToCoNLLFeatures.convert(splitted[2], splitted[12]);
+                String newPFeatures = msdToCoNLLFeatures.convert(splitted[3], splitted[14]);
 
-                oldReduced = splitted[13];
-                oldPReduced = splitted[15];
-                newReduced = msdReducer.reduce(splitted[12]);
-                newPReduced = msdReducer.reduce(splitted[14]);
+                String oldReduced = splitted[13];
+                String oldPReduced = splitted[15];
+
+                String newReduced = msdReducer.reduce(splitted[12]);
+                String newPReduced = msdReducer.reduce(splitted[14]);
 
                 if (!oldFetures.equals(newFeatures))
                 {
@@ -9171,12 +9016,12 @@ public class Tools
     public static Map<String, Integer> edgeStat(List<List<String>> document)
     {
         Map<String, Integer> edgeStat = new TreeMap<String, Integer>();
-        String[] splitted = null;
+
         for (List<String> sentence : document)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
 
                 if (!edgeStat.containsKey(splitted[10]))
                     edgeStat.put(splitted[10], 0);
@@ -9205,15 +9050,13 @@ public class Tools
 
     public static void buildFreqs(List<List<List<String>>> documents, String file)
     {
-        Map<String, Integer> freqs = null;
-        String[] splitted = null;
-        freqs = new TreeMap<String, Integer>();
+        Map<String, Integer> freqs = new TreeMap<String, Integer>();
 
         for (List<List<String>> document : documents)
             for (List<String> sentence : document)
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
+                    String[] splitted = token.split("\t");
                     if (!splitted[4].equals("ELL") && !splitted[4].equals("VAN"))
                     {
                         if (!freqs.containsKey(splitted[12]))
@@ -9223,14 +9066,15 @@ public class Tools
                     }
                 }
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+
             for (Map.Entry<String, Integer> entry : freqs.entrySet())
             {
                 writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -9250,31 +9094,27 @@ public class Tools
 
     public static void buildLexicon(List<List<List<String>>> documents, String file)
     {
-        Map<String, Set<MorAna>> lexicon = null;
-        String[] splitted = null;
-        lexicon = new TreeMap<String, Set<MorAna>>();
-
-        MorAna morAna = null;
+        Map<String, Set<MorAna>> lexicon = new TreeMap<String, Set<MorAna>>();
 
         for (List<List<String>> document : documents)
             for (List<String> sentence : document)
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
+                    String[] splitted = token.split("\t");
                     if (!splitted[4].equals("ELL") && !splitted[4].equals("VAN"))
                     {
                         if (!lexicon.containsKey(splitted[1]))
                             lexicon.put(splitted[1], new TreeSet<MorAna>());
 
-                        morAna = new MorAna(splitted[2], splitted[12]);
+                        MorAna morAna = new MorAna(splitted[2], splitted[12]);
                         lexicon.get(splitted[1]).add(morAna);
                     }
                 }
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+
             for (Map.Entry<String, Set<MorAna>> entry : lexicon.entrySet())
             {
                 writer.write(entry.getKey());
@@ -9284,6 +9124,7 @@ public class Tools
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -9305,16 +9146,14 @@ public class Tools
     {
         Map<String, Integer> casStat = new TreeMap<String, Integer>();
 
-        String[] splitted = null;
-        String cas = null;
         for (List<String> sentence : document)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
                 if (splitted[4].equals("N"))
                 {
-                    cas = getCas(splitted[6]);
+                    String cas = getCas(splitted[6]);
                     if (!casStat.containsKey(cas))
                     {
                         casStat.put(cas, 0);
@@ -9329,13 +9168,11 @@ public class Tools
 
     public static void possibles(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 System.err.println(line + "\t" + HunLemMor.getMorphologicalAnalyses(line));
             }
@@ -9349,18 +9186,15 @@ public class Tools
     public static void main(String args[])
     {
         // possibles("c:/jav2_elemezni.txt");
-        String[] files = null;
         String path = "./data/conll/corrected_features/";
-        String extension = null;
-        files = new String[] { /*
-                                * "8oelb", "10elb", "10erv", "1984", "cwszt",
-                                * "gazdtar", "hvg", "mh",
-                                */"newsml"/*
-                                * , "np", "nv", "pfred", "szerzj",
-                                * "utas", "win2000"
-                                */};
-
-        extension = ".conll-2009-msd";
+        String[] files = new String[] { /*
+                                         * "8oelb", "10elb", "10erv", "1984", "cwszt",
+                                         * "gazdtar", "hvg", "mh",
+                                         */"newsml"/*
+                                         * , "np", "nv", "pfred", "szerzj",
+                                         * "utas", "win2000"
+                                         */};
+        String extension = ".conll-2009-msd";
 
         // for (String file : files) {
         // for (Map.Entry<String, Integer> entry : edgeStat(
@@ -10214,7 +10048,7 @@ public class CoNLLFeaturesToMSD
      */
     private String convert(Character pos, Map<String, Integer> positionsMap, Map<String, String> featuresMap)
     {
-        StringBuffer msd = new StringBuffer(pos + "----------------");
+        StringBuilder msd = new StringBuilder(pos + "----------------");
 
         for (Map.Entry<String, String> entry : featuresMap.entrySet())
         {
@@ -10441,7 +10275,7 @@ public class KRToMSD
 
     public String convertNoun(String lemma, String kr)
     {
-        StringBuffer msd = new StringBuffer(Settings.DEFAULT_NOUN + "------");
+        StringBuilder msd = new StringBuilder(Settings.DEFAULT_NOUN + "------");
 
         /*
          * nevmas minden PERS-t tartalmazo NOUN
@@ -10452,7 +10286,7 @@ public class KRToMSD
 
         if (kr.contains("PERS"))
         {
-            msd = new StringBuffer("Pp--sn-----------");
+            msd = new StringBuilder("Pp--sn-----------");
             /*
              * szemely
              */
@@ -10625,7 +10459,7 @@ public class KRToMSD
 
         if (kr.contains("POSTP"))
         {
-            msd = new StringBuffer("Pp3-sn");
+            msd = new StringBuilder("Pp3-sn");
 
             if (lemma.equals("én"))
             {
@@ -10855,7 +10689,7 @@ public class KRToMSD
 
     public String convertAdjective(String kr)
     {
-        StringBuffer msd = new StringBuffer("Afp-sn-------");
+        StringBuilder msd = new StringBuilder("Afp-sn-------");
 
         /*
          * tipus (melleknev vagy melleknevi igenev)
@@ -11100,7 +10934,7 @@ public class KRToMSD
 
     public String convertVerb(String kr)
     {
-        StringBuffer msd = new StringBuffer("Vmip3s---n-");
+        StringBuilder msd = new StringBuilder("Vmip3s---n-");
 
         /*
          * magyarlanc 2.5-től
@@ -11203,7 +11037,7 @@ public class KRToMSD
 
     public String convertNumber(String kr, String analysis)
     {
-        StringBuffer msd = new StringBuffer("Mc-snl-------");
+        StringBuilder msd = new StringBuilder("Mc-snl-------");
 
         // c alapeset, nincs jelolve
 
@@ -11417,7 +11251,7 @@ public class KRToMSD
 
     public String convertAdverb(String kr)
     {
-        StringBuffer msd = new StringBuffer("Rx----");
+        StringBuilder msd = new StringBuilder("Rx----");
 
         // c
         if (kr.contains("[COMPAR]"))
@@ -11634,7 +11468,7 @@ public class KRToMSD
 
     public String cleanMsd(String msd)
     {
-        StringBuffer cleaned = new StringBuffer(msd.trim());
+        StringBuilder cleaned = new StringBuilder(msd.trim());
 
         int index = cleaned.length() - 1;
         while (cleaned.charAt(index) == '-')
@@ -12089,28 +11923,28 @@ public class MSDReducer
      */
     private String reduceN(String msd)
     {
-        StringBuffer result = new StringBuffer("N");
+        StringBuilder sb = new StringBuilder("N");
 
         // dative/genitive
         // superessive/essive
         if (msd.length() > 4 && (msd.charAt(4) == 'd' || msd.charAt(4) == 'g' || msd.charAt(4) == 'p'))
         {
-            result.append(msd.charAt(4));
+            sb.append(msd.charAt(4));
         }
 
         // N.-..---s3
         if (NOUN_PATTERN_1.matcher(msd).find())
         {
-            result.append('s');
+            sb.append('s');
         }
 
         // N.-..---..s
         if (NOUN_PATTERN_2.matcher(msd).find())
         {
-            result.append('z');
+            sb.append('z');
         }
 
-        return result.toString();
+        return sb.toString();
     }
 
     /**
@@ -12122,28 +11956,28 @@ public class MSDReducer
      */
     private String reduceO(String msd)
     {
-        StringBuffer result = new StringBuffer("O");
+        StringBuilder sb = new StringBuilder("O");
 
         // dative/genitive
         // superessive/essive
         if (msd.length() > 5 && (msd.charAt(5) == 'd' || msd.charAt(5) == 'g' || msd.charAt(5) == 'p'))
         {
-            result.append(msd.charAt(5));
+            sb.append(msd.charAt(5));
         }
 
         // O..-..---s3
         if (OPEN_PATTERN_1.matcher(msd).find())
         {
-            result.append('s');
+            sb.append('s');
         }
 
         // O..-..---..s
         if (OPEN_PATTERN_2.matcher(msd).find())
         {
-            result.append('z');
+            sb.append('z');
         }
 
-        return result.toString();
+        return sb.toString();
     }
 
     /**
@@ -12276,34 +12110,34 @@ public class MSDReducer
      */
     private String reduceA(String msd)
     {
-        StringBuffer result = new StringBuffer("A");
+        StringBuilder sb = new StringBuilder("A");
 
         // igenevek
         if (msd.charAt(1) != 'f')
         {
-            result.append('r');
+            sb.append('r');
         }
 
         // dative/genitive
         // superessive/essive
         if (msd.length() > 5 && (msd.charAt(5) == 'd' || msd.charAt(5) == 'g' || msd.charAt(5) == 'p'))
         {
-            result.append(msd.charAt(5));
+            sb.append(msd.charAt(5));
         }
 
         // A..-..-.--s3
         if (ADJECTIVE_PATTERN_1.matcher(msd).find())
         {
-            result.append('s');
+            sb.append('s');
         }
 
         // A..-..-.--..s
         if (ADJECTIVE_PATTERN_2.matcher(msd).find())
         {
-            result.append('z');
+            sb.append('z');
         }
 
-        return result.toString();
+        return sb.toString();
     }
 
     /**
@@ -12315,18 +12149,18 @@ public class MSDReducer
      */
     private String reduceP(String msd)
     {
-        StringBuffer result = new StringBuffer("P");
+        StringBuilder sb = new StringBuilder("P");
 
         // Pq Pr Pp
         if (msd.length() > 1 && (msd.charAt(1) == 'q' || msd.charAt(1) == 'r' || msd.charAt(1) == 'p'))
         {
             if (msd.charAt(1) == 'p')
             {
-                result.append('e');
+                sb.append('e');
             }
             else
             {
-                result.append(msd.charAt(1));
+                sb.append(msd.charAt(1));
             }
         }
 
@@ -12334,10 +12168,10 @@ public class MSDReducer
         // superessive/essive
         if (msd.length() > 5 && (msd.charAt(5) == 'd' || msd.charAt(5) == 'g' || msd.charAt(5) == 'p'))
         {
-            result.append(msd.charAt(5));
+            sb.append(msd.charAt(5));
         }
 
-        return result.toString();
+        return sb.toString();
     }
 
     /**
@@ -12349,15 +12183,15 @@ public class MSDReducer
      */
     private String reduceR(String msd)
     {
-        StringBuffer result = new StringBuffer("R");
+        StringBuilder sb = new StringBuilder("R");
 
         // Rq Rr Rp
         if (msd.length() > 1 && (msd.charAt(1) == 'q' || msd.charAt(1) == 'r' || msd.charAt(1) == 'p'))
         {
-            result.append(msd.charAt(1));
+            sb.append(msd.charAt(1));
         }
 
-        return result.toString();
+        return sb.toString();
     }
 
     /**
@@ -12369,34 +12203,34 @@ public class MSDReducer
      */
     private String reduceM(String msd)
     {
-        StringBuffer result = new StringBuffer("M");
+        StringBuilder sb = new StringBuilder("M");
 
         // fractal
         if (msd.length() > 1 && msd.charAt(1) == 'f')
         {
-            result.append(msd.charAt(1));
+            sb.append(msd.charAt(1));
         }
 
         // dative/genitive
         // superessive/essive
         if (msd.length() > 4 && (msd.charAt(4) == 'd' || msd.charAt(4) == 'g' || msd.charAt(4) == 'p'))
         {
-            result.append(msd.charAt(4));
+            sb.append(msd.charAt(4));
         }
 
         // M.-...-.--s3
         if (NUMERAL_PATTERN_1.matcher(msd).find())
         {
-            result.append('s');
+            sb.append('s');
         }
 
         // M.-...-.--..s
         if (NUMERAL_PATTERN_2.matcher(msd).find())
         {
-            result.append('z');
+            sb.append('z');
         }
 
-        return result.toString();
+        return sb.toString();
     }
 
     /**
@@ -12520,16 +12354,16 @@ public class MSDToCoNLLFeatures
     private String parseN(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
 
         // 2 (not used)
@@ -12537,26 +12371,26 @@ public class MSDToCoNLLFeatures
         // 3 Num
         if (MSDCode.charAt(3) == '-')
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
         }
         else
         {
-            features.append("|Num=" + MSDCode.charAt(3));
+            sb.append("|Num=").append(MSDCode.charAt(3));
         }
 
         // 4 Cas
         if (MSDCode.charAt(4) == '-')
         {
-            features.append("|Cas=none");
+            sb.append("|Cas=none");
         }
         else
         {
-            features.append("|Cas=" + MSDCode.charAt(4));
+            sb.append("|Cas=").append(MSDCode.charAt(4));
         }
         if (length == 5)
         {
-            features.append("|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 5 (not used)
@@ -12568,44 +12402,44 @@ public class MSDToCoNLLFeatures
         // 8 NumP
         if (MSDCode.charAt(8) == '-')
         {
-            features.append("|NumP=none");
+            sb.append("|NumP=none");
         }
         else
         {
-            features.append("|NumP=" + MSDCode.charAt(8));
+            sb.append("|NumP=").append(MSDCode.charAt(8));
         }
         if (length == 9)
         {
-            features.append("|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 9 PerP
         if (MSDCode.charAt(9) == '-')
         {
-            features.append("|PerP=none");
+            sb.append("|PerP=none");
         }
         else
         {
-            features.append("|PerP=" + MSDCode.charAt(9));
+            sb.append("|PerP=").append(MSDCode.charAt(9));
         }
         if (length == 10)
         {
-            features.append("|NumPd=none");
-            return features.toString();
+            sb.append("|NumPd=none");
+            return sb.toString();
         }
 
         // 10 NumPd
         if (MSDCode.charAt(10) == '-')
         {
-            features.append("|NumPd=none");
+            sb.append("|NumPd=none");
         }
         else
         {
-            features.append("|NumPd=" + MSDCode.charAt(10));
+            sb.append("|NumPd=").append(MSDCode.charAt(10));
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -12614,40 +12448,40 @@ public class MSDToCoNLLFeatures
     private String parseV(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
 
         // 2 Mood
         if (MSDCode.charAt(2) == '-')
         {
-            features.append("|Mood=none");
+            sb.append("|Mood=none");
         }
         else
         {
-            features.append("|Mood=" + MSDCode.charAt(2));
+            sb.append("|Mood=").append(MSDCode.charAt(2));
         }
         if (length == 3)
         {
             if (MSDCode.charAt(2) != 'n')
             {
-                features.append("|Tense=none");
+                sb.append("|Tense=none");
             }
-            features.append("|Per=none|Num=none");
+            sb.append("|Per=none|Num=none");
             if (MSDCode.charAt(2) != 'n')
             {
-                features.append("|Def=none");
+                sb.append("|Def=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 3 Tense (if Mood != n)
@@ -12655,61 +12489,61 @@ public class MSDToCoNLLFeatures
         {
             if (MSDCode.charAt(3) == '-')
             {
-                features.append("|Tense=none");
+                sb.append("|Tense=none");
             }
             else
             {
-                features.append("|Tense=" + MSDCode.charAt(3));
+                sb.append("|Tense=").append(MSDCode.charAt(3));
             }
         }
         if (length == 4)
         {
-            features.append("|Per=none|Num=none");
+            sb.append("|Per=none|Num=none");
             if (MSDCode.charAt(2) != 'n')
             {
-                features.append("|Def=none");
+                sb.append("|Def=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 4 Per
         if (MSDCode.charAt(4) == '-')
         {
-            features.append("|Per=none");
+            sb.append("|Per=none");
         }
         else
         {
-            features.append("|Per=" + MSDCode.charAt(4));
+            sb.append("|Per=").append(MSDCode.charAt(4));
         }
         if (length == 5)
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
             if (MSDCode.charAt(2) != 'n')
             {
-                features.append("|Def=none");
+                sb.append("|Def=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 5 Num
         if (MSDCode.charAt(5) == '-')
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
         }
         else
         {
-            features.append("|Num=" + MSDCode.charAt(5));
+            sb.append("|Num=").append(MSDCode.charAt(5));
         }
         if (length == 6)
         {
             if (MSDCode.charAt(2) != 'n')
             {
-                features.append("|Def=none");
+                sb.append("|Def=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 6 Def
@@ -12717,10 +12551,10 @@ public class MSDToCoNLLFeatures
         {
             if (MSDCode.charAt(2) != 'n')
             {
-                features.append("|Def=none");
+                sb.append("|Def=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 7 (not used)
@@ -12732,23 +12566,23 @@ public class MSDToCoNLLFeatures
         {
             if (MSDCode.charAt(9) == '-')
             {
-                features.append("|Def=none");
+                sb.append("|Def=none");
             }
             else
             {
-                features.append("|Def=" + MSDCode.charAt(9));
+                sb.append("|Def=").append(MSDCode.charAt(9));
             }
         }
         if (length == 10)
         {
-            return features.toString();
+            return sb.toString();
         }
 
         // 10 (not used)
         if (length == 11)
-            return features.toString();
+            return sb.toString();
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -12757,26 +12591,26 @@ public class MSDToCoNLLFeatures
     private String parseA(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
 
         // 2 Deg
         if (MSDCode.charAt(2) == '-')
         {
-            features.append("|Deg=none");
+            sb.append("|Deg=none");
         }
         else
         {
-            features.append("|Deg=" + MSDCode.charAt(2));
+            sb.append("|Deg=").append(MSDCode.charAt(2));
         }
 
         // 3 (not used)
@@ -12784,26 +12618,26 @@ public class MSDToCoNLLFeatures
         // 4 Num
         if (MSDCode.charAt(4) == '-')
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
         }
         else
         {
-            features.append("|Num=" + MSDCode.charAt(4));
+            sb.append("|Num=").append(MSDCode.charAt(4));
         }
 
         // 5 Cas
         if (MSDCode.charAt(5) == '-')
         {
-            features.append("|Cas=none");
+            sb.append("|Cas=none");
         }
         else
         {
-            features.append("|Cas=" + MSDCode.charAt(5));
+            sb.append("|Cas=").append(MSDCode.charAt(5));
         }
         if (length == 6)
         {
-            features.append("|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 6 (not used)
@@ -12817,44 +12651,44 @@ public class MSDToCoNLLFeatures
         // 10 NumP
         if (MSDCode.charAt(10) == '-')
         {
-            features.append("|NumP=none");
+            sb.append("|NumP=none");
         }
         else
         {
-            features.append("|NumP=" + MSDCode.charAt(10));
+            sb.append("|NumP=").append(MSDCode.charAt(10));
         }
         if (length == 11)
         {
-            features.append("|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 11 PerP
         if (MSDCode.charAt(11) == '-')
         {
-            features.append("|PerP=none");
+            sb.append("|PerP=none");
         }
         else
         {
-            features.append("|PerP=" + MSDCode.charAt(11));
+            sb.append("|PerP=").append(MSDCode.charAt(11));
         }
         if (length == 12)
         {
-            features.append("|NumPd=none");
-            return features.toString();
+            sb.append("|NumPd=none");
+            return sb.toString();
         }
 
         // 12 NumPd
         if (MSDCode.charAt(12) == '-')
         {
-            features.append("|NumPd=none");
+            sb.append("|NumPd=none");
         }
         else
         {
-            features.append("|NumPd=" + MSDCode.charAt(12));
+            sb.append("|NumPd=").append(MSDCode.charAt(12));
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -12863,26 +12697,26 @@ public class MSDToCoNLLFeatures
     private String parseP(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
 
         // 2 Per
         if (MSDCode.charAt(2) == '-')
         {
-            features.append("|Per=none");
+            sb.append("|Per=none");
         }
         else
         {
-            features.append("|Per=" + MSDCode.charAt(2));
+            sb.append("|Per=").append(MSDCode.charAt(2));
         }
 
         // 3 (not used)
@@ -12890,42 +12724,42 @@ public class MSDToCoNLLFeatures
         // 4 Num
         if (MSDCode.charAt(4) == '-')
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
         }
         else
         {
-            features.append("|Num=" + MSDCode.charAt(4));
+            sb.append("|Num=").append(MSDCode.charAt(4));
         }
 
         // 5 Cas
         if (MSDCode.charAt(5) == '-')
         {
-            features.append("|Cas=none");
+            sb.append("|Cas=none");
         }
         else
         {
-            features.append("|Cas=" + MSDCode.charAt(5));
+            sb.append("|Cas=").append(MSDCode.charAt(5));
         }
         if (length == 6)
         {
-            features.append("|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 6 NumP
         if (MSDCode.charAt(6) == '-')
         {
-            features.append("|NumP=none");
+            sb.append("|NumP=none");
         }
         else
         {
-            features.append("|NumP=" + MSDCode.charAt(6));
+            sb.append("|NumP=").append(MSDCode.charAt(6));
         }
 
         if (length == 7)
         {
-            features.append("|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 7 (not used)
@@ -12947,30 +12781,30 @@ public class MSDToCoNLLFeatures
         // 15 PerP
         if (MSDCode.charAt(15) == '-')
         {
-            features.append("|PerP=none");
+            sb.append("|PerP=none");
         }
         else
         {
-            features.append("|PerP=" + MSDCode.charAt(15));
+            sb.append("|PerP=").append(MSDCode.charAt(15));
         }
 
         if (length == 16)
         {
-            features.append("|NumPd=none");
-            return features.toString();
+            sb.append("|NumPd=none");
+            return sb.toString();
         }
 
         // 16 NumPd
         if (MSDCode.charAt(16) == '-')
         {
-            features.append("|NumPd=none");
+            sb.append("|NumPd=none");
         }
         else
         {
-            features.append("|NumPd=" + MSDCode.charAt(16));
+            sb.append("|NumPd=").append(MSDCode.charAt(16));
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -12995,45 +12829,45 @@ public class MSDToCoNLLFeatures
     private String parseR(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
         if (length == 2)
         {
-            features.append("|Deg=none");
+            sb.append("|Deg=none");
             if (MSDCode.charAt(1) == 'l')
             {
-                features.append("|Num=none|Per=none");
+                sb.append("|Num=none|Per=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 2 Deg
         if (MSDCode.charAt(2) == '-')
         {
-            features.append("|Deg=none");
+            sb.append("|Deg=none");
         }
         else
         {
-            features.append("|Deg=" + MSDCode.charAt(2));
+            sb.append("|Deg=").append(MSDCode.charAt(2));
         }
         if (length == 3)
         {
             if (MSDCode.charAt(1) == 'l')
             {
-                features.append("|Num=none|Per=none");
+                sb.append("|Num=none|Per=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 3 (not used)
@@ -13043,21 +12877,21 @@ public class MSDToCoNLLFeatures
         {
             if (MSDCode.charAt(4) == '-')
             {
-                features.append("|Num=none");
+                sb.append("|Num=none");
             }
             else
             {
-                features.append("|Num=" + MSDCode.charAt(4));
+                sb.append("|Num=").append(MSDCode.charAt(4));
             }
         }
         if (length == 5)
         {
             if (MSDCode.charAt(1) == 'l')
             {
-                features.append("|Per=none");
+                sb.append("|Per=none");
             }
 
-            return features.toString();
+            return sb.toString();
         }
 
         // 5 Per
@@ -13065,15 +12899,15 @@ public class MSDToCoNLLFeatures
         {
             if (MSDCode.charAt(5) == '-')
             {
-                features.append("|Per=none");
+                sb.append("|Per=none");
             }
             else
             {
-                features.append("|Per=" + MSDCode.charAt(5));
+                sb.append("|Per=").append(MSDCode.charAt(5));
             }
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -13097,39 +12931,39 @@ public class MSDToCoNLLFeatures
      */
     private String parseC(String MSDCode)
     {
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
 
         // 2 Form
         if (MSDCode.charAt(2) == '-')
         {
-            features.append("|Form=none");
+            sb.append("|Form=none");
         }
         else
         {
-            features.append("|Form=" + MSDCode.charAt(2));
+            sb.append("|Form=").append(MSDCode.charAt(2));
         }
 
         // 3 Coord
         if (MSDCode.charAt(3) == '-')
         {
-            features.append("|Coord=none");
+            sb.append("|Coord=none");
         }
         else
         {
-            features.append("|Coord=" + MSDCode.charAt(3));
+            sb.append("|Coord=").append(MSDCode.charAt(3));
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -13138,16 +12972,16 @@ public class MSDToCoNLLFeatures
     private String parseM(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
 
         // 2 (not used)
@@ -13155,36 +12989,36 @@ public class MSDToCoNLLFeatures
         // 3 Num
         if (MSDCode.charAt(3) == '-')
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
         }
         else
         {
-            features.append("|Num=" + MSDCode.charAt(3));
+            sb.append("|Num=").append(MSDCode.charAt(3));
         }
 
         // 4 Cas
         if (MSDCode.charAt(4) == '-')
         {
-            features.append("|Cas=none");
+            sb.append("|Cas=none");
         }
         else
         {
-            features.append("|Cas=" + MSDCode.charAt(4));
+            sb.append("|Cas=").append(MSDCode.charAt(4));
         }
 
         // 5 Form
         if (MSDCode.charAt(5) == '-')
         {
-            features.append("|Form=none");
+            sb.append("|Form=none");
         }
         else
         {
-            features.append("|Form=" + MSDCode.charAt(5));
+            sb.append("|Form=").append(MSDCode.charAt(5));
         }
         if (length == 6)
         {
-            features.append("|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 6 (not used)
@@ -13198,44 +13032,44 @@ public class MSDToCoNLLFeatures
         // 10 NumP
         if (MSDCode.charAt(10) == '-')
         {
-            features.append("|NumP=none");
+            sb.append("|NumP=none");
         }
         else
         {
-            features.append("|NumP=" + MSDCode.charAt(10));
+            sb.append("|NumP=").append(MSDCode.charAt(10));
         }
         if (length == 11)
         {
-            features.append("|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 11 PerP
         if (MSDCode.charAt(11) == '-')
         {
-            features.append("|PerP=none");
+            sb.append("|PerP=none");
         }
         else
         {
-            features.append("|PerP=" + MSDCode.charAt(11));
+            sb.append("|PerP=").append(MSDCode.charAt(11));
         }
         if (length == 12)
         {
-            features.append("|NumPd=none");
-            return features.toString();
+            sb.append("|NumPd=none");
+            return sb.toString();
         }
 
         // 12 NumPd
         if (MSDCode.charAt(12) == '-')
         {
-            features.append("|NumPd=none");
+            sb.append("|NumPd=none");
         }
         else
         {
-            features.append("|NumPd=" + MSDCode.charAt(12));
+            sb.append("|NumPd=").append(MSDCode.charAt(12));
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -13259,40 +13093,39 @@ public class MSDToCoNLLFeatures
     private String parseO(String MSDCode)
     {
         int length = MSDCode.length();
-        StringBuffer features = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // 1 SubPOS
         if (MSDCode.charAt(1) == '-')
         {
-            features.append("SubPOS=none");
+            sb.append("SubPOS=none");
         }
         else
         {
-            features.append("SubPOS=" + MSDCode.charAt(1));
+            sb.append("SubPOS=").append(MSDCode.charAt(1));
         }
         if (length == 2)
         {
-            features.append("|Num=none|Cas=none|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|Num=none|Cas=none|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 2 Type (if SubPOS=e|d|n)
-        if (MSDCode.charAt(1) == 'e' || MSDCode.charAt(1) == 'd'
-                || MSDCode.charAt(1) == 'n')
+        if (MSDCode.charAt(1) == 'e' || MSDCode.charAt(1) == 'd' || MSDCode.charAt(1) == 'n')
         {
             if (MSDCode.charAt(1) == '-')
             {
-                features.append("|Type=none");
+                sb.append("|Type=none");
             }
             else
             {
-                features.append("|Type=" + MSDCode.charAt(2));
+                sb.append("|Type=").append(MSDCode.charAt(2));
             }
         }
         if (length == 3)
         {
-            features.append("|Num=none|Cas=none|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|Num=none|Cas=none|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 3 (not used)
@@ -13300,31 +13133,31 @@ public class MSDToCoNLLFeatures
         // 4 Num
         if (MSDCode.charAt(4) == '-')
         {
-            features.append("|Num=none");
+            sb.append("|Num=none");
         }
         else
         {
-            features.append("|Num=" + MSDCode.charAt(4));
+            sb.append("|Num=").append(MSDCode.charAt(4));
         }
         if (length == 5)
         {
-            features.append("|Cas=none|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|Cas=none|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 5 Cas
         if (MSDCode.charAt(5) == '-')
         {
-            features.append("|Cas=none");
+            sb.append("|Cas=none");
         }
         else
         {
-            features.append("|Cas=" + MSDCode.charAt(5));
+            sb.append("|Cas=").append(MSDCode.charAt(5));
         }
         if (length == 6)
         {
-            features.append("|NumP=none|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|NumP=none|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 6 (not used)
@@ -13336,44 +13169,44 @@ public class MSDToCoNLLFeatures
         // 9 NumP
         if (MSDCode.charAt(9) == '-')
         {
-            features.append("|NumP=none");
+            sb.append("|NumP=none");
         }
         else
         {
-            features.append("|NumP=" + MSDCode.charAt(9));
+            sb.append("|NumP=").append(MSDCode.charAt(9));
         }
         if (length == 10)
         {
-            features.append("|PerP=none|NumPd=none");
-            return features.toString();
+            sb.append("|PerP=none|NumPd=none");
+            return sb.toString();
         }
 
         // 10 PerP
         if (MSDCode.charAt(10) == '-')
         {
-            features.append("|PerP=none");
+            sb.append("|PerP=none");
         }
         else
         {
-            features.append("|PerP=" + MSDCode.charAt(10));
+            sb.append("|PerP=").append(MSDCode.charAt(10));
         }
         if (length == 11)
         {
-            features.append("|NumPd=none");
-            return features.toString();
+            sb.append("|NumPd=none");
+            return sb.toString();
         }
 
         // 11 NumPd
         if (MSDCode.charAt(11) == '-')
         {
-            features.append("|NumPd=none");
+            sb.append("|NumPd=none");
         }
         else
         {
-            features.append("|NumPd=" + MSDCode.charAt(11));
+            sb.append("|NumPd=").append(MSDCode.charAt(11));
         }
 
-        return features.toString();
+        return sb.toString();
     }
 
     /**
@@ -14085,7 +13918,7 @@ public class NumberGuesser
 
     private static String nounToNumeral(String nounMsd, String numeralMsd)
     {
-        StringBuffer msd = new StringBuffer(numeralMsd);
+        StringBuilder msd = new StringBuilder(numeralMsd);
 
         // szam
         if (nounMsd.length() > 3)
@@ -14112,7 +13945,7 @@ public class NumberGuesser
 
     private static String nounToOther(String nounMsd, String otherMsd)
     {
-        StringBuffer msd = new StringBuffer(otherMsd);
+        StringBuilder msd = new StringBuilder(otherMsd);
 
         // szam
         if (nounMsd.length() > 3)
@@ -14139,7 +13972,7 @@ public class NumberGuesser
 
     private static String nounToNoun(String nounMsd, String otherMsd)
     {
-        StringBuffer msd = new StringBuffer(otherMsd);
+        StringBuilder msd = new StringBuilder(otherMsd);
 
         // szam
         if (nounMsd.length() > 3)
@@ -14873,19 +14706,19 @@ public class CoNLLSentence
 
     public String toString()
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < this.getTokens().length; ++i)
         {
-            stringBuffer.append(tokens[i][0]);
+            sb.append(tokens[i][0]);
             for (int j = 1; j < tokens[i].length; ++j)
             {
-                stringBuffer.append("\t" + tokens[i][j]);
+                sb.append("\t").append(tokens[i][j]);
             }
-            stringBuffer.append("\n");
+            sb.append("\n");
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     private String[] getColumn(int index)
@@ -15119,18 +14952,15 @@ public class CoNLLUtil
 {
     static String readToString(String file)
     {
-        BufferedReader bufferedReader = null;
-        String line = null;
-        StringBuffer stringBuffer = null;
+        StringBuilder sb = new StringBuilder();
 
-        stringBuffer = new StringBuffer();
         try
         {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = bufferedReader.readLine()) != null)
+            for (String line; (line = bufferedReader.readLine()) != null; )
             {
-                stringBuffer.append(line + "\n");
+                sb.append(line).append("\n");
             }
         }
         catch (UnsupportedEncodingException e)
@@ -15146,7 +14976,7 @@ public class CoNLLUtil
             e.printStackTrace();
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static void merge(String out)
@@ -16138,24 +15968,23 @@ public class HunSplitter
      */
     private static String addSpaces(String text)
     {
-        StringBuffer stringBuffer = new StringBuffer(String.valueOf(text));
+        StringBuilder sb = new StringBuilder(String.valueOf(text));
 
         for (char c : HunSplitterResources.FORCE_TOKEN_SEPARATORS)
         {
-            int index = -1;
-            index = stringBuffer.indexOf(String.valueOf(c));
+            int index = sb.indexOf(String.valueOf(c));
 
-            while (index > 1 && index < stringBuffer.length() - 1)
+            while (index > 1 && index < sb.length() - 1)
             {
-                if (stringBuffer.charAt(index - 1) != ' ')
+                if (sb.charAt(index - 1) != ' ')
                 {
-                    stringBuffer.insert(index + 1, ' ');
+                    sb.insert(index + 1, ' ');
                 }
-                index = stringBuffer.indexOf(String.valueOf(c), index + 1);
+                index = sb.indexOf(String.valueOf(c), index + 1);
             }
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static void main(String[] args)
@@ -16234,43 +16063,43 @@ public class StringCleaner
 
     private Set<Integer> loadErrorCharacters()
     {
-        Set<Integer> errorCharacters = new TreeSet<Integer>();
+        Set<Integer> ecs = new TreeSet<Integer>();
 
-        errorCharacters.add(11);
-        errorCharacters.add(12);
-        errorCharacters.add(28);
-        errorCharacters.add(29);
-        errorCharacters.add(30);
-        errorCharacters.add(31);
-        errorCharacters.add(5760);
-        errorCharacters.add(6158);
-        errorCharacters.add(8192);
-        errorCharacters.add(8193);
-        errorCharacters.add(8194);
-        errorCharacters.add(8195);
-        errorCharacters.add(8196);
-        errorCharacters.add(8197);
-        errorCharacters.add(8198);
-        errorCharacters.add(8200);
-        errorCharacters.add(8201);
-        errorCharacters.add(8202);
-        errorCharacters.add(8203);
-        errorCharacters.add(8232);
-        errorCharacters.add(8233);
-        errorCharacters.add(8287);
-        errorCharacters.add(12288);
-        errorCharacters.add(65547);
-        errorCharacters.add(65564);
-        errorCharacters.add(65565);
-        errorCharacters.add(65566);
-        errorCharacters.add(65567);
+        ecs.add(11);
+        ecs.add(12);
+        ecs.add(28);
+        ecs.add(29);
+        ecs.add(30);
+        ecs.add(31);
+        ecs.add(5760);
+        ecs.add(6158);
+        ecs.add(8192);
+        ecs.add(8193);
+        ecs.add(8194);
+        ecs.add(8195);
+        ecs.add(8196);
+        ecs.add(8197);
+        ecs.add(8198);
+        ecs.add(8200);
+        ecs.add(8201);
+        ecs.add(8202);
+        ecs.add(8203);
+        ecs.add(8232);
+        ecs.add(8233);
+        ecs.add(8287);
+        ecs.add(12288);
+        ecs.add(65547);
+        ecs.add(65564);
+        ecs.add(65565);
+        ecs.add(65566);
+        ecs.add(65567);
 
-        return errorCharacters;
+        return ecs;
     }
 
     public String cleanString(String text)
     {
-        StringBuffer sb = new StringBuffer(text);
+        StringBuilder sb = new StringBuilder(text);
 
         for (int i = 0; i < sb.length(); ++i)
         {
@@ -16698,7 +16527,7 @@ public class Train
         String msd = null;
         spelling = node.getChildNodes().item(0).getTextContent().trim();
 
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         NodeList nodes = ((Element) node).getElementsByTagName("ana");
         for (int i = 0; i < nodes.getLength(); ++i)
@@ -16728,51 +16557,51 @@ public class Train
                     msd = msd.replace("Np-", "Nn-");
                 }
 
-                stringBuffer.append(spelling + WORDFORM_LEMMA_SEPARATOR + lemma + LEMMA_MSD_SEPARATOR + msd);
+                sb.append(spelling).append(WORDFORM_LEMMA_SEPARATOR).append(lemma).append(LEMMA_MSD_SEPARATOR).append(msd);
             }
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static String splitToTrainString(String[][] split)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (String[] s : split)
         {
-            stringBuffer.append(s[0]);
-            stringBuffer.append(WORDFORM_LEMMA_SEPARATOR);
-            stringBuffer.append(s[1]);
-            stringBuffer.append(LEMMA_MSD_SEPARATOR);
-            stringBuffer.append(s[2]);
-            stringBuffer.append('\n');
+            sb.append(s[0]);
+            sb.append(WORDFORM_LEMMA_SEPARATOR);
+            sb.append(s[1]);
+            sb.append(LEMMA_MSD_SEPARATOR);
+            sb.append(s[2]);
+            sb.append('\n');
         }
 
-        return stringBuffer.toString().trim();
+        return sb.toString().trim();
     }
 
     public static String cToTrain(Node node)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         String c = node.getTextContent();
 
-        stringBuffer.append(c);
-        stringBuffer.append(WORDFORM_LEMMA_SEPARATOR);
-        stringBuffer.append(c);
-        stringBuffer.append(LEMMA_MSD_SEPARATOR);
+        sb.append(c);
+        sb.append(WORDFORM_LEMMA_SEPARATOR);
+        sb.append(c);
+        sb.append(LEMMA_MSD_SEPARATOR);
 
         if (!ResourceHolder.getPunctations().contains(c))
         {
-            stringBuffer.append("K");
+            sb.append("K");
         }
         else
         {
-            stringBuffer.append(c);
+            sb.append(c);
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static String choiceToTrain(Node node)
@@ -16807,7 +16636,7 @@ public class Train
 
     private static String sentenceNodeToTrain(Node sentenceNode)
     {
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         String trainNode = null;
 
@@ -16817,12 +16646,12 @@ public class Train
 
             if (trainNode != null)
             {
-                stringBuffer.append(trainNode);
-                stringBuffer.append("\n");
+                sb.append(trainNode);
+                sb.append("\n");
             }
         }
 
-        return stringBuffer.toString();
+        return sb.toString();
     }
 
     public static List<Node> getNodes(Node node, String... tagNames)
@@ -16897,8 +16726,6 @@ public class Train
 
     private static void convert(String corpusPath, String trainFile, String testFile)
     {
-        StringBuffer xml = null;
-
         BufferedWriter trainWriter = null;
         BufferedWriter testWriter = null;
 
@@ -16918,7 +16745,7 @@ public class Train
 
         for (String corpus : CORPUSES)
         {
-            xml = new StringBuffer(corpusPath);
+            StringBuilder xml = new StringBuilder(corpusPath);
             xml.append(corpus + XML_EXTENSION);
             divNodes = readXml(xml.toString());
             treshold = (int) (divNodes.size() * DIVISION);
@@ -16979,7 +16806,7 @@ public class Train
             String line = null;
             String[] split = null;
 
-            StringBuffer stringBuffer = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             String reducedMsd = null;
             while ((line = reader.readLine()) != null)
@@ -16987,19 +16814,19 @@ public class Train
                 split = line.split("\t");
                 if (split.length == 3)
                 {
-                    stringBuffer.append(split[0]);
-                    stringBuffer.append(STANFORD_TRAIN_WORDFORM_MSD_SEPARATOR);
+                    sb.append(split[0]);
+                    sb.append(STANFORD_TRAIN_WORDFORM_MSD_SEPARATOR);
 
                     reducedMsd = ResourceHolder.getMSDReducer().reduce(split[2]);
-                    stringBuffer.append(reducedMsd);
+                    sb.append(reducedMsd);
                     msdCodes.add(reducedMsd);
 
-                    stringBuffer.append(STANFORD_TRAIN_TOKEN_SEPARATOR);
+                    sb.append(STANFORD_TRAIN_TOKEN_SEPARATOR);
                 }
                 else
                 {
-                    writer.write(stringBuffer.toString().trim() + '\n');
-                    stringBuffer = new StringBuffer();
+                    writer.write(sb.toString().trim() + '\n');
+                    sb = new StringBuilder();
                 }
             }
         }
@@ -17261,7 +17088,7 @@ public class XMLtoTXT
         String[] splittedLine = null;
         String[] splittedNamedEntity = null;
         String[] splittedLemma = null;
-        StringBuffer stringBuffer = null;
+        StringBuilder sb = null;
 
         for (int i = 0; i < sentence.size(); ++i)
         {
@@ -17284,31 +17111,31 @@ public class XMLtoTXT
                 splittedNamedEntity = splittedLine[1].split("_");
                 splittedLemma = splittedLine[2].split("_");
 
-                stringBuffer = new StringBuffer(splittedLine[0]);
+                sb = new StringBuilder(splittedLine[0]);
                 try
                 {
-                    stringBuffer.append("\t" + splittedNamedEntity[0]);
+                    sb.append("\t").append(splittedNamedEntity[0]);
                 }
                 catch (ArrayIndexOutOfBoundsException e)
                 {
                     // System.out.println(sentence.get(i));
                 }
-                stringBuffer.append("\t" + splittedLemma[0]);
+                sb.append("\t").append(splittedLemma[0]);
 
                 // System.out.println(splittedLemma[0]);
 
                 // utolso elotti tokenek
                 if (splittedLine[3].startsWith("X"))
                 {
-                    stringBuffer.append("\t" + "Np-sn");
-                    stringBuffer.append("\t" + "N");
+                    sb.append("\t").append("Np-sn");
+                    sb.append("\t").append("N");
                 }
 
                 // N
                 else if (splittedLine[3].startsWith("Np"))
                 {
-                    stringBuffer.append("\t" + "Np-sn");
-                    stringBuffer.append("\t" + "N");
+                    sb.append("\t").append("Np-sn");
+                    sb.append("\t").append("N");
                 }
 
                 // M
@@ -17318,18 +17145,18 @@ public class XMLtoTXT
                     {
                         if (!splittedNamedEntity[0].contains(","))
                         {
-                            stringBuffer.append("\t" + "Mc-snd");
+                            sb.append("\t").append("Mc-snd");
                         }
                         else
                         {
-                            stringBuffer.append("\t" + "Mf-snd");
+                            sb.append("\t").append("Mf-snd");
                         }
                     }
                     else
                     {
-                        stringBuffer.append("\t" + "Mc-snd");
+                        sb.append("\t").append("Mc-snd");
                     }
-                    stringBuffer.append("\t" + "M");
+                    sb.append("\t").append("M");
                 }
 
                 // AFP
@@ -17339,42 +17166,42 @@ public class XMLtoTXT
                     {
                         if (splittedLine[1].contains(","))
                         {
-                            stringBuffer.append("\t" + "Mf-snd");
+                            sb.append("\t").append("Mf-snd");
                         }
                         else
                         {
-                            stringBuffer.append("\t" + "Mc-snd");
+                            sb.append("\t").append("Mc-snd");
                         }
-                        stringBuffer.append("\t" + "NUM");
+                        sb.append("\t").append("NUM");
                     }
                     else
                     {
-                        stringBuffer.append("\t" + "Np-sn");
-                        stringBuffer.append("\t" + "N");
+                        sb.append("\t").append("Np-sn");
+                        sb.append("\t").append("N");
                     }
                 }
                 else
                 {
-                    stringBuffer.append("\t" + "Np-sn");
-                    stringBuffer.append("\t" + splittedLine[4]);
+                    sb.append("\t").append("Np-sn");
+                    sb.append("\t").append(splittedLine[4]);
                 }
 
-                stringBuffer.append("\t" + splittedLine[5]);
-                stringBuffer.append("\t" + String.valueOf(Integer.valueOf(splittedLine[0]) + 1));
+                sb.append("\t").append(splittedLine[5]);
+                sb.append("\t").append(Integer.valueOf(splittedLine[0]) + 1);
 
                 if (splittedLine[3].startsWith("M"))
                 {
-                    stringBuffer.append("\t" + "NUM");
+                    sb.append("\t").append("NUM");
                 }
                 else
                 {
-                    stringBuffer.append("\t" + "NE");
+                    sb.append("\t").append("NE");
                 }
 
-                stringBuffer.append("\t" + splittedLine[8]);
-                stringBuffer.append("\t" + splittedLine[9]);
+                sb.append("\t").append(splittedLine[8]);
+                sb.append("\t").append(splittedLine[9]);
 
-                sentence.set(i, stringBuffer.toString());
+                sentence.set(i, sb.toString());
 
                 // sentence = renumberOrdinal(sentence, i + 1,
                 // splittedNamedEntity.length - 1);
@@ -17386,11 +17213,11 @@ public class XMLtoTXT
 
                 for (int j = i + 1; j < i + splittedNamedEntity.length; ++j)
                 {
-                    stringBuffer = new StringBuffer(String.valueOf(j + 1));
-                    stringBuffer.append("\t" + splittedNamedEntity[token]);
+                    sb = new StringBuilder(String.valueOf(j + 1));
+                    sb.append("\t").append(splittedNamedEntity[token]);
                     try
                     {
-                        stringBuffer.append("\t" + splittedLemma[token]);
+                        sb.append("\t").append(splittedLemma[token]);
                     }
                     catch (Exception e)
                     {
@@ -17401,13 +17228,13 @@ public class XMLtoTXT
                     {
                         if (j == (i + splittedNamedEntity.length - 1))
                         {
-                            stringBuffer.append("\t" + "X");
-                            stringBuffer.append("\t" + "X");
+                            sb.append("\t").append("X");
+                            sb.append("\t").append("X");
                         }
                         else
                         {
-                            stringBuffer.append("\t" + "Np-sn");
-                            stringBuffer.append("\t" + "N");
+                            sb.append("\t").append("Np-sn");
+                            sb.append("\t").append("N");
                         }
                     }
 
@@ -17418,19 +17245,19 @@ public class XMLtoTXT
                         {
                             if (splittedLine[0].equals("és"))
                             {
-                                stringBuffer.append("\t" + "Ccsw");
-                                stringBuffer.append("\t" + "Ccsw");
+                                sb.append("\t").append("Ccsw");
+                                sb.append("\t").append("Ccsw");
                             }
                             else
                             {
-                                stringBuffer.append("\t" + splittedLine[3]);
-                                stringBuffer.append("\t" + splittedLine[4]);
+                                sb.append("\t").append(splittedLine[3]);
+                                sb.append("\t").append(splittedLine[4]);
                             }
                         }
                         else
                         {
-                            stringBuffer.append("\t" + "Np-sn");
-                            stringBuffer.append("\t" + "N");
+                            sb.append("\t").append("Np-sn");
+                            sb.append("\t").append("N");
                         }
                     }
 
@@ -17441,52 +17268,52 @@ public class XMLtoTXT
                         {
                             if (splittedLine[0].equals("és"))
                             {
-                                stringBuffer.append("\t" + "Ccsw");
-                                stringBuffer.append("\t" + "Ccsw");
+                                sb.append("\t").append("Ccsw");
+                                sb.append("\t").append("Ccsw");
                             }
                             else
                             {
-                                stringBuffer.append("\t" + splittedLine[3]);
-                                stringBuffer.append("\t" + splittedLine[4]);
+                                sb.append("\t").append(splittedLine[3]);
+                                sb.append("\t").append(splittedLine[4]);
                             }
                         }
                         else
                         {
-                            stringBuffer.append("\t" + "Np-sn");
-                            stringBuffer.append("\t" + "N");
+                            sb.append("\t").append("Np-sn");
+                            sb.append("\t").append("N");
                         }
                     }
                     else
                     {
-                        stringBuffer.append("\t" + splittedLine[3]);
-                        stringBuffer.append("\t" + splittedLine[4]);
+                        sb.append("\t").append(splittedLine[3]);
+                        sb.append("\t").append(splittedLine[4]);
                     }
 
-                    stringBuffer.append("\t" + splittedLine[5]);
+                    sb.append("\t").append(splittedLine[5]);
 
                     // utols token
                     if (j + 1 == i + splittedNamedEntity.length)
                     {
                         if (Integer.parseInt(splittedLine[6]) > j - splittedNamedEntity.length + 1)
                         {
-                            stringBuffer.append("\t" + String.valueOf(Integer.valueOf(splittedLine[6]) + splittedNamedEntity.length - 1));
+                            sb.append("\t").append(Integer.valueOf(splittedLine[6]) + splittedNamedEntity.length - 1);
                         }
                         else
                         {
-                            stringBuffer.append("\t" + String.valueOf(Integer.valueOf(splittedLine[6])));
+                            sb.append("\t").append(Integer.valueOf(splittedLine[6]));
                         }
 
-                        stringBuffer.append("\t" + splittedLine[7]);
+                        sb.append("\t").append(splittedLine[7]);
                     }
                     else
                     {
-                        stringBuffer.append("\t" + String.valueOf(j + 2));
-                        stringBuffer.append("\t" + "NE");
+                        sb.append("\t").append(j + 2);
+                        sb.append("\t").append("NE");
                     }
-                    stringBuffer.append("\t" + splittedLine[8]);
-                    stringBuffer.append("\t" + splittedLine[9]);
+                    sb.append("\t").append(splittedLine[8]);
+                    sb.append("\t").append(splittedLine[9]);
                     ++token;
-                    sentence.add(j, stringBuffer.toString());
+                    sentence.add(j, sb.toString());
                 }
             }
         }
@@ -18032,7 +17859,7 @@ public class Dumper extends Thread
 
     public static String stackDump()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
         for (Map.Entry<Thread, StackTraceElement[]> entry : map.entrySet())
         {
@@ -18042,7 +17869,7 @@ public class Dumper extends Thread
             System.out.println(thread);
             for (StackTraceElement trace : dump)
             {
-                sb.append(" " + trace + "\n");
+                sb.append(" ").append(trace).append("\n");
             }
         }
 
@@ -18568,14 +18395,14 @@ public class RFSA
 
     public String toDetailedString()
     {
-        StringBuffer sb = new StringBuffer("  " + stateCount + ", " + edgeCount + ", " + startingState + "\n");
+        StringBuilder sb = new StringBuilder("  " + stateCount + ", " + edgeCount + ", " + startingState + "\n");
 
         for (int i = 0; i < stateCount; i++)
         {
-            sb.append("    " + i + ", " + ab[i] + ", " + (indices[i + 1] - indices[i]) + "\n");
+            sb.append("    ").append(i).append(", ").append(ab[i]).append(", ").append(indices[i + 1] - indices[i]).append("\n");
             for (int j = indices[i]; j < indices[i + 1]; j++)
             {
-                sb.append("      " + targets[j] + ": >" + charsymbols[j] + "|" + symbols[j] + "<\n");
+                sb.append("      ").append(targets[j]).append(": >").append(charsymbols[j]).append("|").append(symbols[j]).append("<\n");
             }
         }
 
