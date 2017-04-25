@@ -7,7 +7,7 @@
                    [org.clojure/clojure "1.7.0"]
                  #_[org.clojure/core.async "0.2.374"]
                  #_[org.clojure/core.match "0.3.0-alpha4"]
-                 #_[org.clojure/data.int-map "0.2.2"]]
+                   [org.clojure/data.int-map "0.2.2"]]
 ;   :global-vars {*warn-on-reflection* true}
     :jvm-opts ["-Xmx2g"]
 ;   :javac-options ["-g"]
