@@ -57,10 +57,9 @@ public class SzteMaxentTagger extends MaxentTagger
 
         List<TaggedWord> sentence = new ArrayList<TaggedWord>();
 
-        TaggedWord taggedWord = null;
         for (String form : forms)
         {
-            taggedWord = new TaggedWord();
+            TaggedWord taggedWord = new TaggedWord();
             taggedWord.setWord(form);
             sentence.add(taggedWord);
         }
@@ -165,19 +164,19 @@ public class Dep2Nooj
 
         StringBuilder sb = new StringBuilder();
 
-        String token[] = null;
-        String templabel = null;
         for (int i = 0; i < sentence.length; ++i)
         {
-            token = sentence[i];
+            String[] token = sentence[i];
+
             sb.append("<LU LEMMA=\"");
             sb.append(token[2]).append("\" ");
             sb.append("CAT=\"");
             sb.append(token[4]).append("\" ");
             sb.append("POS").append(token[3]);
+
             for (String gov : getGovs(i + 1, sentence))
             {
-                templabel = gov + "GOV";
+                String templabel = gov + "GOV";
                 if (!map.containsKey(templabel))
                 {
                     map.put(templabel, 0);
@@ -189,7 +188,7 @@ public class Dep2Nooj
 
             if (!token[7].equals("ROOT"))
             {
-                templabel = token[7] + "DEP";
+                String templabel = token[7] + "DEP";
                 if (!map.containsKey(templabel))
                 {
                     map.put(templabel, 0);
@@ -207,19 +206,15 @@ public class Dep2Nooj
 
     private static String[][][] read(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
+        List<String[][]> document = new ArrayList<String[][]>();
 
-        List<String[]> sentence = null;
-        List<String[][]> document = null;
-
-        document = new ArrayList<String[][]>();
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            sentence = new ArrayList<String[]>();
-            while ((line = reader.readLine()) != null)
+            List<String[]> sentence = new ArrayList<String[]>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().length() == 0)
                 {
@@ -231,6 +226,7 @@ public class Dep2Nooj
                     sentence.add(line.split("\t"));
                 }
             }
+
             reader.close();
         }
         catch (UnsupportedEncodingException e)
@@ -243,7 +239,6 @@ public class Dep2Nooj
         }
         catch (IOException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -257,12 +252,15 @@ public class Dep2Nooj
         try
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), encoding));
+
             writer.write("<doc>\n");
             for (String[][] sentence : sentences)
             {
-                writer.write(convertSentence(sentence) + "\n");
+                writer.write(convertSentence(sentence));
+                writer.write("\n");
             }
             writer.write("</doc>");
+
             writer.close();
         }
         catch (IOException e)
@@ -284,15 +282,16 @@ public class Dep2Nooj
 
     public static void convert(String file, String outFile)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), "UTF-8"));
+
             for (String[][] s : read(file))
             {
-                writer.write(convertSentence(s) + "\n");
+                writer.write(convertSentence(s));
+                writer.write("\n");
             }
+
             writer.close();
         }
         catch (IOException e)
@@ -327,8 +326,8 @@ public class Conll2007To2009
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), "utf-8"));
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "utf-8"));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), "UTF-8"));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -340,12 +339,12 @@ public class Conll2007To2009
                 {
                     String[] split = line.split("\t");
 
-                    String num = split[0];
-                    String wordform = split[1];
-                    String lemma = split[2];
-                    String msd = split[3];
-                    String parent = split[6];
-                    String deprel = split[7];
+                    String num = split[0],
+                      wordform = split[1],
+                         lemma = split[2],
+                           msd = split[3],
+                        parent = split[6],
+                        deprel = split[7];
 
                     StringBuilder sb = new StringBuilder();
 
@@ -356,15 +355,24 @@ public class Conll2007To2009
                     else
                     {
                         if (msd.equals("null"))
-                        {
                             msd = wordform;
-                        }
-                        sb.append(num).append("\t").append(wordform).append("\t").append(lemma).append("\t").append(lemma).append("\t").append(msd.charAt(0)).append("\t").append(msd.charAt(0)).append("\t");
-                        sb.append(msdToConllFeatures.convert(lemma, msd)).append("\t").append(msdToConllFeatures.convert(lemma, msd)).append("\t");
-                    }
-                    sb.append(parent).append("\t").append(parent).append("\t").append(deprel).append("\t").append(deprel);
 
-                    writer.write(sb.toString() + "\n");
+                        sb.append(num).append("\t").append(wordform)
+                                      .append("\t").append(lemma)
+                                      .append("\t").append(lemma)
+                                      .append("\t").append(msd.charAt(0))
+                                      .append("\t").append(msd.charAt(0))
+                                      .append("\t").append(msdToConllFeatures.convert(lemma, msd))
+                                      .append("\t").append(msdToConllFeatures.convert(lemma, msd))
+                                      .append("\t");
+                    }
+
+                    sb.append(parent).append("\t").append(parent)
+                                     .append("\t").append(deprel)
+                                     .append("\t").append(deprel)
+                                     .append("\n");
+
+                    writer.write(sb.toString());
                 }
             }
         }
@@ -432,7 +440,7 @@ public class Converter
 {
     private static final MSDReducer MSD_REDUCER = new MSDReducer();
 
-    private static final Set<String> PUNCT = new HashSet<String>(Arrays.asList(new String[] { "!", ",", "-", ".", ":", ";", "?", "�" }));;
+    private static final Set<String> PUNCT = new HashSet<String>(Arrays.asList(new String[] { "!", ",", "-", ".", ":", ";", "?", "�" }));
 
     private static final String[] CORPUSES = { "faq1", "faq2", "faq3", "faq4", "face1", "face2", "face3", "face4", };
 
@@ -469,15 +477,11 @@ public class Converter
 
         List<Node> nodes = new LinkedList<Node>();
 
-        Node node = null;
         for (int i = 0; i < nodeList.getLength(); ++i)
         {
-            node = nodeList.item(i);
+            Node node = nodeList.item(i);
 
-            if (node.getAttributes().getNamedItem("type") == null)
-            {
-            }
-            else
+            if (node.getAttributes().getNamedItem("type") != null)
             {
                 if (node.getAttributes().getNamedItem("type").getTextContent().equals(type))
                 {
@@ -690,12 +694,11 @@ public class Converter
 
     private static List<Node> readXml(String xml)
     {
-        Document document = null;
         List<Node> divNodes = null;
 
         try
         {
-            document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new FileInputStream(new File(xml)), LATIN_2_ENCODING);
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new FileInputStream(new File(xml)), LATIN_2_ENCODING);
             divNodes = getNodes(document, "div", "article");
         }
         catch (IOException e)
@@ -714,17 +717,12 @@ public class Converter
     {
         StringBuilder sb = new StringBuilder();
 
-        String trainNode = null;
-
         for (Node node : getNodes(sentenceNode, new String[] { "w", "c", "choice" }))
         {
-            trainNode = nodeToTrain(node);
+            String trainNode = nodeToTrain(node);
 
             if (trainNode != null)
-            {
-                sb.append(trainNode);
-                sb.append("\n");
-            }
+                sb.append(trainNode).append("\n");
         }
 
         return sb.toString();
@@ -746,16 +744,13 @@ public class Converter
             e.printStackTrace();
         }
 
-        int treshold = 0;
-        List<Node> divNodes = null;
-
         for (String corpus : CORPUSES)
         {
             StringBuilder xml = new StringBuilder(corpusPath);
             xml.append(corpus + XML_EXTENSION);
-            divNodes = readXml(xml.toString());
+            List<Node> divNodes = readXml(xml.toString());
 
-            treshold = (int) (divNodes.size() * DIVISION);
+            int treshold = (int) (divNodes.size() * DIVISION);
 
             int sentenceCounter = 0;
             try
@@ -838,7 +833,8 @@ public class Converter
                 }
                 else
                 {
-                    writer.write(sb.toString().trim() + '\n');
+                    writer.write(sb.toString().trim());
+                    writer.write('\n');
                     sb = new StringBuilder();
                 }
             }
@@ -883,7 +879,10 @@ public class Converter
                 writer.write(entry.getKey());
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t" + morAna.getLemma() + "\t" + morAna.getMsd());
+                    writer.write("\t");
+                    writer.write(morAna.getLemma());
+                    writer.write("\t");
+                    writer.write(morAna.getMsd());
                 }
                 writer.write('\n');
             }
@@ -911,14 +910,17 @@ public class Converter
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "utf-8"));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Map.Entry<String, Set<MorAna>> entry : lexicon.entrySet())
             {
                 writer.write(entry.getKey());
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t" + morAna.getLemma() + "\t" + morAna.getMsd());
+                    writer.write("\t");
+                    writer.write(morAna.getLemma());
+                    writer.write("\t");
+                    writer.write(morAna.getMsd());
                 }
                 writer.write('\n');
             }
@@ -950,7 +952,10 @@ public class Converter
 
             for (Map.Entry<String, Integer> entry : frequencies.entrySet())
             {
-                writer.write(entry.getKey() + "\t" + entry.getValue() + '\n');
+                writer.write(entry.getKey());
+                writer.write("\t");
+                writer.write(entry.getValue());
+                writer.write('\n');
             }
         }
         catch (IOException e)
@@ -1116,7 +1121,7 @@ import szte.dep.parser.MateParserWrapper;
 
 public class DepPrediction
 {
-    private static final String ENCODING = "utf-8";
+    private static final String ENCODING = "UTF-8";
 
     private static final List<List<String>> forms = new ArrayList<List<String>>();
     private static final List<List<String>> lemmas = new ArrayList<List<String>>();
@@ -1189,29 +1194,40 @@ public class DepPrediction
         try
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), ENCODING));
+
             for (int i = 0; i < forms.size(); ++i)
             {
                 for (int j = 0; j < forms.get(i).size(); ++j)
                 {
-                    writer.write(j + 1 + "\t");
-                    writer.write(forms.get(i).get(j) + "\t");
-                    writer.write(lemmas.get(i).get(j) + "\t");
+                    writer.write(j + 1);
+                    writer.write("\t");
+                    writer.write(forms.get(i).get(j));
+                    writer.write("\t");
+                    writer.write(lemmas.get(i).get(j));
+                    writer.write("\t");
 
                     // full msd
-                    writer.write(msds.get(i).get(j) + "\t");
+                    writer.write(msds.get(i).get(j));
+                    writer.write("\t");
 
                     // reduced msd
-                    // writer.write(ResourceHolder.getMSDReducer().reduce(msds.get(i).get(j)) + "\t");
+                    // writer.write(ResourceHolder.getMSDReducer().reduce(msds.get(i).get(j)));
+                    // writer.write("\t");
 
                     // full msd
-                    writer.write(msds.get(i).get(j) + "\t");
+                    writer.write(msds.get(i).get(j));
+                    writer.write("\t");
 
-                    writer.write("_" + "\t");
+                    writer.write("_");
+                    writer.write("\t");
 
-                    writer.write(dep.get(i)[j][6] + "\t");
-                    writer.write(dep.get(i)[j][7] + "\t");
+                    writer.write(dep.get(i)[j][6]);
+                    writer.write("\t");
+                    writer.write(dep.get(i)[j][7]);
+                    writer.write("\t");
 
-                    writer.write("-" + "\t");
+                    writer.write("-");
+                    writer.write("\t");
                     writer.write("_");
 
                     writer.write("\n");
@@ -1271,33 +1287,29 @@ public class Test
 {
     public static void main(String[] args)
     {
-        BufferedReader in;
-        String str;
-        List<String> a = null;
         try
         {
-            in = new BufferedReader(new InputStreamReader(new FileInputStream("./data/twitter/tweets.txt"), "utf-8"));
-            while ((str = in.readLine()) != null)
+            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream("./data/twitter/tweets.txt"), "UTF-8"));
+
+            for (String line; (line = in.readLine()) != null; )
             {
-                a = TwitterQuestion.getAnswers(TwitterUtil.cleanTweet(str));
+                List<String> a = TwitterQuestion.getAnswers(TwitterUtil.cleanTweet(line));
 
                 if (a != null && !a.contains("igen"))
                 {
-                    System.err.println(str);
+                    System.err.println(line);
                     System.err.println(a);
                     System.err.println();
                 }
-                // System.out.println(TwitterUtil.cleanTweet(str));
+                // System.out.println(TwitterUtil.cleanTweet(line));
             }
         }
         catch (UnsupportedEncodingException | FileNotFoundException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         catch (IOException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -1335,7 +1347,7 @@ import szte.pos.converter.CoNLLFeaturesToMSD;
 
 public class TrainResources
 {
-    public static final String ENCODING = "utf-8";
+    public static final String ENCODING = "UTF-8";
     public static final CoNLLFeaturesToMSD CFTM = new CoNLLFeaturesToMSD();
 
     private static final Random RANDOM = new Random();
@@ -1372,20 +1384,17 @@ public class TrainResources
      */
     public static List<List<String>> readSentences(String file)
     {
+        List<List<String>> sentences = new LinkedList<List<String>>();
+
         BufferedReader reader = null;
-
-        String line = null;
-        List<String> sentence = null;
-        List<List<String>> sentences = null;
-
-        sentence = new ArrayList<String>();
-        sentences = new LinkedList<List<String>>();
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
 
-            while ((line = reader.readLine()) != null)
+            List<String> sentence = new ArrayList<String>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().length() == 0)
                 {
@@ -1467,10 +1476,14 @@ public class TrainResources
                     for (String token : sentence)
                     {
                         String[] split = token.split("\t");
-                        String wordForm = split[1];
 
+                        String wordForm = split[1];
                         String msd = CFTM.convert(split[4], split[6]);
-                        writer.write(wordForm + "@" + ResourceHolder.getMSDReducer().reduce(msd) + " ");
+
+                        writer.write(wordForm);
+                        writer.write("@");
+                        writer.write(ResourceHolder.getMSDReducer().reduce(msd));
+                        writer.write(" ");
                     }
                     writer.write("\n");
                 }
@@ -1527,7 +1540,12 @@ public class TrainResources
                 writer.write(enrty.getKey());
 
                 for (MorAna m : enrty.getValue())
-                    writer.write("\t" + m.getLemma() + "\t" + m.getMsd());
+                {
+                    writer.write("\t");
+                    writer.write(m.getLemma());
+                    writer.write("\t");
+                    writer.write(m.getMsd());
+                }
 
                 writer.write("\n");
             }
@@ -1581,7 +1599,10 @@ public class TrainResources
 
             for (Entry<String, Integer> enrty : freq.entrySet())
             {
-                writer.write(enrty.getKey() + "\t" + enrty.getValue() + "\n");
+                writer.write(enrty.getKey());
+                writer.write("\t");
+                writer.write(enrty.getValue());
+                writer.write("\n");
             }
 
             writer.flush();
@@ -1621,7 +1642,12 @@ public class TrainResources
                         String lemma = split[2];
                         String msd = CFTM.convert(split[4], split[6]);
 
-                        writer.write(wordForm + "\t" + lemma + "\t" + msd + "\n");
+                        writer.write(wordForm);
+                        writer.write("\t");
+                        writer.write(lemma);
+                        writer.write("\t");
+                        writer.write(msd);
+                        writer.write("\n");
                     }
                     writer.write("\n");
                 }
@@ -1670,9 +1696,30 @@ public class TrainResources
                     String head = split[8];
                     String label = split[10];
 
-                    writer.write(id + "\t" + form + "\t" + lemma + "\t" + lemma + "\t"
-                            + POS + "\t" + POS + "\t" + feature + "\t" + feature + "\t"
-                            + head + "\t" + head + "\t" + label + "\t" + label + "\t_\t_\n");
+                    writer.write(id);
+                    writer.write("\t");
+                    writer.write(form);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\t_\t_\n");
                 }
                 writer.write("\n");
             }
@@ -1796,8 +1843,16 @@ public class TrainResources
                     {
                         for (int i = 0; i < pred.length; ++i)
                         {
-                            writer.write(wordForm.get(i) + "\t" + head.get(i) + "\t"
-                                    + pred[i][6] + "\t" + rel.get(i) + "\t" + pred[i][7] + "\n");
+                            writer.write(wordForm.get(i));
+                            writer.write("\t");
+                            writer.write(head.get(i));
+                            writer.write("\t");
+                            writer.write(pred[i][6]);
+                            writer.write("\t");
+                            writer.write(rel.get(i));
+                            writer.write("\t");
+                            writer.write(pred[i][7]);
+                            writer.write("\n");
                         }
 
                         writer.write("\n");
@@ -1851,11 +1906,10 @@ public class TrainResources
 
     public static void predictPred(List<List<String>> testSentences)
     {
-        // String[][] parseSentence(String[] form, String[] lemma,
-        // String[] MSD) {
-        //
+        // String[][] parseSentence(String[] form, String[] lemma, String[] MSD) {
         // for (int i = 0; i < forms.size(); ++i) {
         // dep.add(MateParserWrapper.parseSentence();
+        // }
         // }
     }
 
@@ -2018,13 +2072,9 @@ public class TwitterQuestion
     {
         List<String> answers = new LinkedList<String>();
 
-        String[][] morphSentence = null;
-        int morAnaIndex = -1;
-        String prevMsd = null;
-
         if (isQuestion(sentence))
         {
-            morphSentence = Magyarlanc.morphParseSentence(sentence);
+            String[][] morphSentence = Magyarlanc.morphParseSentence(sentence);
 
             // YES/NO questions
             if (getMsd(morphSentence, 0).startsWith("V"))
@@ -2034,10 +2084,11 @@ public class TwitterQuestion
             }
 
             // 'vagy' questions
-            morAnaIndex = getMorAnaIndex(morphSentence, "vagy", "Ccs");
+            int morAnaIndex = getMorAnaIndex(morphSentence, "vagy", "Ccs");
             if (morAnaIndex > 0)
             {
-                prevMsd = morphSentence[morAnaIndex - 1][2];
+                String prevMsd = morphSentence[morAnaIndex - 1][2];
+
                 // Nn Q
                 if (prevMsd.startsWith("Nn"))
                 {
@@ -2101,18 +2152,15 @@ public class TwitterQuestion
     {
         List<List<String>> sentences = ResourceHolder.getHunSplitter().split(text);
 
-        List<String> sentenceAnswers = null;
-
         // reverse list
         Collections.reverse(sentences);
 
         for (List<String> sentence : sentences)
         {
-            sentenceAnswers = getAnswers(sentence);
+            List<String> sentenceAnswers = getAnswers(sentence);
+
             if (sentenceAnswers.size() > 0)
-            {
                 return sentenceAnswers;
-            }
         }
 
         return null;
@@ -2175,17 +2223,11 @@ public class MateParserWrapper
      */
     public static String[][] parseSentence(String[][] morph)
     {
-        String[] form = null;
-        String[] lemma = null;
-        String[] MSD = null;
-        String[] POS = null;
-        String[] feature = null;
-
-        form = new String[morph.length];
-        lemma = new String[morph.length];
-        MSD = new String[morph.length];
-        POS = new String[morph.length];
-        feature = new String[morph.length];
+        String[] form = new String[morph.length],
+                lemma = new String[morph.length],
+                  MSD = new String[morph.length],
+                  POS = new String[morph.length],
+              feature = new String[morph.length];
 
         for (int i = 0; i < morph.length; ++i)
         {
@@ -2216,11 +2258,8 @@ public class MateParserWrapper
      */
     public static String[][] parseSentence(String[] wordForm, String[] lemma, String[] msd)
     {
-        String[] POS = null;
-        String[] feature = null;
-
-        POS = new String[msd.length];
-        feature = new String[msd.length];
+        String[] POS = new String[msd.length];
+        String[] feature = new String[msd.length];
 
         for (int i = 0; i < msd.length; ++i)
         {
@@ -2234,10 +2273,10 @@ public class MateParserWrapper
     public static String[][] parseSentence(List<String> form, List<String> lemma, List<String> msd, List<String> pos, List<String> feature)
     {
         return parseSentence(form.toArray(new String[form.size()]),
-                lemma.toArray(new String[lemma.size()]),
-                msd.toArray(new String[msd.size()]),
-                pos.toArray(new String[pos.size()]),
-                feature.toArray(new String[feature.size()]));
+                             lemma.toArray(new String[lemma.size()]),
+                             msd.toArray(new String[msd.size()]),
+                             pos.toArray(new String[pos.size()]),
+                             feature.toArray(new String[feature.size()]));
     }
 
     /**
@@ -2254,15 +2293,10 @@ public class MateParserWrapper
     {
         SentenceData09 sentenceData09 = new SentenceData09();
 
-        String s[] = null;
-        String l[] = null;
-        String p[] = null;
-        String f[] = null;
-
-        s = new String[form.length + 1];
-        l = new String[lemma.length + 1];
-        p = new String[pos.length + 1];
-        f = new String[feature.length + 1];
+        String[] s = new String[form.length + 1];
+        String[] l = new String[lemma.length + 1];
+        String[] p = new String[pos.length + 1];
+        String[] f = new String[feature.length + 1];
 
         s[0] = "<root>";
         l[0] = "<root-LEMMA>";
@@ -2489,10 +2523,8 @@ public class CoNLL2009Sentence
 
     private int getVirtualRootIndex(String rootType)
     {
-        String[] POS = null;
-        String[] rel = null;
-        POS = this.getPOS();
-        rel = this.getRel();
+        String[] POS = this.getPOS();
+        String[] rel = this.getRel();
 
         for (int i = 0; i < POS.length; ++i)
         {
@@ -2634,16 +2666,12 @@ public class CoNLL2009Sentence
      */
     private void removeVirtualRoot(String rootType, String[] rels)
     {
-        int rootIndex = 0;
-        Integer[] childrenIndexes = null;
-        String[] childrenRelLabels = null;
-
         // virtualis ROOT indexe
-        rootIndex = this.getVirtualRootIndex(rootType);
+        int rootIndex = this.getVirtualRootIndex(rootType);
         // virtualis ROOT child node-jainan idexei
-        childrenIndexes = this.getChildrenIndexes(rootIndex);
+        Integer[] childrenIndexes = this.getChildrenIndexes(rootIndex);
         // virtualis ROOT child node-jainak relacioi
-        childrenRelLabels = getRelLabel(childrenIndexes);
+        String[] childrenRelLabels = getRelLabel(childrenIndexes);
 
         // a virtualis ROOT lehetseges child relacioi, fontos a sorrend
         for (String rel : rels)
@@ -2799,16 +2827,15 @@ public class RemoveVirtualNodes
     {
         String file = "./data/objfx/10fold/law.0.test";
 
-        CoNLL2009Sentence coNLL2009Sentence = null;
-
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/objfx/10fold/law.0.test.virtual"), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file + ".virtual"), "UTF-8"));
 
             // for (String[][] sentence : Util.readCoNLL2009(file)) {
-            // coNLL2009Sentence = new CoNLL2009Sentence(sentence);
+            // CoNLL2009Sentence coNLL2009Sentence = new CoNLL2009Sentence(sentence);
             // coNLL2009Sentence.removeVirtuals();
-            // writer.write(coNLL2009Sentence.toString() + "\n");
+            // writer.write(coNLL2009Sentence.toString());
+            // writer.write("\n");
             // }
 
             writer.flush();
@@ -2864,14 +2891,15 @@ public class Util
      */
     public static String[][][] readCoNLL2009(String file, String encoding)
     {
-        List<String[]> sentence = new ArrayList<String[]>();
         List<String[][]> sentences = new ArrayList<String[][]>();
 
         try
         {
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
 
-            for (String line; (line = bufferedReader.readLine()) != null; )
+            List<String[]> sentence = new ArrayList<String[]>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (!line.equals(""))
                 {
@@ -2912,7 +2940,8 @@ public class Util
                 {
                     for (String s : token)
                     {
-                        writer.write(s + "\t");
+                        writer.write(s);
+                        writer.write("\t");
                     }
                     writer.write("\n");
                 }
@@ -2948,13 +2977,8 @@ public class Util
 
     public static void main(String[] args)
     {
-        String[][][] conll = null;
-        String[][][] msd = null;
-
-        //conll = readCoNLL2009("newspaper.conll2009");
-
-        conll = readCoNLL2009("newspaper.conll2009_test_virtual_1");
-        msd = readCoNLL2009("newspaper.pred2");
+        String[][][] conll = readCoNLL2009("newspaper.conll2009" + "_test_virtual_1");
+        String[][][] msd = readCoNLL2009("newspaper.pred2");
 
         MSDToCoNLLFeatures msdToCoNLLFeatures = new MSDToCoNLLFeatures();
 
@@ -3252,17 +3276,17 @@ public class WhatsWrongWrapper
     {
         List<List<String>> list = new ArrayList<List<String>>();
 
-        String[] s = null;
         for (String[] a : array)
         {
-            s = new String[14];
+            String[] s = new String[14];
+
             s[0] = a[0]; // id
             s[1] = a[1]; // form
             s[2] = a[2]; // lemma
             s[4] = "_"; // plemma
             s[3] = a[4]; // POS
             s[5] = "_"; // pPOS
-            // s[6] = a[5]; // feat
+         // s[6] = a[5]; // feat
             s[6] = "_"; // feat
             s[7] = "_"; // pfeat
             s[8] = a[6]; // head
@@ -3289,13 +3313,9 @@ public class WhatsWrongWrapper
         if (renderer == null)
             renderer = new SingleSentenceRenderer();
 
-        BufferedImage bufferedImage = null;
-        Graphics2D graphics = null;
-        Dimension dimension = null;
-
-        bufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
-        graphics = bufferedImage.createGraphics();
-        dimension = renderer.render(instance, graphics);
+        BufferedImage bufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
+        Graphics2D graphics = bufferedImage.createGraphics();
+        Dimension dimension = renderer.render(instance, graphics);
 
         bufferedImage = new BufferedImage((int) dimension.getWidth() + 5, (int) dimension.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
         graphics = bufferedImage.createGraphics();
@@ -3317,13 +3337,12 @@ public class WhatsWrongWrapper
         if (coNLL2009 == null)
             coNLL2009 = new CoNLL2009();
 
-        FileOutputStream fileOutputStream = null;
         try
         {
-            fileOutputStream = new FileOutputStream(out);
-            ImageIO.write(getImage(coNLL2009.create(arrayToList(sentence))), "PNG", fileOutputStream);
-            fileOutputStream.flush();
-            fileOutputStream.close();
+            FileOutputStream fos = new FileOutputStream(out);
+            ImageIO.write(getImage(coNLL2009.create(arrayToList(sentence))), "PNG", fos);
+            fos.flush();
+            fos.close();
         }
         catch (FileNotFoundException e)
         {
@@ -3346,13 +3365,14 @@ public class WhatsWrongWrapper
         if (coNLL2009 == null)
             coNLL2009 = new CoNLL2009();
 
-        ByteArrayOutputStream byteArrayOutputStream = null;
+        ByteArrayOutputStream baos = null;
+
         try
         {
-            byteArrayOutputStream = new ByteArrayOutputStream();
-            ImageIO.write(getImage(coNLL2009.create(arrayToList(sentence))), "PNG", byteArrayOutputStream);
-            byteArrayOutputStream.flush();
-            byteArrayOutputStream.close();
+            baos = new ByteArrayOutputStream();
+            ImageIO.write(getImage(coNLL2009.create(arrayToList(sentence))), "PNG", baos);
+            baos.flush();
+            baos.close();
         }
         catch (FileNotFoundException e)
         {
@@ -3363,7 +3383,7 @@ public class WhatsWrongWrapper
             e.printStackTrace();
         }
 
-        return byteArrayOutputStream.toByteArray();
+        return baos.toByteArray();
     }
 
     public static void main(String[] args)
@@ -3719,11 +3739,9 @@ public class HunLemMor
 
             if (index > 0)
             {
-                String root = null;
-                String suffix = null;
+                String root = word.substring(0, index);
+                String suffix = word.substring(index + 1);
 
-                root = word.substring(0, index);
-                suffix = word.substring(index + 1);
                 morAnas.addAll(HyphenicGuesser.guess(root, suffix));
             }
         }
@@ -3751,12 +3769,10 @@ public class HunLemMor
     {
         // System.err.println(HunLemMor.getMorphologicalAnalyses("lehet"));
 
-        FileOutputStream fos = null;
-        ObjectOutputStream out = null;
         try
         {
-            fos = new FileOutputStream("d:/m.ser");
-            out = new ObjectOutputStream(fos);
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("d:/m.ser"));
+
             out.writeObject(ResourceHolder.getCorpus());
 
             out.close();
@@ -3954,24 +3970,26 @@ public class Magyarlanc
 
     public static void write(String[][][] array, String out, String encoding)
     {
-        BufferedWriter bufferedWriter = null;
         try
         {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), encoding));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), encoding));
+
             for (int i = 0; i < array.length; ++i)
             {
                 for (int j = 0; j < array[i].length; ++j)
                 {
                     for (int k = 0; k < array[i][j].length; ++k)
                     {
-                        bufferedWriter.write(array[i][j][k] + "\t");
+                        writer.write(array[i][j][k]);
+                        writer.write("\t");
                     }
-                    bufferedWriter.write("\n");
+                    writer.write("\n");
                 }
-                bufferedWriter.write("\n");
+                writer.write("\n");
             }
-            bufferedWriter.flush();
-            bufferedWriter.close();
+
+            writer.flush();
+            writer.close();
         }
         catch (IOException e)
         {
@@ -4020,7 +4038,7 @@ public class Magyarlanc
         {
             try
             {
-                writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), Settings.DEFAULT_ENCODING));
+                writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), "UTF-8"));
             }
             catch (IOException e)
             {
@@ -4030,27 +4048,19 @@ public class Magyarlanc
 
         BufferedReader reader = null;
 
-        String line = null;
+        List<String> wordForms = new ArrayList<String>();
+        List<String> lemmas = new ArrayList<String>();
+        List<String> msds = new ArrayList<String>();
 
-        List<String> wordForms = null;
-        List<String> lemmas = null;
-        List<String> msds = null;
-
-        wordForms = new ArrayList<String>();
-        lemmas = new ArrayList<String>();
-        msds = new ArrayList<String>();
-
-        String[] split = null;
-        String[][] predicated = null;
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(testFile), Settings.DEFAULT_ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(testFile), "UTF-8"));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.equals(""))
                 {
-                    predicated = morphParseSentence(wordForms);
+                    String[][] predicated = morphParseSentence(wordForms);
 
                     Eval.addSentence(lemmas.toArray(new String[lemmas.size()]), msds.toArray(new String[msds.size()]), predicated);
 
@@ -4060,9 +4070,16 @@ public class Magyarlanc
                         {
                             for (int i = 0; i < predicated.length; ++i)
                             {
-                                writer.write(predicated[i][0] + '\t' + lemmas.get(i) + '\t'
-                                        + msds.get(i) + '\t' + predicated[i][1] + '\t'
-                                        + predicated[i][2] + '\n');
+                                writer.write(predicated[i][0]);
+                                writer.write('\t');
+                                writer.write(lemmas.get(i));
+                                writer.write('\t');
+                                writer.write(msds.get(i));
+                                writer.write('\t');
+                                writer.write(predicated[i][1]);
+                                writer.write('\t');
+                                writer.write(predicated[i][2]);
+                                writer.write('\n');
                             }
                             writer.write('\n');
                         }
@@ -4078,7 +4095,8 @@ public class Magyarlanc
                 }
                 else
                 {
-                    split = line.split(Settings.DEFAULT_SEPARATOR);
+                    String[] split = line.split(Settings.DEFAULT_SEPARATOR);
+
                     wordForms.add(split[0]);
                     lemmas.add(split[1]);
                     msds.add(split[2]);
@@ -4125,8 +4143,7 @@ public class Magyarlanc
             System.exit(0);
         }
 
-        Map<String, String> params;
-        params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<String, String>();
 
         for (int i = 0; i < args.length; i++)
         {
@@ -4185,13 +4202,14 @@ public class Magyarlanc
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
                         List<String> lines = null;
+
                         if (params.containsKey("-encoding"))
                         {
                             lines = SafeReader.read(params.get("-input"), params.get("-encoding"));
                         }
                         else
                         {
-                            lines = SafeReader.read(params.get("-input"), "utf-8");
+                            lines = SafeReader.read(params.get("-input"), "UTF-8");
                         }
 
                         if (params.containsKey("-encoding"))
@@ -4200,7 +4218,7 @@ public class Magyarlanc
                         }
                         else
                         {
-                            write(morphParse(lines), params.get("-output"), "utf-8");
+                            write(morphParse(lines), params.get("-output"), "UTF-8");
                         }
                     }
                     else
@@ -4220,7 +4238,7 @@ public class Magyarlanc
                         }
                         else
                         {
-                            lines = SafeReader.read(params.get("-input"), "utf-8");
+                            lines = SafeReader.read(params.get("-input"), "UTF-8");
                         }
 
                         if (params.containsKey("-encoding"))
@@ -4229,7 +4247,7 @@ public class Magyarlanc
                         }
                         else
                         {
-                            write(depParse(lines), params.get("-output"), "utf-8");
+                            write(depParse(lines), params.get("-output"), "UTF-8");
                         }
                     }
                     else
@@ -4265,7 +4283,7 @@ public class Magyarlanc
                         }
                         else
                         {
-                            Dep2Nooj.convert(depParse(Util.readFileToString(params.get("-input"), "UTF-8")), params.get("-output"), "utf-8");
+                            Dep2Nooj.convert(depParse(Util.readFileToString(params.get("-input"), "UTF-8")), params.get("-output"), "UTF-8");
                         }
                     }
                     else
@@ -4288,8 +4306,8 @@ import java.io.Serializable;
 
 public class MorAna implements Comparable<MorAna>, Serializable
 {
-    private String lemma = null;
-    private String msd = null;
+    private String lemma;
+    private String msd;
 
     public MorAna()
     {
@@ -4383,20 +4401,17 @@ public class ResourceBuilder
 {
     public static List<List<String>> read(String file)
     {
+        List<List<String>> sentences = new LinkedList<List<String>>();
+
         BufferedReader reader = null;
-
-        String line = null;
-        List<String> sentence = null;
-        List<List<String>> sentences = null;
-
-        sentence = new ArrayList<String>();
-        sentences = new LinkedList<List<String>>();
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = reader.readLine()) != null)
+            List<String> sentence = new ArrayList<String>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.equals(""))
                 {
@@ -4438,36 +4453,25 @@ public class ResourceBuilder
 
     public static void minimalize(List<List<String>> sentences, String out)
     {
-        String id = null;
-        String form = null;
-        String lemma = null;
-        String POS = null;
-        String feature = null;
-        String head = null;
-        String label = null;
-
-        String MSD = null;
-
-        Writer writer = null;
-
-        String[] splitted = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
-                    id = splitted[0];
-                    form = splitted[1];
-                    lemma = splitted[2];
-                    POS = splitted[4];
-                    feature = splitted[6];
-                    head = splitted[8];
-                    label = splitted[10];
-                    MSD = ResourceHolder.getCoNLLFeaturesToMSD().convert(POS, feature);
+                    String[] splitted = token.split("\t");
+
+                    String id = splitted[0];
+                    String form = splitted[1];
+                    String lemma = splitted[2];
+                    String POS = splitted[4];
+                    String feature = splitted[6];
+                    String head = splitted[8];
+                    String label = splitted[10];
+
+                    String MSD = ResourceHolder.getCoNLLFeaturesToMSD().convert(POS, feature);
 
                     if (lemma.equals("-e"))
                         MSD = MSD + "-y";
@@ -4484,11 +4488,26 @@ public class ResourceBuilder
                         feature = sb.toString();
                     }
 
-                    writer.write(id + "\t" + form + "\t" + lemma + "\t" + MSD + "\t"
-                            + POS + "\t" + feature + "\t" + head + "\t" + label + "\n");
+                    writer.write(id);
+                    writer.write("\t");
+                    writer.write(form);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(MSD);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\n");
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -4519,11 +4538,9 @@ public class ResourceBuilder
 
     public static void write(List<List<String>> sentences, String file)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
@@ -4554,10 +4571,10 @@ public class ResourceBuilder
 
     public static boolean containsZ(List<String> sentence)
     {
-        String[] splitted = null;
         for (String token : sentence)
         {
-            splitted = token.split("\t");
+            String[] splitted = token.split("\t");
+
             if (splitted[4].equals("Z"))
             {
                 // System.err.println(token);
@@ -4625,23 +4642,23 @@ public class ResourceBuilder
 
     public static void writePosTrain(String file, String out)
     {
-        String[] splitted = null;
-        Writer writer = null;
-        String form = null;
-        String MSD = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<String> sentence : read(file))
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
-                    form = splitted[1];
-                    MSD = splitted[3];
-                    writer.write(form + "@" + ResourceHolder.getMSDReducer().reduce(MSD) + " ");
+                    String[] splitted = token.split("\t");
+
+                    String form = splitted[1];
+                    String MSD = splitted[3];
+
+                    writer.write(form);
+                    writer.write("@");
+                    writer.write(ResourceHolder.getMSDReducer().reduce(MSD));
+                    writer.write(" ");
                 }
                 writer.write("\n");
             }
@@ -4666,44 +4683,54 @@ public class ResourceBuilder
     {
         // 1 A a a T T SubPOS=f SubPOS=f 3 3 DET DET _ _
 
-        String[] splitted = null;
-        Writer writer = null;
-
-        String id = null;
-        String form = null;
-        String lemma = null;
-        String POS = null;
-        String feature = null;
-
-        String head = null;
-        String label = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<String> sentence : read(file))
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
+                    String[] splitted = token.split("\t");
 
-                    id = splitted[0];
-                    form = splitted[1];
-                    lemma = splitted[2];
+                    String id = splitted[0];
+                    String form = splitted[1];
+                    String lemma = splitted[2];
                     // splitted[3];
-                    POS = splitted[4];
-                    feature = splitted[5];
+                    String POS = splitted[4];
+                    String feature = splitted[5];
 
-                    head = splitted[6];
-                    label = splitted[7];
+                    String head = splitted[6];
+                    String label = splitted[7];
 
-                    writer.write(id + "\t" + form + "\t" + lemma + "\t" + lemma + "\t"
-                            + POS + "\t" + POS + "\t" + feature + "\t" + feature + "\t"
-                            + head + "\t" + head + "\t" + label + "\t" + label + "\t_\t_\n");
+                    writer.write(id);
+                    writer.write("\t");
+                    writer.write(form);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\t_\t_\n");
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -4723,24 +4750,19 @@ public class ResourceBuilder
 
     public static void writeCorpus(String file, String out)
     {
-        String[] splitted = null;
-        String form = null;
-        String lemma = null;
-        String MSD = null;
-
         Map<String, Set<MorAna>> corpus = new TreeMap<String, Set<MorAna>>();
-
-        MorAna morAna = null;
 
         for (List<String> sentence : read(file))
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
-                form = splitted[1];
-                lemma = splitted[2];
-                MSD = splitted[3];
-                morAna = new MorAna(lemma, MSD);
+                String[] splitted = token.split("\t");
+
+                String form = splitted[1];
+                String lemma = splitted[2];
+                String MSD = splitted[3];
+
+                MorAna morAna = new MorAna(lemma, MSD);
 
                 if (!corpus.containsKey(form))
                     corpus.put(form, new TreeSet<MorAna>());
@@ -4749,17 +4771,21 @@ public class ResourceBuilder
             }
         }
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Entry<String, Set<MorAna>> enrty : corpus.entrySet())
             {
                 writer.write(enrty.getKey());
 
                 for (MorAna m : enrty.getValue())
-                    writer.write("\t" + m.getLemma() + "\t" + m.getMsd());
+                {
+                    writer.write("\t");
+                    writer.write(m.getLemma());
+                    writer.write("\t");
+                    writer.write(m.getMsd());
+                }
 
                 writer.write("\n");
             }
@@ -4783,19 +4809,15 @@ public class ResourceBuilder
 
     public static void writeFreq(String file, String out)
     {
-        String[] splitted = null;
-        Writer writer = null;
-
-        String msd = null;
-
         Map<String, Integer> freq = new TreeMap<String, Integer>();
 
         for (List<String> sentence : read(file))
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
-                msd = splitted[3];
+                String[] splitted = token.split("\t");
+
+                String msd = splitted[3];
 
                 if (!freq.containsKey(msd))
                     freq.put(msd, 0);
@@ -4806,12 +4828,16 @@ public class ResourceBuilder
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Entry<String, Integer> enrty : freq.entrySet())
             {
-                writer.write(enrty.getKey() + "\t" + enrty.getValue() + "\n");
+                writer.write(enrty.getKey());
+                writer.write("\t");
+                writer.write(enrty.getValue());
+                writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -5052,14 +5078,11 @@ public class ResourceHolder
         }
     }
 
-    private static String data = "./data/";
-    private static final String ENCONDING = "UTF-8";
-
     // DEP model
     private static final String PARSER_MODEL = "szeged.dep.model";
 
     // other resources
-    private static final String STOPWORDS = "stopword.txt";
+    private static final String STOPWORDS = "stopwords.txt";
     private static final String RFS = "rfsa.txt";
     private static final String CORRDIC = "corrdic.txt";
     private static final String HUN_ABBREV = "hun_abbrev.txt";
@@ -5169,7 +5192,7 @@ public class ResourceHolder
         {
             try
             {
-                rfsa = RFSA.read(Data.class.getResourceAsStream(RFS), ResourceHolder.getEncoding());
+                rfsa = RFSA.read(Data.class.getResourceAsStream(RFS), "UTF-8");
             }
             catch (FileNotFoundException e)
             {
@@ -5216,7 +5239,7 @@ public class ResourceHolder
     {
         if (parser == null)
         {
-            parser = new Parser(new Options(new String[] { "-model", data + PARSER_MODEL, "-cores", "1" }));
+            parser = new Parser(new Options(new String[] { "-model", "./data/" + PARSER_MODEL, "-cores", "1" }));
         }
     }
 
@@ -5368,11 +5391,6 @@ public class ResourceHolder
         }
     }
 
-    public static String getEncoding()
-    {
-        return ENCONDING;
-    }
-
     public static Set<String> getStopwords()
     {
         if (stopwords == null)
@@ -5456,27 +5474,26 @@ public class Util
 
     static Map<String, Set<MorAna>> readCorpus(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-        Set<MorAna> morAnas = null;
-        String[] splitted = null;
-
         Map<String, Set<MorAna>> corpus = new TreeMap<String, Set<MorAna>>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
-                morAnas = new TreeSet<MorAna>();
-                splitted = line.split("\t");
+                Set<MorAna> morAnas = new TreeSet<MorAna>();
+
+                String[] splitted = line.split("\t");
                 for (int i = 1; i < splitted.length - 1; i++)
                 {
                     morAnas.add(new MorAna(splitted[i], splitted[i + 1]));
                     i++;
                 }
+
                 corpus.put(splitted[0], morAnas);
             }
+
             reader.close();
         }
         catch (IOException e)
@@ -5489,18 +5506,15 @@ public class Util
 
     static Map<String, Integer> readFrequencies(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-        String[] splitted = null;
-
         Map<String, Integer> frequencies = new TreeMap<String, Integer>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
-                splitted = line.split("\t");
+                String[] splitted = line.split("\t");
                 frequencies.put(splitted[0], Integer.parseInt(splitted[1]));
             }
         }
@@ -5514,15 +5528,13 @@ public class Util
 
     static Set<String> readStopwords(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-
         Set<String> stopwords = new TreeSet<String>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 stopwords.add(line);
             }
@@ -5537,16 +5549,13 @@ public class Util
 
     static Set<String> readList(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-
         Set<String> lines = new TreeSet<String>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 lines.add(line);
             }
@@ -5589,14 +5598,18 @@ public class Util
 
     public static void writeMapToFile(Map<?, ?> map, File file, String encoging)
     {
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoging));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoging));
+
             for (Map.Entry<?, ?> entry : map.entrySet())
             {
-                writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
+                writer.write(entry.getKey().toString());
+                writer.write("\t");
+                writer.write(entry.getValue().toString());
+                writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -5616,18 +5629,15 @@ public class Util
 
     public static Map<String, String> readCorrDic(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-        String[] splitted = null;
-
         Map<String, String> dictionary = new TreeMap<String, String>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), ResourceHolder.getEncoding()));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
-                splitted = line.split("\t");
+                String[] splitted = line.split("\t");
                 dictionary.put(splitted[0], splitted[1]);
             }
         }
@@ -5705,14 +5715,15 @@ public class Util
      */
     public static String[][] readTokenizedFile(String filenName, String encoding)
     {
-        BufferedReader reader = null;
-
         List<String[]> sentences = new ArrayList<String[]>();
-        List<String> tokens = new ArrayList<String>();
+
+        BufferedReader reader = null;
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(filenName), encoding));
+
+            List<String> tokens = new ArrayList<String>();
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -5755,7 +5766,6 @@ package szte.magyarlanc;
 public class Settings
 {
     public static final String DEFAULT_NOUN = "Nn-sn";
-    public static final String DEFAULT_ENCODING = "utf-8";
     public static final String DEFAULT_SEPARATOR = "\t";
 }
 EOF
@@ -5790,17 +5800,13 @@ public class CorpusStats
 
     public static void main(String[] args)
     {
-        String path = null;
-        String[] files = null;
-        String extension = null;
+        String path = "./data/conll/corrected_features/";
 
-        path = "./data/conll/corrected_features/";
-
-        files = new String[] { "8oelb", "10elb", "10erv", "1984", "cwszt",
+        String[] files = new String[] { "8oelb", "10elb", "10erv", "1984", "cwszt",
             "gazdtar", "hvg", "mh", "newsml", "np", "nv", "pfred", "szerzj",
             "utas", "win2000" };
 
-        extension = ".conll-2009-msd";
+        String extension = ".conll-2009-msd";
     }
 }
 EOF
@@ -5834,26 +5840,27 @@ public class Eval
 {
     public static void writePosTrain(String file, String out)
     {
-        String[] splitted = null;
-        Writer writer = null;
-        String form = null;
-        String MSD = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<String> sentence : read(file))
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
-                    form = splitted[1];
-                    MSD = splitted[3];
-                    writer.write(form + "@" + ResourceHolder.getMSDReducer().reduce(MSD) + " ");
+                    String[] splitted = token.split("\t");
+
+                    String form = splitted[1];
+                    String MSD = splitted[3];
+
+                    writer.write(form);
+                    writer.write("@");
+                    writer.write(ResourceHolder.getMSDReducer().reduce(MSD));
+                    writer.write(" ");
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -5875,44 +5882,54 @@ public class Eval
     {
         // 1 A a a T T SubPOS=f SubPOS=f 3 3 DET DET _ _
 
-        String[] splitted = null;
-        Writer writer = null;
-
-        String id = null;
-        String form = null;
-        String lemma = null;
-        String POS = null;
-        String feature = null;
-
-        String head = null;
-        String label = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<String> sentence : read(file))
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
+                    String[] splitted = token.split("\t");
 
-                    id = splitted[0];
-                    form = splitted[1];
-                    lemma = splitted[2];
+                    String id = splitted[0];
+                    String form = splitted[1];
+                    String lemma = splitted[2];
                     // splitted[3];
-                    POS = splitted[4];
-                    feature = splitted[5];
+                    String POS = splitted[4];
+                    String feature = splitted[5];
 
-                    head = splitted[6];
-                    label = splitted[7];
+                    String head = splitted[6];
+                    String label = splitted[7];
 
-                    writer.write(id + "\t" + form + "\t" + lemma + "\t" + lemma + "\t"
-                            + POS + "\t" + POS + "\t" + feature + "\t" + feature + "\t"
-                            + head + "\t" + head + "\t" + label + "\t" + label + "\t_\t_\n");
+                    writer.write(id);
+                    writer.write("\t");
+                    writer.write(form);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(lemma);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(POS);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(feature);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(head);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\t");
+                    writer.write(label);
+                    writer.write("\t_\t_\n");
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -5946,8 +5963,7 @@ public class Eval
 
         int[] offsets = new int[n + 1];
 
-        double length = 0;
-        length = (double) ids.length / n;
+        double length = (double) ids.length / n;
 
         for (int i = 0; i < n; ++i)
         {
@@ -5960,17 +5976,14 @@ public class Eval
 
     public static Integer[][] apart(Integer[] ids, int n)
     {
-        Integer[][] aparted = null;
+        Integer[][] aparted = new Integer[n][];
 
         int[] offsets = getOffsets(ids, n);
-
-        aparted = new Integer[n][];
-        int index = 0;
 
         for (int i = 0; i < offsets.length - 1; ++i)
         {
             aparted[i] = new Integer[offsets[i + 1] - offsets[i]];
-            index = 0;
+            int index = 0;
             for (int j = offsets[i]; j < offsets[i + 1]; ++j)
             {
                 aparted[i][index] = ids[j];
@@ -5998,11 +6011,9 @@ public class Eval
 
     public static void write(List<List<String>> sentences, Integer[] ids, String out)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (int id : ids)
             {
@@ -6013,6 +6024,7 @@ public class Eval
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -6032,11 +6044,8 @@ public class Eval
 
     public static void write10Fold(String file)
     {
-        List<List<String>> sentences = null;
-        int numberOfSentences = 0;
-
-        sentences = read(file);
-        numberOfSentences = sentences.size();
+        List<List<String>> sentences = read(file);
+        int numberOfSentences = sentences.size();
 
         System.err.println(file + "\t" + sentences.size() + " sentences");
 
@@ -6044,12 +6053,11 @@ public class Eval
 
         int n = 0;
         Integer[][] aparts = apart(ids, 10);
-        Integer[] group = null;
 
         // test
         for (int i = 0; i < aparts.length; ++i)
         {
-            group = aparts[i];
+            Integer[] group = aparts[i];
             n += group.length;
             System.err.println("|" + group.length + "|" + "\t" + Arrays.toString(group));
 
@@ -6057,12 +6065,10 @@ public class Eval
         }
 
         // train
-        Integer[] trainArray = null;
-        ArrayList<Integer> train = null;
-
         for (int i = 0; i < aparts.length; ++i)
         {
-            train = new ArrayList<Integer>();
+            ArrayList<Integer> train = new ArrayList<Integer>();
+
             for (int j = 0; j < aparts.length; ++j)
             {
                 if (i != j)
@@ -6071,7 +6077,7 @@ public class Eval
                 }
             }
 
-            trainArray = train.toArray(new Integer[train.size()]);
+            Integer[] trainArray = train.toArray(new Integer[train.size()]);
             Arrays.sort(trainArray);
             System.err.println("|" + trainArray.length + "|" + "\t" + Arrays.toString(trainArray));
 
@@ -6082,20 +6088,15 @@ public class Eval
 
     public static List<List<String>> read(String file)
     {
-        BufferedReader reader = null;
-
-        String line = null;
-        List<String> sentence = null;
-        List<List<String>> sentences = null;
-
-        sentence = new ArrayList<String>();
-        sentences = new LinkedList<List<String>>();
+        List<List<String>> sentences = new LinkedList<List<String>>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = reader.readLine()) != null)
+            List<String> sentence = new ArrayList<String>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.equals(""))
                 {
@@ -6128,10 +6129,9 @@ public class Eval
     {
         String[] forms = new String[sentence.size()];
 
-        String[] splitted = null;
         for (int i = 0; i < sentence.size(); ++i)
         {
-            splitted = sentence.get(i).split("\t");
+            String[] splitted = sentence.get(i).split("\t");
             forms[i] = splitted[index];
         }
 
@@ -6143,46 +6143,43 @@ public class Eval
         List<List<String>> sentences = read(file);
         System.out.println(sentences.size());
 
-        String[] form = null;
-        String[] lemma = null;
-        String[] MSD = null;
-        String[][] morph = null;
-
-        String[] head = null;
-        String[] label = null;
-
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
-                form = getColumn(sentence, 1);
-                lemma = getColumn(sentence, 2);
-                MSD = getColumn(sentence, 3);
+                String[] form = getColumn(sentence, 1);
+                String[] lemma = getColumn(sentence, 2);
+                String[] MSD = getColumn(sentence, 3);
 
-                morph = Magyarlanc.morphParseSentence(form);
+                String[][] morph = Magyarlanc.morphParseSentence(form);
 
-                head = getColumn(sentence, 6);
-                label = getColumn(sentence, 7);
+                String[] head = getColumn(sentence, 6);
+                String[] label = getColumn(sentence, 7);
 
                 for (int i = 0; i < form.length; ++i)
                 {
                     writer.write(form[i]);
-                    writer.write("\t" + lemma[i]);
-                    writer.write("\t" + MSD[i]);
-                    writer.write("\t" + morph[i][0]);
-                    writer.write("\t" + morph[i][1]);
+                    writer.write("\t");
+                    writer.write(lemma[i]);
+                    writer.write("\t");
+                    writer.write(MSD[i]);
+                    writer.write("\t");
+                    writer.write(morph[i][0]);
+                    writer.write("\t");
+                    writer.write(morph[i][1]);
 
-                    writer.write("\t" + head[i]);
-                    writer.write("\t" + label[i]);
+                    writer.write("\t");
+                    writer.write(head[i]);
+                    writer.write("\t");
+                    writer.write(label[i]);
 
                     writer.write("\n");
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -6202,23 +6199,18 @@ public class Eval
 
     public static void eval(String file)
     {
-        BufferedReader reader = null;
-
-        String line = null;
-        String[] splitted = null;
-
         int tp = 0;
         int cntr = 0;
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (!line.equals(""))
                 {
-                    splitted = line.split("\t");
+                    String[] splitted = line.split("\t");
                     //System.out.println(line);
                     if (splitted[1].equalsIgnoreCase(splitted[3]) && splitted[2].equals(splitted[4]))
                     {
@@ -6251,53 +6243,46 @@ public class Eval
 
     public static void predicateDep(Parser parser, String file, String out)
     {
-        String[] form = null;
-        String[] lemma = null;
-        String[] POS = null;
-        String[] MSD = null;
-        String[] feature = null;
-
-        String[] head = null;
-        String[] label = null;
-
-        String[][] parsed = null;
-
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+
             int cntr = 0;
             for (List<String> sentence : read(file))
             {
                 if (sentence.size() < 100)
                 {
-                    form = getColumn(sentence, 0);
+                    String[] form = getColumn(sentence, 0);
 
-                    // lemma = getColumn(sentence, 2);
-                    lemma = getColumn(sentence, 3);
+                    // String[] lemma = getColumn(sentence, 2);
+                    String[] lemma = getColumn(sentence, 3);
 
-                    // POS = getColumn(sentence, 4);
-                    MSD = getColumn(sentence, 4);
+                    // String[] POS = getColumn(sentence, 4);
+                    String[] MSD = getColumn(sentence, 4);
 
-                    head = getColumn(sentence, 5);
-                    label = getColumn(sentence, 6);
+                    String[] head = getColumn(sentence, 5);
+                    String[] label = getColumn(sentence, 6);
 
-                    parsed = MateParserWrapper.parseSentence(form, lemma, MSD);
+                    String[][] parsed = MateParserWrapper.parseSentence(form, lemma, MSD);
 
                     for (int i = 0; i < form.length; ++i)
                     {
                         writer.write(form[i]);
-                        writer.write("\t" + head[i]);
-                        writer.write("\t" + label[i]);
-                        writer.write("\t" + parsed[i][0]);
-                        writer.write("\t" + parsed[i][1]);
+                        writer.write("\t");
+                        writer.write(head[i]);
+                        writer.write("\t");
+                        writer.write(label[i]);
+                        writer.write("\t");
+                        writer.write(parsed[i][0]);
+                        writer.write("\t");
+                        writer.write(parsed[i][1]);
                         writer.write("\n");
                     }
                     writer.write("\n");
                     System.out.println(++cntr);
                 }
             }
+
             writer.flush();
             writer.close();
         }
@@ -6319,8 +6304,6 @@ public class Eval
     {
         List<List<String>> sentences = read(file);
 
-        String[] splitted = null;
-
         int counter = 0;
 
         int las = 0;
@@ -6330,7 +6313,7 @@ public class Eval
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
                 if (splitted[1].equals(splitted[3]))
                 {
                     ++uas;
@@ -6481,15 +6464,10 @@ public class FxDepParse
     {
         SentenceData09 sentenceData09 = new SentenceData09();
 
-        String s[] = null;
-        String l[] = null;
-        String p[] = null;
-        String f[] = null;
-
-        s = new String[form.length + 1];
-        l = new String[lemma.length + 1];
-        p = new String[pos.length + 1];
-        f = new String[feature.length + 1];
+        String[] s = new String[form.length + 1];
+        String[] l = new String[lemma.length + 1];
+        String[] p = new String[pos.length + 1];
+        String[] f = new String[feature.length + 1];
 
         s[0] = "<root>";
         l[0] = "<root-LEMMA>";
@@ -6549,19 +6527,15 @@ public class FxDepParse
 
     public static List<List<String>> read(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-
-        List<String> sentence = null;
-        List<List<String>> sentences = null;
-
-        sentence = new LinkedList<String>();
-        sentences = new LinkedList<List<String>>();
+        List<List<String>> sentences = new LinkedList<List<String>>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+
+            List<String> sentence = new LinkedList<String>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (!line.equals(""))
                 {
@@ -6588,11 +6562,9 @@ public class FxDepParse
 
     public static void write(List<List<String>> sentences, String file)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
@@ -6699,27 +6671,32 @@ public class FxDepParse
 
         List<List<String>> sentences = read(file);
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pred), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pred), "UTF-8"));
 
             int cntr = 0;
-            String[][] parsed = null;
 
             for (List<String> sentence : sentences)
             {
                 if (sentence.size() < 100)
                 {
-                    parsed = parseSentence(getColumn(sentence, 1), getColumn(sentence, 2), getColumn(sentence, 4), getColumn(sentence, 6));
+                    String[][] parsed = parseSentence(getColumn(sentence, 1),
+                                                      getColumn(sentence, 2),
+                                                      getColumn(sentence, 4),
+                                                      getColumn(sentence, 6));
 
                     for (int i = 0; i < getColumn(sentence, 10).length; ++i)
                     {
                         writer.write(getColumn(sentence, 1)[i]);
-                        writer.write("\t" + getColumn(sentence, 8)[i]);
-                        writer.write("\t" + getColumn(sentence, 10)[i]);
-                        writer.write("\t" + parsed[i][0]);
-                        writer.write("\t" + parsed[i][1]);
+                        writer.write("\t");
+                        writer.write(getColumn(sentence, 8)[i]);
+                        writer.write("\t");
+                        writer.write(getColumn(sentence, 10)[i]);
+                        writer.write("\t");
+                        writer.write(parsed[i][0]);
+                        writer.write("\t");
+                        writer.write(parsed[i][1]);
                         writer.write("\n");
                     }
                     writer.write("\n");
@@ -6748,23 +6725,26 @@ public class FxDepParse
     {
         List<List<String>> sentences = read(WORK_DIR + file);
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + file + ".shorted"), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + file + ".shorted"), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
                 for (int i = 0; i < sentence.size(); ++i)
                 {
                     writer.write(getColumn(sentence, 0)[i]);
-                    writer.write("\t" + getColumn(sentence, 1)[i]);
-                    writer.write("\t" + getColumn(sentence, 8)[i]);
-                    writer.write("\t" + getColumn(sentence, 10)[i]);
+                    writer.write("\t");
+                    writer.write(getColumn(sentence, 1)[i]);
+                    writer.write("\t");
+                    writer.write(getColumn(sentence, 8)[i]);
+                    writer.write("\t");
+                    writer.write(getColumn(sentence, 10)[i]);
                     writer.write("\n");
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -6819,12 +6799,11 @@ public class FxDepParse
 
     public static void evalSentence(String[] parent, String[] pparent, String[] label, String[] plabel, String[] form)
     {
-        Value value = null;
         for (int i = 0; i < parent.length; ++i)
         {
             if (label[i].endsWith("FX") || plabel[i].endsWith("FX"))
             {
-                value = evalToken(parent[i], pparent[i], label[i], plabel[i]);
+                Value value = evalToken(parent[i], pparent[i], label[i], plabel[i]);
 
                 switch (value)
                 {
@@ -6843,8 +6822,7 @@ public class FxDepParse
                         break;
                 }
 
-                // System.err.println(parent[i] + "\t" + pparent[i] + "\t" + label[i]
-                // + "\t" + plabel[i] + "\t" + value + "\t" + form[i]);
+                // System.err.println(parent[i] + "\t" + pparent[i] + "\t" + label[i] + "\t" + plabel[i] + "\t" + value + "\t" + form[i]);
             }
         }
     }
@@ -6859,16 +6837,17 @@ public class FxDepParse
 
         for (List<String> sentence : sentences)
         {
-            evalSentence(getColumn(sentence, 1), getColumn(sentence, 3), getColumn(sentence, 2), getColumn(sentence, 4), getColumn(sentence, 0));
+            evalSentence(getColumn(sentence, 1),
+                         getColumn(sentence, 3),
+                         getColumn(sentence, 2),
+                         getColumn(sentence, 4),
+                         getColumn(sentence, 0));
         }
 
         System.err.println("TP: " + truePositive + "\tFN: " + falseNegative + "\tFP: " + falsePositive);
 
-        float precision = 0.0f;
-        float recall = 0.0f;
-
-        precision = (float) truePositive / (truePositive + falsePositive);
-        recall = (float) truePositive / (truePositive + falseNegative);
+        float precision = (float) truePositive / (truePositive + falsePositive);
+        float recall = (float) truePositive / (truePositive + falseNegative);
 
         System.err.print("P: " + precision);
         System.err.print("\tR: " + recall);
@@ -6881,15 +6860,13 @@ public class FxDepParse
     {
         List<List<String>> sentences = read(file);
 
-        String[] splitted = null;
-
         int counter = 0;
         int las = 0;
         for (List<String> sentence : sentences)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
                 if (splitted[1].equals(splitted[3]) && splitted[2].equals(splitted[4]))
                 {
                     ++las;
@@ -6904,15 +6881,13 @@ public class FxDepParse
     {
         List<List<String>> sentences = read(file);
 
-        String[] splitted = null;
-
         int counter = 0;
         int uas = 0;
         for (List<String> sentence : sentences)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
                 if (splitted[1].equals(splitted[3]))
                 {
                     ++uas;
@@ -6925,33 +6900,30 @@ public class FxDepParse
 
     public static void rewriteAnnotation(String corpusFile, String correctedFile, String out)
     {
-        List<List<String>> corpus = null;
-        List<List<String>> corrected = null;
-
-        corpus = read(WORK_DIR + corpusFile);
-        corrected = read(WORK_DIR + correctedFile);
-        String[] splittedCorpus = null;
-        String[] splittedCorrected = null;
-        Writer writer = null;
+        List<List<String>> corpus = read(WORK_DIR + corpusFile);
+        List<List<String>> corrected = read(WORK_DIR + correctedFile);
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + out), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + out), "UTF-8"));
 
             for (int i = 0; i < corpus.size(); ++i)
             {
                 for (int j = 0; j < corpus.get(i).size(); ++j)
                 {
-                    splittedCorpus = corpus.get(i).get(j).split("\t");
-                    splittedCorrected = corrected.get(i).get(j).split("\t");
+                    String[] splittedCorpus = corpus.get(i).get(j).split("\t");
+                    String[] splittedCorrected = corrected.get(i).get(j).split("\t");
 
                     writer.write(splittedCorpus[0]);
                     for (int k = 1; k < 10; ++k)
                     {
-                        writer.write("\t" + splittedCorpus[k]);
+                        writer.write("\t");
+                        writer.write(splittedCorpus[k]);
                     }
-                    writer.write("\t" + splittedCorrected[3]);
-                    writer.write("\t" + splittedCorrected[3]);
+                    writer.write("\t");
+                    writer.write(splittedCorrected[3]);
+                    writer.write("\t");
+                    writer.write(splittedCorrected[3]);
                     writer.write("\n");
                 }
                 writer.write("\n");
@@ -6976,17 +6948,14 @@ public class FxDepParse
 
     public static int[] getFoldOffsets(String file)
     {
-        BufferedReader bufferedReader = null;
-        String line = null;
-
-        int offset = 0;
-        int sentenceCounter = 0;
-
         try
         {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = bufferedReader.readLine()) != null)
+            int offset = 0;
+            int sentenceCounter = 0;
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 sentenceCounter += Integer.parseInt(line.split("\t")[1]);
                 if ((++offset % 120) == 0)
@@ -6994,6 +6963,7 @@ public class FxDepParse
                     System.out.println(offset + "\t" + sentenceCounter);
                 }
             }
+
             System.out.println(offset);
         }
         catch (FileNotFoundException e)
@@ -7023,21 +6993,14 @@ public class FxDepParse
     {
         List<List<String>> sentences = read(file);
 
-        int[] foldOffsets = null;
-
-        foldOffsets = new int[] { 0, 688, 1470, 2221, 2848, 4113, 4755, 5666, 6961, 8190, sentences.size() };
-
-        Writer testWriter = null;
-        Writer trainWriter = null;
+        int[] foldOffsets = new int[] { 0, 688, 1470, 2221, 2848, 4113, 4755, 5666, 6961, 8190, sentences.size() };
 
         for (int i = 0; i < foldOffsets.length - 1; ++i)
         {
             try
             {
-                testWriter = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream("./data/objfx/10fold-removed-virtuals2/law." + i + ".test"), "UTF8"));
-                trainWriter = new BufferedWriter(new OutputStreamWriter(
-                            new FileOutputStream("./data/objfx/10fold-removed-virtuals2/law." + i + ".train"), "UTF8"));
+                Writer testWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/objfx/10fold-removed-virtuals2/law." + i + ".test"), "UTF-8"));
+                Writer trainWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/objfx/10fold-removed-virtuals2/law." + i + ".train"), "UTF-8"));
 
                 for (int j = 0; j < sentences.size(); ++j)
                 {
@@ -7144,11 +7107,8 @@ public class FXIAA
     {
         boolean inPhrase = false;
 
-        ArrayList<Integer> start = null;
-        ArrayList<Integer> end = null;
-
-        start = new ArrayList<Integer>();
-        end = new ArrayList<Integer>();
+        ArrayList<Integer> start = new ArrayList<Integer>();
+        ArrayList<Integer> end = new ArrayList<Integer>();
 
         for (int i = 0; i < sentence.length; ++i)
         {
@@ -7197,11 +7157,8 @@ public class FXIAA
 
     public static void evalSentence(String[] e, String[] p)
     {
-        Integer[][] ePhrases = null;
-        Integer[][] pPhrases = null;
-
-        ePhrases = getPhrases(e);
-        pPhrases = getPhrases(p);
+        Integer[][] ePhrases = getPhrases(e);
+        Integer[][] pPhrases = getPhrases(p);
 
         for (int i = 0; i < ePhrases.length; ++i)
         {
@@ -7226,20 +7183,15 @@ public class FXIAA
 
     public static List<List<String>> read(String file)
     {
-        BufferedReader reader = null;
-
-        String line = null;
-        List<String> sentence = null;
-        List<List<String>> sentences = null;
-
-        sentence = new ArrayList<String>();
-        sentences = new LinkedList<List<String>>();
+        List<List<String>> sentences = new LinkedList<List<String>>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = reader.readLine()) != null)
+            List<String> sentence = new ArrayList<String>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.equals(""))
                 {
@@ -7319,12 +7271,12 @@ public class SafeReader
         List<String> lines = new LinkedList<>();
 
         BufferedReader reader = null;
+
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
-            String line = null;
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().length() > 0)
                 {
@@ -7412,27 +7364,26 @@ public class SzK25
 
     static Map<String, Set<MorAna>> readLexicon(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
-        Set<MorAna> morAnas = null;
-        String[] splitted = null;
-
         Map<String, Set<MorAna>> lexicon = new TreeMap<String, Set<MorAna>>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
-                morAnas = new TreeSet<MorAna>();
-                splitted = line.split("\t");
+                Set<MorAna> morAnas = new TreeSet<MorAna>();
+
+                String[] splitted = line.split("\t");
                 for (int i = 1; i < splitted.length - 1; i++)
                 {
                     morAnas.add(new MorAna(splitted[i], splitted[i + 1]));
                     i++;
                 }
+
                 lexicon.put(splitted[0], morAnas);
             }
+
             reader.close();
         }
         catch (IOException e)
@@ -7445,16 +7396,13 @@ public class SzK25
 
     public static Map<String, Integer> readIntMap(String file, String encoding, String separator, boolean isCaseSensitive)
     {
-        BufferedReader bufferedReader = null;
         Map<String, Integer> map = new HashMap<String, Integer>();
-
-        String line = null;
-        String[] splitted = null;
 
         try
         {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
-            while ((line = bufferedReader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 line = line.trim();
 
@@ -7463,7 +7411,7 @@ public class SzK25
                     line = line.toLowerCase();
                 }
 
-                splitted = line.split(separator);
+                String[] splitted = line.split(separator);
 
                 if (splitted.length > 1)
                 {
@@ -7481,7 +7429,8 @@ public class SzK25
                     }
                 }
             }
-            bufferedReader.close();
+
+            reader.close();
         }
         catch (UnsupportedEncodingException e)
         {
@@ -7555,19 +7504,13 @@ public class SzK25
      */
     private static String[] splitA(String line)
     {
-        String[] lines = null;
-
-        String[] splittedLine = null;
-        String[] splittedWordForm = null;
-        String[] splittedLemma = null;
-
-        splittedLine = line.split("\t");
+        String[] splittedLine = line.split("\t");
         // word form
-        splittedWordForm = splittedLine[WORD_FORM_INDEX].split(" ");
+        String[] splittedWordForm = splittedLine[WORD_FORM_INDEX].split(" ");
         // lemma
-        splittedLemma = splittedLine[LEMMA_INDEX].split(" ");
+        String[] splittedLemma = splittedLine[LEMMA_INDEX].split(" ");
 
-        lines = new String[splittedWordForm.length];
+        String[] lines = new String[splittedWordForm.length];
 
         for (int i = 0; i < splittedWordForm.length; ++i)
         {
@@ -7602,19 +7545,13 @@ public class SzK25
      */
     private static String[] splitM(String line)
     {
-        String[] lines = null;
-
-        String[] splittedLine = null;
-        String[] splittedWordForm = null;
-        String[] splittedLemma = null;
-
-        splittedLine = line.split("\t");
+        String[] splittedLine = line.split("\t");
         // word form
-        splittedWordForm = splittedLine[WORD_FORM_INDEX].split(" ");
+        String[] splittedWordForm = splittedLine[WORD_FORM_INDEX].split(" ");
         // lemma
-        splittedLemma = splittedLine[LEMMA_INDEX].split(" ");
+        String[] splittedLemma = splittedLine[LEMMA_INDEX].split(" ");
 
-        lines = new String[splittedWordForm.length];
+        String[] lines = new String[splittedWordForm.length];
 
         for (int i = 0; i < splittedWordForm.length; ++i)
         {
@@ -7656,20 +7593,13 @@ public class SzK25
      */
     private static String[] splitN(String line)
     {
-        // result split
-        String[] lines = null;
-
-        String[] splittedLine = null;
-        String[] splittedWordForm = null;
-        String[] splittedLemma = null;
-
-        splittedLine = line.split("\t");
+        String[] splittedLine = line.split("\t");
         // word form
-        splittedWordForm = splittedLine[WORD_FORM_INDEX].split(" ");
+        String[] splittedWordForm = splittedLine[WORD_FORM_INDEX].split(" ");
         // lemma
-        splittedLemma = splittedLine[LEMMA_INDEX].split(" ");
+        String[] splittedLemma = splittedLine[LEMMA_INDEX].split(" ");
 
-        lines = new String[splittedWordForm.length];
+        String[] lines = new String[splittedWordForm.length];
 
         // System.err.println(line);
         for (int i = 0; i < splittedWordForm.length; ++i)
@@ -7704,12 +7634,12 @@ public class SzK25
      */
     private static String[] splitMW(String line)
     {
-        String[] split = null;
-
         if (line.split("\t")[WORD_FORM_INDEX].contains(" "))
         {
             // System.err.println(line.split("\t")[MSD_INDEX]);
             System.err.println(line);
+
+            String[] split = null;
 
             switch (line.split("\t")[MSD_INDEX].charAt(0))
             {
@@ -7751,10 +7681,9 @@ public class SzK25
 
         List<Node> nodes = new LinkedList<Node>();
 
-        Node node = null;
         for (int i = 0; i < nodeList.getLength(); ++i)
         {
-            node = nodeList.item(i);
+            Node node = nodeList.item(i);
             if (node.getAttributes().getNamedItem("type").getTextContent().equals(type))
             {
                 nodes.add(node);
@@ -7776,12 +7705,11 @@ public class SzK25
 
         List<Node> nodes = new LinkedList<Node>();
 
-        Node tempNode = null;
-        String tempNodeName = null;
         for (int i = 0; i < childNodes.getLength(); ++i)
         {
-            tempNode = childNodes.item(i);
-            tempNodeName = tempNode.getNodeName();
+            Node tempNode = childNodes.item(i);
+            String tempNodeName = tempNode.getNodeName();
+
             for (String tagName : tagNames)
             {
                 if (tempNodeName.equals(tagName))
@@ -7842,14 +7770,20 @@ public class SzK25
         NodeList nodes = ((Element) node).getElementsByTagName("ana");
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            writer.write("\t" + getLemma(nodes.item(i)).replace("+", "") + "\t" + getMsd(nodes.item(i)));
+            writer.write("\t");
+            writer.write(getLemma(nodes.item(i)).replace("+", ""));
+            writer.write("\t");
+            writer.write(getMsd(nodes.item(i)));
         }
 
         nodes = ((Element) node).getElementsByTagName("anav");
 
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            writer.write("\t" + getLemma(nodes.item(i)) + "\t" + getMsd(nodes.item(i)));
+            writer.write("\t");
+            writer.write(getLemma(nodes.item(i)));
+            writer.write("\t");
+            writer.write(getMsd(nodes.item(i)));
         }
     }
 
@@ -7867,13 +7801,25 @@ public class SzK25
 
         if (!ResourceHolder.getPunctations().contains(c))
         {
-            writer.write("\t" + node.getTextContent() + "\t" + "K" + "\t"
-                + node.getTextContent() + "\t" + "K");
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write("K");
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write("K");
         }
         else
         {
-            writer.write("\t" + node.getTextContent() + "\t" + node.getTextContent()
-                + "\t" + node.getTextContent() + "\t" + node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
         }
     }
 
@@ -7932,14 +7878,13 @@ public class SzK25
     {
         for (Node node : nodes)
         {
-            writer.write(node.getAttributes().getNamedItem("id").getTextContent() + "\t");
+            writer.write(node.getAttributes().getNamedItem("id").getTextContent());
+            writer.write("\t");
         }
     }
 
     private static void convertXMLtoTXT(String XML, String txt)
     {
-        Document document = null;
-
         if (writer == null)
             try
             {
@@ -7952,7 +7897,7 @@ public class SzK25
 
         try
         {
-            document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(XML));
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(XML));
 
             // "1984"
             // for (Node partDivNode : getNodes(document, "div", "part")) {
@@ -8002,11 +7947,11 @@ public class SzK25
 
     private static String[][] read(String file)
     {
-        List<String> sentence = new ArrayList<String>();
+        List<String[]> sentences = new ArrayList<String[]>();
 
         String s = Util.readFileToString(file);
 
-        List<String[]> sentences = new ArrayList<String[]>();
+        List<String> sentence = new ArrayList<String>();
 
         for (String line : s.split("\n"))
         {
@@ -8028,29 +7973,29 @@ public class SzK25
     {
         String corpus = Util.readFileToString(file);
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
-            String[] split = null;
             for (String line : corpus.split("\n"))
             {
                 if (line.length() > 0)
                 {
                     // split MW
-                    split = splitMW(line);
+                    String[] split = splitMW(line);
                     if (split != null)
                     {
                         // split lines
                         for (String s : split)
                         {
-                            writer.write(s + "\n");
+                            writer.write(s);
+                            writer.write("\n");
                         }
                     }
                     else
                     {
-                        writer.write(line + "\n");
+                        writer.write(line);
+                        writer.write("\n");
                     }
                 }
                 else
@@ -8058,6 +8003,7 @@ public class SzK25
                     writer.write("\n");
                 }
             }
+
             writer.close();
         }
         catch (IOException e)
@@ -8068,21 +8014,21 @@ public class SzK25
 
     private static void writeTrain(String[][] sentences, String out)
     {
-        Writer writer = null;
-
         System.err.println(out);
+
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String[] sentence : sentences)
             {
                 // train
                 for (String token : sentence)
                 {
-                    writer.write(token.split("\t")[WORD_FORM_INDEX].replace(" ", "_")
-                        + "@"
-                        + ResourceHolder.getMSDReducer().reduce(token.split("\t")[MSD_INDEX]) + " ");
+                    writer.write(token.split("\t")[WORD_FORM_INDEX].replace(" ", "_"));
+                    writer.write("@");
+                    writer.write(ResourceHolder.getMSDReducer().reduce(token.split("\t")[MSD_INDEX]));
+                    writer.write(" ");
                 }
                 writer.write("\n");
             }
@@ -8097,10 +8043,9 @@ public class SzK25
 
     private static void writeTest(String[][] sentences, String out)
     {
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String[] sentence : sentences)
             {
@@ -8108,9 +8053,12 @@ public class SzK25
                 {
                     String msd = token.split("\t")[MSD_INDEX].replace("Np", "Nn").replace("Nc", "Nn");
 
-                    writer.write(token.split("\t")[WORD_FORM_INDEX].replace(" ", "_")
-                        + "\t" + token.split("\t")[LEMMA_INDEX].replace(" ", "_") + "\t"
-                        + msd + "\n");
+                    writer.write(token.split("\t")[WORD_FORM_INDEX].replace(" ", "_"));
+                    writer.write("\t");
+                    writer.write(token.split("\t")[LEMMA_INDEX].replace(" ", "_"));
+                    writer.write("\t");
+                    writer.write(msd);
+                    writer.write("\n");
                 }
                 writer.write("\n");
             }
@@ -8159,7 +8107,10 @@ public class SzK25
 
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t" + morAna.getLemma() + "\t" + morAna.getMsd());
+                    writer.write("\t");
+                    writer.write(morAna.getLemma());
+                    writer.write("\t");
+                    writer.write(morAna.getMsd());
                 }
                 writer.write("\n");
             }
@@ -8242,39 +8193,36 @@ public class SzK25
     {
         String[][] sentences = read(file);
 
-        String[] wordform = null;
-        String[] lemma = null;
-        String[] msd = null;
-
-        String[][] pred = null;
-
         int correct = 0;
         int tokenCounter = 0;
 
-        Writer writer = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String[] sentence : sentences)
             {
-                wordform = getColumn(sentence, 0);
-                lemma = getColumn(sentence, 1);
-                msd = getColumn(sentence, 2);
+                String[] wordform = getColumn(sentence, 0);
+                String[] lemma = getColumn(sentence, 1);
+                String[] msd = getColumn(sentence, 2);
 
-                pred = Magyarlanc.morphParseSentence(wordform);
+                String[][] pred = Magyarlanc.morphParseSentence(wordform);
 
                 for (int i = 0; i < pred.length; ++i)
                 {
-                    writer.write(wordform[i] + "\t");
-                    writer.write(lemma[i] + "\t");
-                    writer.write(msd[i] + "\t");
-                    writer.write(pred[i][1] + "\t");
-                    writer.write(pred[i][2] + "\n");
+                    writer.write(wordform[i]);
+                    writer.write("\t");
+                    writer.write(lemma[i]);
+                    writer.write("\t");
+                    writer.write(msd[i]);
+                    writer.write("\t");
+                    writer.write(pred[i][1]);
+                    writer.write("\t");
+                    writer.write(pred[i][2]);
+                    writer.write("\n");
 
                     // if (!lemma[i].equals(pred[i][1]) || !msd[i].equals(pred[i][2])) {
-                    // System.err.println(lemma[i] + "\t" + pred[i][1] + "\t" + msd[i]
-                    // + "\t" + (pred[i][2]));
+                    // System.err.println(lemma[i] + "\t" + pred[i][1] + "\t" + msd[i] + "\t" + (pred[i][2]));
                     // }
 
                     if (lemma[i].equalsIgnoreCase(pred[i][1]) && msd[i].equals(pred[i][2]))
@@ -8283,13 +8231,13 @@ public class SzK25
                     }
                     else
                     {
-                        // System.err.println(wordform[i] + "\t" + lemma[i] + "\t" + msd[i]
-                        // + "\t" + pred[i][1] + "\t" + pred[i][2]);
+                        // System.err.println(wordform[i] + "\t" + lemma[i] + "\t" + msd[i] + "\t" + pred[i][1] + "\t" + pred[i][2]);
                     }
                     ++tokenCounter;
                 }
                 writer.write("\n");
             }
+
             writer.close();
         }
         catch (IOException e)
@@ -8342,7 +8290,7 @@ public class SzK25
             }
         }
 
-        writeMapToFile(map, out, "\t", "utf-8");
+        writeMapToFile(map, out, "\t", "UTF-8");
     }
 
     public static void writeMapToFile(Map<String, Integer> map, String file, String separator, String encoding)
@@ -8358,7 +8306,10 @@ public class SzK25
 
             for (Entry<String, Integer> entry : map.entrySet())
             {
-                writer.write(entry.getKey() + separator + entry.getValue() + "\n");
+                writer.write(entry.getKey());
+                writer.write(separator);
+                writer.write(entry.getValue());
+                writer.write("\n");
             }
 
             writer.close();
@@ -8560,7 +8511,7 @@ public class Tools
         int tokenCounter = 0;
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -8627,7 +8578,7 @@ public class Tools
     {
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (List<List<String>> document : documents)
             {
@@ -8639,7 +8590,10 @@ public class Tools
 
                         writer.write(splitted[0]);
                         for (int i = 1; i < 12; ++i)
-                            writer.write("\t" + splitted[i]);
+                        {
+                            writer.write("\t");
+                            writer.write(splitted[i]);
+                        }
                         writer.write("\n");
                     }
                     writer.write("\n");
@@ -8704,7 +8658,7 @@ public class Tools
     //
     // try {
     // writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
-    // file), "UTF8"));
+    // file), "UTF-8"));
     // for (List<List<String>> document : documents) {
     // for (List<String> sentence : document) {
     // for (String line : sentence) {
@@ -8741,7 +8695,7 @@ public class Tools
 
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
@@ -8752,7 +8706,11 @@ public class Tools
                     {
                         String msd = coNLLFeaturesToMSD.convert(splitted[4], splitted[6]);
 
-                        writer.write(splitted[1] + "@" + msdReducer.reduce(msd) + " ");
+                        writer.write(splitted[1]);
+                        writer.write("@");
+                        writer.write(msdReducer.reduce(msd));
+                        writer.write(" ");
+
                         reduced.add(splitted[13]);
                     }
                 }
@@ -8783,11 +8741,8 @@ public class Tools
 
     public static void validate()
     {
-        MSDToCoNLLFeatures msdToCoNLLFeatures = null;
-        CoNLLFeaturesToMSD coNLLFeaturesToMSD = null;
-
-        msdToCoNLLFeatures = new MSDToCoNLLFeatures();
-        coNLLFeaturesToMSD = new CoNLLFeaturesToMSD();
+        MSDToCoNLLFeatures msdToCoNLLFeatures = new MSDToCoNLLFeatures();
+        CoNLLFeaturesToMSD coNLLFeaturesToMSD = new CoNLLFeaturesToMSD();
 
         MSDReducer msdReducer = new MSDReducer();
 
@@ -8818,10 +8773,6 @@ public class Tools
 
         List<List<List<String>>> documents = readFiles(fileList(path, files, extension));
 
-        String oldFetures = null;
-        String newFeatures = null;
-        String[] splitted = null;
-
         Set<String> ftrs = new TreeSet<String>();
 
         Map<String, Map<String, Integer>> rdcds = new TreeMap<String, Map<String, Integer>>();
@@ -8834,9 +8785,10 @@ public class Tools
             {
                 for (String token : sentence)
                 {
-                    splitted = token.split("\t");
-                    oldFetures = splitted[6];
-                    newFeatures = msdToCoNLLFeatures.convert(splitted[2], splitted[12]);
+                    String[] splitted = token.split("\t");
+
+                    String oldFetures = splitted[6];
+                    String newFeatures = msdToCoNLLFeatures.convert(splitted[2], splitted[12]);
 
                     // new features
                     if (!oldFetures.equals(newFeatures))
@@ -8870,8 +8822,7 @@ public class Tools
                             {
                                 // System.out.println(token);
                             }
-                            // rdcds.add(splitted[12] + "\t" + splitted[13] + "\t"
-                            // + msdReducer.reduce(splitted[12]));
+                            // rdcds.add(splitted[12] + "\t" + splitted[13] + "\t" + msdReducer.reduce(splitted[12]));
                         }
                     }
                     catch (Exception e)
@@ -8920,8 +8871,8 @@ public class Tools
     public static void correct(String file, String out)
     {
         List<List<String>> document = readFile(file);
-        Writer writer = null;
 
+        Writer writer = null;
         try
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
@@ -8985,7 +8936,10 @@ public class Tools
                 {
                     writer.write(splitted[0]);
                     for (int i = 1; i < splitted.length; ++i)
-                        writer.write("\t" + splitted[i]);
+                    {
+                        writer.write("\t");
+                        writer.write(splitted[i]);
+                    }
                     writer.write("\n");
                 }
                 catch (IOException e)
@@ -9002,6 +8956,7 @@ public class Tools
                 e.printStackTrace();
             }
         }
+
         try
         {
             writer.flush();
@@ -9072,7 +9027,10 @@ public class Tools
 
             for (Map.Entry<String, Integer> entry : freqs.entrySet())
             {
-                writer.write(entry.getKey() + "\t" + entry.getValue() + "\n");
+                writer.write(entry.getKey());
+                writer.write("\t");
+                writer.write(entry.getValue());
+                writer.write("\n");
             }
 
             writer.flush();
@@ -9120,7 +9078,10 @@ public class Tools
                 writer.write(entry.getKey());
                 for (MorAna m : entry.getValue())
                 {
-                    writer.write("\t" + m.getLemma() + "\t" + m.getMsd());
+                    writer.write("\t");
+                    writer.write(m.getLemma());
+                    writer.write("\t");
+                    writer.write(m.getMsd());
                 }
                 writer.write("\n");
             }
@@ -9313,17 +9274,14 @@ public class TrainTest
 
     public static Integer[][] apart(Integer[] ids, int n)
     {
-        Integer[][] aparted = null;
+        Integer[][] aparted = new Integer[n][];
 
         int[] offsets = getOffsets(ids, n);
-
-        aparted = new Integer[n][];
-        int index = 0;
 
         for (int i = 0; i < offsets.length - 1; ++i)
         {
             aparted[i] = new Integer[offsets[i + 1] - offsets[i]];
-            index = 0;
+            int index = 0;
             for (int j = offsets[i]; j < offsets[i + 1]; ++j)
             {
                 aparted[i][index] = ids[j];
@@ -9351,21 +9309,17 @@ public class TrainTest
 
     public static List<List<String>> read(String file)
     {
-        BufferedReader reader = null;
-        String line = null;
+        List<List<String>> sentences = new LinkedList<List<String>>();
 
-        List<String> sentence = null;
-        List<List<String>> sentences = null;
-        List<List<List<String>>> documents = null;
-
-        sentence = new LinkedList<String>();
-        sentences = new LinkedList<List<String>>();
-        documents = new LinkedList<List<List<String>>>();
+        List<List<List<String>>> documents = new LinkedList<List<List<String>>>();
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+
+            List<String> sentence = new LinkedList<String>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.equals("--DOCSTART--"))
                 {
@@ -9393,6 +9347,7 @@ public class TrainTest
         {
             e.printStackTrace();
         }
+
         // System.out.println(sentences.size());
         return sentences;
     }
@@ -9411,12 +9366,9 @@ public class TrainTest
 
     public static void write(List<List<String>> sentences, Integer[] ids, String out, boolean removeColumn)
     {
-        Writer writer = null;
-
-        String[] splitted = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (int id : ids)
             {
@@ -9424,17 +9376,19 @@ public class TrainTest
                 {
                     if (removeColumn)
                     {
-                        splitted = token.split("\t");
+                        String[] splitted = token.split("\t");
 
                         writer.write(splitted[0]);
                         for (int i = 1; i < 12; ++i)
                         {
-                            writer.write("\t" + splitted[i]);
+                            writer.write("\t");
+                            writer.write(splitted[i]);
                         }
 
                         for (int i = 13; i < splitted.length; ++i)
                         {
-                            writer.write("\t" + splitted[i]);
+                            writer.write("\t");
+                            writer.write(splitted[i]);
                         }
                     }
                     else
@@ -9445,6 +9399,7 @@ public class TrainTest
                 }
                 writer.write("\n");
             }
+
             writer.flush();
             writer.close();
         }
@@ -9469,11 +9424,10 @@ public class TrainTest
     public static void removeLongSentences(String file, int length)
     {
         List<List<String>> sentences = read(WORK_DIR + CORPUS_DIR + file);
-        Writer writer = null;
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + CORPUS_DIR + length + "_" + file), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + CORPUS_DIR + length + "_" + file), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
@@ -9487,6 +9441,7 @@ public class TrainTest
                     writer.write("\n");
                 }
             }
+
             writer.flush();
             writer.close();
         }
@@ -9516,20 +9471,17 @@ public class TrainTest
         // System.err.println("100<\t" + sentences.size());
 
         List<List<String>> sentences = read(WORK_DIR + CORPUS2_DIR + REMOVED_EMPTY_NODES + file);
-
-        int numberOfSentences = 0;
-        numberOfSentences = sentences.size();
+        int numberOfSentences = sentences.size();
 
         Integer[] ids = randomArray(numberOfSentences);
 
         int n = 0;
         Integer[][] aparts = apart(ids, 10);
-        Integer[] group = null;
 
         // test
         for (int i = 0; i < aparts.length; ++i)
         {
-            group = aparts[i];
+            Integer[] group = aparts[i];
             n += group.length;
             System.err.println("|" + group.length + "|" + "\t" + Arrays.toString(group));
 
@@ -9537,12 +9489,9 @@ public class TrainTest
         }
 
         // train
-        Integer[] trainArray = null;
-        ArrayList<Integer> train = null;
-
         for (int i = 0; i < aparts.length; ++i)
         {
-            train = new ArrayList<Integer>();
+            ArrayList<Integer> train = new ArrayList<Integer>();
             for (int j = 0; j < aparts.length; ++j)
             {
                 if (i != j)
@@ -9551,7 +9500,7 @@ public class TrainTest
                 }
             }
 
-            trainArray = train.toArray(new Integer[train.size()]);
+            Integer[] trainArray = train.toArray(new Integer[train.size()]);
             Arrays.sort(trainArray);
             System.err.println("|" + trainArray.length + "|" + "\t" + Arrays.toString(trainArray));
 
@@ -9573,11 +9522,9 @@ public class TrainTest
 
     public static void write(List<List<String>> sentences, String file)
     {
-        Writer writer = null;
-
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (List<String> sentence : sentences)
             {
@@ -9614,8 +9561,7 @@ public class TrainTest
         // virtualis node-ok eltavolitasa
         try
         {
-            szte.dep.util.RemoveEmptyNodes.processFile(WORK_DIR + CORPUS2_DIR
-                    + file, WORK_DIR + CORPUS2_DIR + REMOVED_EMPTY_NODES + file);
+            szte.dep.util.RemoveEmptyNodes.processFile(WORK_DIR + CORPUS2_DIR + file, WORK_DIR + CORPUS2_DIR + REMOVED_EMPTY_NODES + file);
         }
         catch (IOException e)
         {
@@ -9647,90 +9593,86 @@ public class TrainTest
     public static void preidcate(String testFile, String modelFile, Writer writer)
         throws IOException
     {
-        Parser parser = null;
+        Parser parser = new Parser(new Options(new String[] { "-model", modelFile, "-cores", "1" }));
+
         List<List<String>> sentences = read(testFile);
-        List<String> sentence = null;
-
-        parser = new Parser(new Options(new String[] { "-model", modelFile, "-cores", "1" }));
-        String[][] prediction = null;
-
-        String[] id = null;
-        String[] form = null;
-        String[] lemma = null;
-        String[] plemma = null;
-        String[] pos = null;
-        String[] ppos = null;
-        String[] feat = null;
-        String[] pfeat = null;
-        String[] head = null;
-        String[] rel = null;
-        String[] fx = null;
 
         for (int i = 0; i < sentences.size(); ++i)
         {
             if ((i % 200) == 0)
                 System.out.print(sentences.size() + "/" + i + " ");
 
-            sentence = sentences.get(i);
+            List<String> sentence = sentences.get(i);
 
-            id = getColumn(sentence, 0);
-            form = getColumn(sentence, 1);
-            lemma = getColumn(sentence, 2);
-            plemma = getColumn(sentence, 3);
-            pos = getColumn(sentence, 4);
-            ppos = getColumn(sentence, 5);
-            feat = getColumn(sentence, 6);
-            pfeat = getColumn(sentence, 7);
-            head = getColumn(sentence, 8);
-            // 9
-            rel = getColumn(sentence, 10);
-            // 11
-            fx = getColumn(sentence, 12);
+            String[] id = getColumn(sentence, 0),
+                   form = getColumn(sentence, 1),
+                  lemma = getColumn(sentence, 2),
+                 plemma = getColumn(sentence, 3),
+                    pos = getColumn(sentence, 4),
+                   ppos = getColumn(sentence, 5),
+                   feat = getColumn(sentence, 6),
+                  pfeat = getColumn(sentence, 7),
+                   head = getColumn(sentence, 8),
+                                           // 9
+                    rel = getColumn(sentence, 10),
+                                           // 11
+                     fx = getColumn(sentence, 12);
 
-            // prediction = DParser.parseSentence(getColumn(sentence, 1), getColumn(
-            // sentence, 3), getColumn(sentence, 5), getColumn(sentence, 7), parser);
+            String[][] prediction = null/*!*/;
+            // String[][] prediction = DParser.parseSentence(getColumn(sentence, 1), getColumn(sentence, 3), getColumn(sentence, 5), getColumn(sentence, 7), parser);
 
             for (int j = 0; j < id.length; ++j)
             {
                 writer.write(id[j]);
-                writer.write("\t" + form[j]);
-                writer.write("\t" + lemma[j]);
-                writer.write("\t" + plemma[j]);
-                writer.write("\t" + pos[j]);
-                writer.write("\t" + ppos[j]);
-                writer.write("\t" + feat[j]);
-                writer.write("\t" + pfeat[j]);
+                writer.write("\t");
+                writer.write(form[j]);
+                writer.write("\t");
+                writer.write(lemma[j]);
+                writer.write("\t");
+                writer.write(plemma[j]);
+                writer.write("\t");
+                writer.write(pos[j]);
+                writer.write("\t");
+                writer.write(ppos[j]);
+                writer.write("\t");
+                writer.write(feat[j]);
+                writer.write("\t");
+                writer.write(pfeat[j]);
                 // HEAD
-                writer.write("\t" + head[j]);
-                writer.write("\t" + prediction[j][0]);
+                writer.write("\t");
+                writer.write(head[j]);
+                writer.write("\t");
+                writer.write(prediction[j][0]);
                 // REL
-                writer.write("\t" + rel[j]);
-                writer.write("\t" + prediction[j][1]);
+                writer.write("\t");
+                writer.write(rel[j]);
+                writer.write("\t");
+                writer.write(prediction[j][1]);
                 // FX
-                writer.write("\t" + fx[j]);
+                writer.write("\t");
+                writer.write(fx[j]);
 
                 writer.write("\n");
             }
             writer.write("\n");
         }
+
         System.out.println();
     }
 
     public static void predicateCorpus(String corpus)
     {
-        String testFile = null;
-        String modelFile = null;
-        String predFile = null;
+        String predFile = WORK_DIR + PRED_DIR + corpus + ".dep.fx.pred";
 
-        Writer writer = null;
-        predFile = WORK_DIR + PRED_DIR + corpus + ".dep.fx.pred";
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(predFile), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(predFile), "UTF-8"));
+
             for (int i = 0; i < 10; ++i)
             {
-                testFile = WORK_DIR + TEST_DIR + corpus + ".dep.fx.test." + i;
-                modelFile = WORK_DIR + MODEL_DIR + corpus + ".dep.fx.model." + i;
+                String testFile = WORK_DIR + TEST_DIR + corpus + ".dep.fx.test." + i;
+                String modelFile = WORK_DIR + MODEL_DIR + corpus + ".dep.fx.model." + i;
+
                 System.out.println(testFile + "\t" + modelFile + "\t" + predFile);
                 preidcate(testFile, modelFile, writer);
             }
@@ -9754,32 +9696,33 @@ public class TrainTest
 
     public static void mergeSubCorpuses(String[] subCorpuses, String out)
     {
-        Writer writer = null;
-        List<List<String>> sentences = null;
-        String[] splitted = null;
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + CORPUS_DIR + out), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(WORK_DIR + CORPUS_DIR + out), "UTF-8"));
 
             for (String subCorpus : subCorpuses)
             {
-                sentences = read(WORK_DIR + subCorpus);
+                List<List<String>> sentences = read(WORK_DIR + subCorpus);
+
                 System.err.println(subCorpus + "\t" + sentences.size());
+
                 for (List<String> sentence : sentences)
                 {
                     for (String token : sentence)
                     {
-                        splitted = token.split("\t");
+                        String[] splitted = token.split("\t");
 
                         writer.write(splitted[0]);
                         for (int i = 1; i < 8; ++i)
                         {
-                            writer.write("\t" + splitted[i]);
+                            writer.write("\t");
+                            writer.write(splitted[i]);
                         }
 
                         for (int i = 10; i < splitted.length; ++i)
                         {
-                            writer.write("\t" + splitted[i]);
+                            writer.write("\t");
+                            writer.write(splitted[i]);
                         }
 
                         writer.write("\n");
@@ -9811,20 +9754,20 @@ public class TrainTest
     {
         List<List<String>> sentences = read(WORK_DIR + PRED_DIR + file);
 
-        String[] splitted = null;
-
         int counter = 0;
         int las = 0;
-        int uas = 0;
+
         for (List<String> sentence : sentences)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
-                if (splitted[2].equals(splitted[3]) && splitted[4].equals(splitted[5])
-                        && splitted[6].equals(splitted[7])
-                        && splitted[8].equals(splitted[9])
-                        && splitted[10].equals(splitted[11]))
+                String[] splitted = token.split("\t");
+
+                if (splitted[2].equals(splitted[3])
+                 && splitted[4].equals(splitted[5])
+                 && splitted[6].equals(splitted[7])
+                 && splitted[8].equals(splitted[9])
+                 && splitted[10].equals(splitted[11]))
                 {
                     ++las;
                 }
@@ -9839,15 +9782,15 @@ public class TrainTest
     {
         List<List<String>> sentences = read(WORK_DIR + PRED_DIR + file);
 
-        String[] splitted = null;
-
         int counter = 0;
         int uas = 0;
+
         for (List<String> sentence : sentences)
         {
             for (String token : sentence)
             {
-                splitted = token.split("\t");
+                String[] splitted = token.split("\t");
+
                 if (splitted[8].equals(splitted[9]))
                 {
                     ++uas;
@@ -9904,31 +9847,40 @@ public class CoNLLFeaturesToMSD
      * important that the second, fifth etc. characters are empty, that means it
      * has no value, the represtation in the MSD is a - sign.
      */
-    private final static String NOUN_PATTERN = "SubPOS||Num|Cas||||NumP|PerP|NumPd";
-    private final static String VERB_PATTERN = "SubPOS|Mood|Tense|Per|Num||||Def";
-    private final static String ADJ_PATTERN = "SubPOS|Deg||Num|Cas|||||NumP|PerP|NumPd";
-    private final static String PRONOUN_PATTERN = "SubPOS|Per||Num|Cas|NumP|||||||||PerP|NumPd";
-    private final static String ARTICLE_PATTERN = "SubPOS";
-    private final static String ADVERB_PATTERN = "SubPOS|Deg|Clitic|Num|Per";
-    private final static String ADPOSITION_PATTERN = "SubPOS";
-    private final static String CONJUNCTION_PATTERN = "SubPOS|Form|Coord";
-    private final static String NUMERAL_PATTERN = "SubPOS||Num|Cas|Form|||||NumP|PerP|NumPd";
-    private final static String INTERJECTION_PATTERN = "SubPOS";
-    private final static String OTHER_PATTERN = "SubPOS|Type||Num|Cas||||NumP|PerP|NumPd";
+    private static final Map<String, Integer>
+                nounMap = patternToMap("SubPOS||Num|Cas||||NumP|PerP|NumPd"),
+                verbMap = patternToMap("SubPOS|Mood|Tense|Per|Num||||Def"),
+                 adjMap = patternToMap("SubPOS|Deg||Num|Cas|||||NumP|PerP|NumPd"),
+             pronounMap = patternToMap("SubPOS|Per||Num|Cas|NumP|||||||||PerP|NumPd"),
+             articleMap = patternToMap("SubPOS"),
+              adverbMap = patternToMap("SubPOS|Deg|Clitic|Num|Per"),
+          adpositionMap = patternToMap("SubPOS"),
+         conjunctionMap = patternToMap("SubPOS|Form|Coord"),
+             numeralMap = patternToMap("SubPOS||Num|Cas|Form|||||NumP|PerP|NumPd"),
+        interjectionMap = patternToMap("SubPOS"),
+               otherMap = patternToMap("SubPOS|Type||Num|Cas||||NumP|PerP|NumPd");
 
-    private static Map<String, Integer> nounMap = null;
-    private static Map<String, Integer> verbMap = null;
-    private static Map<String, Integer> adjMap = null;
-    private static Map<String, Integer> pronounMap = null;
-    private static Map<String, Integer> articleMap = null;
-    private static Map<String, Integer> adverbMap = null;
-    private static Map<String, Integer> adpositionMap = null;
-    private static Map<String, Integer> conjunctionMap = null;
-    private static Map<String, Integer> numeralMap = null;
-    private static Map<String, Integer> interjectionMap = null;
-    private static Map<String, Integer> otherMap = null;
+    /**
+     * convert the pattern to map, that contains the position of the feature in
+     * the MSD code for ex. the noun map will be {SubPOS=1, Num=3, Cas=4, NumP=8,
+     * PerP=9, NumPd=10}
+     */
+    private static Map<String, Integer> patternToMap(String pattern)
+    {
+        Map<String, Integer> map = new TreeMap<String, Integer>();
 
-    private Set<String> possibleFeatures = null;
+        String[] splitted = pattern.split("\\|");
+
+        for (int i = 0; i < splitted.length; ++i)
+        {
+            if (!splitted[i].equals(""))
+                map.put(splitted[i], i + 1);
+        }
+
+        return map;
+    }
+
+    private Set<String> possibleFeatures;
 
     public CoNLLFeaturesToMSD()
     {
@@ -9944,23 +9896,6 @@ public class CoNLLFeaturesToMSD
         {
             this.getPossibleFeatures().add(feature);
         }
-
-        initMaps();
-    }
-
-    private void initMaps()
-    {
-        nounMap = patternToMap(NOUN_PATTERN);
-        verbMap = patternToMap(VERB_PATTERN);
-        adjMap = patternToMap(ADJ_PATTERN);
-        pronounMap = patternToMap(PRONOUN_PATTERN);
-        articleMap = patternToMap(ARTICLE_PATTERN);
-        adverbMap = patternToMap(ADVERB_PATTERN);
-        adpositionMap = patternToMap(ADPOSITION_PATTERN);
-        conjunctionMap = patternToMap(CONJUNCTION_PATTERN);
-        numeralMap = patternToMap(NUMERAL_PATTERN);
-        interjectionMap = patternToMap(INTERJECTION_PATTERN);
-        otherMap = patternToMap(OTHER_PATTERN);
     }
 
     private void setPossibleFeatures(Set<String> possibleFeatures)
@@ -9971,26 +9906,6 @@ public class CoNLLFeaturesToMSD
     private Set<String> getPossibleFeatures()
     {
         return possibleFeatures;
-    }
-
-    /**
-     * convert the pattern to map, that contains the position of the feature in
-     * the MSD code for ex. the noun map will be {SubPOS=1, Num=3, Cas=4, NumP=8,
-     * PerP=9, NumPd=10}
-     */
-    private Map<String, Integer> patternToMap(String pattern)
-    {
-        Map<String, Integer> map = new TreeMap<String, Integer>();
-
-        String[] splitted = pattern.split("\\|");
-
-        for (int i = 0; i < splitted.length; ++i)
-        {
-            if (!splitted[i].equals(""))
-                map.put(splitted[i], i + 1);
-        }
-
-        return map;
     }
 
     /**
@@ -10016,13 +9931,10 @@ public class CoNLLFeaturesToMSD
     private Map<String, String> getFeaturesMap(String features)
     {
         Map<String, String> featuresMap = new LinkedHashMap<String, String>();
-        String[] pair = null;
 
-        String[] splitted = features.split("\\|");
-
-        for (String feature : splitted)
+        for (String feature : features.split("\\|"))
         {
-            pair = feature.split("=");
+            String[] pair = feature.split("=");
 
             if (pair.length != 2)
             {
@@ -10213,11 +10125,11 @@ public class KRToMSD
     public String getPostPLemma(String analysis)
     {
         if (analysis.startsWith("$én/NOUN<POSTP<")
-                || analysis.startsWith("$te/NOUN<POSTP<")
-                || analysis.startsWith("$ők/NOUN<POSTP<")
-                || analysis.startsWith("$mi/NOUN<POSTP<")
-                || analysis.startsWith("$ti/NOUN<POSTP<")
-                || analysis.startsWith("$ők/NOUN<POSTP<"))
+         || analysis.startsWith("$te/NOUN<POSTP<")
+         || analysis.startsWith("$ők/NOUN<POSTP<")
+         || analysis.startsWith("$mi/NOUN<POSTP<")
+         || analysis.startsWith("$ti/NOUN<POSTP<")
+         || analysis.startsWith("$ők/NOUN<POSTP<"))
         {
             String post = null;
 
@@ -10255,8 +10167,7 @@ public class KRToMSD
             String affix = analysis.substring(15);
             affix = affix.substring(0, affix.indexOf(">")).toLowerCase();
 
-            // alá, alatt, alól, által, elő, előb, ellen, elől, előtt, iránt, után
-            // (pl.: ezután)
+            // alá, alatt, alól, által, elő, előb, ellen, elől, előtt, iránt, után (pl.: ezután)
             if (analysis.contains("(i)"))
             {
                 if (affix.startsWith("a") || affix.startsWith("á")
@@ -11274,19 +11185,14 @@ public class KRToMSD
 
     public Set<MorAna> getMSD(String krAnalysis)
     {
-        Set<MorAna> analisis = null;
-        String lemma = null;
-        String stem = null;
-        String krCode = null;
-        String krRoot = null;
-        String msd = null;
+        Set<MorAna> analisis = new TreeSet<MorAna>();
 
-        analisis = new TreeSet<MorAna>();
-
-        krRoot = KRUtils.getRoot(krAnalysis);
-        lemma = krRoot.substring(1, krRoot.indexOf("/"));
+        String krRoot = KRUtils.getRoot(krAnalysis);
+        String lemma = krRoot.substring(1, krRoot.indexOf("/"));
 
         // $forog(-.)/VERB[CAUS](at)/VERB[FREQ](gat)/VERB<PAST><PERS<1>>
+
+        String stem = null;
 
         if (krAnalysis.contains("(") && krAnalysis.indexOf("(") < krAnalysis.indexOf("/"))
         {
@@ -11301,7 +11207,7 @@ public class KRToMSD
             stem = krAnalysis.substring(1, krAnalysis.indexOf("/"));
         }
 
-        krCode = krRoot.substring(krRoot.indexOf("/") + 1);
+        String krCode = krRoot.substring(krRoot.indexOf("/") + 1);
 
         if (!krAnalysis.contains("[FREQ]") && krAnalysis.contains("[CAUS]") & krAnalysis.contains("<MODAL>"))
         {
@@ -11315,6 +11221,8 @@ public class KRToMSD
                 return analisis;
             }
         }
+
+        String msd = null;
 
         if (krCode.startsWith("NOUN"))
         {
@@ -11397,37 +11305,43 @@ public class KRToMSD
                 analisis.add(new MorAna(lemma, msd.replace('d', 'g')));
             }
         }
+
         if (krCode.startsWith("ART"))
         {
-            /*
-             * definite/indefinte
-             */
+            // definite/indefinte
             analisis.add(new MorAna(lemma, "T"));
         }
+
         if (krCode.startsWith("ADV"))
         {
             analisis.add(new MorAna(lemma, convertAdverb(krCode)));
         }
+
         if (krCode.startsWith("POSTP"))
         {
             analisis.add(new MorAna(lemma, "St"));
         }
+
         if (krCode.startsWith("CONJ"))
         {
             analisis.add(new MorAna(lemma, "Ccsp"));
         }
+
         if (krCode.startsWith("UTT-INT"))
         {
             analisis.add(new MorAna(lemma, "I"));
         }
+
         if (krCode.startsWith("PREV"))
         {
             analisis.add(new MorAna(lemma, "Rp"));
         }
+
         if (krCode.startsWith("DET"))
         {
             analisis.add(new MorAna(lemma, "Pd3-sn"));
         }
+
         if (krCode.startsWith("ONO"))
         {
             analisis.add(new MorAna(lemma, "X"));
@@ -11458,6 +11372,7 @@ public class KRToMSD
         {
             this.getCache().put(krCode, new TreeSet<String>());
         }
+
         for (MorAna m : analisis)
         {
             this.getCache().get(krCode).add(m.getMsd());
@@ -11536,16 +11451,10 @@ public class KRUtils
      */
     private static String findPattern(String text, String pattern, int group)
     {
-        Pattern p = null;
-        Matcher m = null;
-        MatchResult mr = null;
-
-        p = Pattern.compile(pattern);
-        m = p.matcher(text);
+        Matcher m = Pattern.compile(pattern).matcher(text);
         m.find();
-        mr = m.toMatchResult();
 
-        return mr.group(group);
+        return m.group(group);
     }
 
     /**
@@ -11563,20 +11472,11 @@ public class KRUtils
 
     private static List<String> findPatterns(String text, String pattern)
     {
-        Pattern p = null;
-        Matcher m = null;
-        MatchResult mr = null;
-        boolean find = false;
         List<String> found = new LinkedList<String>();
 
-        p = Pattern.compile(pattern);
-        m = p.matcher(text);
-        find = m.find();
-        while (find)
+        for (Matcher m = Pattern.compile(pattern).matcher(text); m.find(); )
         {
-            mr = m.toMatchResult();
-            found.add(mr.group(1));
-            find = m.find();
+            found.add(m.group(1));
         }
 
         return found;
@@ -11603,10 +11503,6 @@ public class KRUtils
         }
 
         String root = null;
-        String vegsoto = null;
-        String igekoto = "";
-        String[] tovek;
-        boolean ikes = false;
 
         if (!morph.contains("/"))
         {
@@ -11614,6 +11510,8 @@ public class KRUtils
         }
         else
         {
+            String igekoto = "";
+
             // igekoto
             if (morph.contains("/PREV+"))
             {
@@ -11621,10 +11519,11 @@ public class KRUtils
                 morph = morph.split("/PREV\\+")[1];
             }
 
-            tovek = morph.split("/");
+            String[] tovek = morph.split("/");
             tovek = preProcess(tovek);
 
-            vegsoto = findPatterns(tovek[0], "^([^\\(\\/]*)").get(0);
+            String vegsoto = findPatterns(tovek[0], "^([^\\(\\/]*)").get(0);
+            boolean ikes = false;
 
             List<String> feladatok;
 
@@ -11702,18 +11601,21 @@ public class KRUtils
                     }
                 }
             }
+
             String ikveg = ikes ? "ik" : "";
             root = igekoto + vegsoto + ikveg + "/" + tovek[tovek.length - 1];
+
             for (String rep : findPatterns(root, "(\\([^\\)]*\\))"))
             {
                 root = root.replace(rep, "");
             }
         }
+
         root = root.replace("!", "");
         root = root.replace("@", "");
         root = root.replace("$", "");
-        root = "$" + root;
-        return root;
+
+        return "$" + root;
     }
 
     private static String[] preProcess(String[] tovek)
@@ -13330,13 +13232,12 @@ public class MSDToCoNLLFeatures
             e.printStackTrace();
         }
 
-        Util.writeMapToFile(sorted, f, ResourceHolder.getEncoding());
+        Util.writeMapToFile(sorted, f, "UTF-8");
     }
 
     public String[] convertArray(String[] forms, String[] MSDs)
     {
-        String features[] = null;
-        features = new String[forms.length];
+        String[] features = new String[forms.length];
 
         for (int i = 0; i < forms.length; ++i)
         {
@@ -13469,7 +13370,7 @@ public class CompoundWord
         for (int i = 2; i < compoundWord.length() - 1; ++i)
         {
             if (ResourceHolder.getRFSA().analyse(compoundWord.substring(0, i)).size() > 0
-                    && ResourceHolder.getRFSA().analyse(compoundWord.substring(i, compoundWord.length())).size() > 0)
+                    && ResourceHolder.getRFSA().analyse(compoundWord.substring(i)).size() > 0)
             {
                 return true;
             }
@@ -13483,7 +13384,7 @@ public class CompoundWord
         for (int i = 2; i < compoundWord.length() - 1; ++i)
         {
             if (ResourceHolder.getRFSA().analyse(compoundWord.substring(0, i)).size() > 0
-                    && ResourceHolder.getRFSA().analyse(compoundWord.substring(i, compoundWord.length())).size() > 0)
+                    && ResourceHolder.getRFSA().analyse(compoundWord.substring(i)).size() > 0)
             {
                 return i;
             }
@@ -13501,14 +13402,8 @@ public class CompoundWord
     {
         LinkedHashSet<String> analises = new LinkedHashSet<String>();
 
-        Collection<String> firstAnalises = null;
-        Collection<String> secondAnalises = null;
-
-        firstAnalises = ResourceHolder.getRFSA().analyse(firstPart);
-        secondAnalises = ResourceHolder.getRFSA().analyse(secondPart);
-
-        String firstPartKR = null;
-        String secondPartKR = null;
+        Collection<String> firstAnalises = ResourceHolder.getRFSA().analyse(firstPart);
+        Collection<String> secondAnalises = ResourceHolder.getRFSA().analyse(secondPart);
 
         if (firstAnalises.size() > 0 && secondAnalises.size() > 0)
         {
@@ -13516,8 +13411,8 @@ public class CompoundWord
             {
                 for (String s : secondAnalises)
                 {
-                    firstPartKR = KRUtils.getRoot(f);
-                    secondPartKR = KRUtils.getRoot(s);
+                    String firstPartKR = KRUtils.getRoot(f);
+                    String secondPartKR = KRUtils.getRoot(s);
 
                     if (isCompatibleAnalyises(firstPartKR, secondPartKR))
                     {
@@ -13539,54 +13434,44 @@ public class CompoundWord
 
     public static LinkedHashSet<String> analyseCompoundWord(String compoundWord)
     {
-        LinkedHashSet<String> analises = new LinkedHashSet<String>();
-
-        String firstPart = null;
-        String secondPart = null;
-
-        int bisectIndex = 0;
-
         // 2 részre vágható van elemzés
         if (isBisectable(compoundWord))
         {
-            bisectIndex = bisectIndex(compoundWord);
-            firstPart = compoundWord.substring(0, bisectIndex);
+            int bisectIndex = bisectIndex(compoundWord);
+            String firstPart = compoundWord.substring(0, bisectIndex);
             // System.out.println(firstPart);
-            secondPart = compoundWord.substring(bisectIndex, compoundWord.length());
+            String secondPart = compoundWord.substring(bisectIndex);
             // System.out.println(secondPart);
-            analises = getCompatibleAnalises(firstPart, secondPart);
+            return getCompatibleAnalises(firstPart, secondPart);
         }
 
+        LinkedHashSet<String> analises = new LinkedHashSet<String>();
+
         // ha nem bontható 2 részre
-        else
+        for (int i = 2; i < compoundWord.length() - 1; ++i)
         {
-            for (int i = 2; i < compoundWord.length() - 1; ++i)
+            String firstPart = compoundWord.substring(0, i);
+            String secondPart = compoundWord.substring(i);
+
+            Collection<String> firstPartAnalises = ResourceHolder.getRFSA().analyse(firstPart);
+            if (firstPartAnalises.size() > 0)
             {
-                firstPart = compoundWord.substring(0, i);
-                secondPart = compoundWord.substring(i, compoundWord.length());
-
-                Collection<String> firstPartAnalises = ResourceHolder.getRFSA().analyse(firstPart);
-                if (firstPartAnalises.size() > 0)
+                // ha a második rész két részre bontható
+                if (isBisectable(secondPart))
                 {
-                    // ha a második rész két részre bontható
-                    if (isBisectable(secondPart))
-                    {
-                        LinkedHashSet<String> secondPartAnalises = null;
-                        String firstPartOfSecondSection = null;
-                        String secondPartOfSecondSection = null;
-                        bisectIndex = bisectIndex(secondPart);
-                        firstPartOfSecondSection = secondPart.substring(0, bisectIndex);
-                        secondPartOfSecondSection = secondPart.substring(bisectIndex, secondPart.length());
-                        secondPartAnalises = getCompatibleAnalises(firstPartOfSecondSection, secondPartOfSecondSection);
+                    int bisectIndex = bisectIndex(secondPart);
+                    String firstPartOfSecondSection = secondPart.substring(0, bisectIndex);
+                    String secondPartOfSecondSection = secondPart.substring(bisectIndex);
 
-                        for (String firstAnalyse : firstPartAnalises)
+                    LinkedHashSet<String> secondPartAnalises = getCompatibleAnalises(firstPartOfSecondSection, secondPartOfSecondSection);
+
+                    for (String firstAnalyse : firstPartAnalises)
+                    {
+                        for (String secondAnalyse : secondPartAnalises)
                         {
-                            for (String secondAnalyse : secondPartAnalises)
+                            if (isCompatibleAnalyises(KRUtils.getRoot(firstAnalyse), KRUtils.getRoot(secondAnalyse)))
                             {
-                                if (isCompatibleAnalyises(KRUtils.getRoot(firstAnalyse), KRUtils.getRoot(secondAnalyse)))
-                                {
-                                    analises.add(KRUtils.getRoot(secondAnalyse).replace("$", "$" + firstPart));
-                                }
+                                analises.add(KRUtils.getRoot(secondAnalyse).replace("$", "$" + firstPart));
                             }
                         }
                     }
@@ -13677,14 +13562,9 @@ public class HyphenicWord
             return analises;
         }
 
-        String firstPart = null;
-        String secondPart = null;
-
-        int hyphenPosition = 0;
-
-        hyphenPosition = hyphenicCompoundWord.indexOf('-');
-        firstPart = hyphenicCompoundWord.substring(0, hyphenPosition);
-        secondPart = hyphenicCompoundWord.substring(hyphenPosition + 1, hyphenicCompoundWord.length());
+        int hyphenPosition = hyphenicCompoundWord.indexOf('-');
+        String firstPart = hyphenicCompoundWord.substring(0, hyphenPosition);
+        String secondPart = hyphenicCompoundWord.substring(hyphenPosition + 1);
 
         // a kötőjel előtti és a kötőjel utáni résznek is van elemzése (pl.: adat-kezelőt)
         if (CompoundWord.isBisectable(firstPart + secondPart))
@@ -13697,15 +13577,11 @@ public class HyphenicWord
         {
             Collection<String> firstPartAnalises = ResourceHolder.getRFSA().analyse(firstPart);
 
-            String firstPartOfSecondSection = null;
-            String secondPartOfSecondSection = null;
-            LinkedHashSet<String> secondSectionAnalises = null;
-            int bisectIndex = 0;
-            bisectIndex = CompoundWord.bisectIndex(secondPart);
-            firstPartOfSecondSection = secondPart.substring(0, bisectIndex);
-            secondPartOfSecondSection = secondPart.substring(bisectIndex, secondPart.length());
+            int bisectIndex = CompoundWord.bisectIndex(secondPart);
+            String firstPartOfSecondSection = secondPart.substring(0, bisectIndex);
+            String secondPartOfSecondSection = secondPart.substring(bisectIndex);
 
-            secondSectionAnalises = CompoundWord.getCompatibleAnalises(firstPartOfSecondSection, secondPartOfSecondSection);
+            LinkedHashSet<String> secondSectionAnalises = CompoundWord.getCompatibleAnalises(firstPartOfSecondSection, secondPartOfSecondSection);
 
             for (String firstAnalyse : firstPartAnalises)
             {
@@ -13727,16 +13603,11 @@ public class HyphenicWord
         {
             Collection<String> secondPartAnalises = ResourceHolder.getRFSA().analyse(secondPart);
 
-            String firstSectionOfFirstPart = null;
-            String secondSectionOfFirstPart = null;
-            LinkedHashSet<String> firstPartAnalises = null;
-            int bisectIndex = 0;
+            int bisectIndex = CompoundWord.bisectIndex(firstPart);
+            String firstSectionOfFirstPart = firstPart.substring(0, bisectIndex);
+            String secondSectionOfFirstPart = firstPart.substring(bisectIndex);
 
-            bisectIndex = CompoundWord.bisectIndex(firstPart);
-            firstSectionOfFirstPart = firstPart.substring(0, bisectIndex);
-            secondSectionOfFirstPart = firstPart.substring(bisectIndex, firstPart.length());
-
-            firstPartAnalises = CompoundWord.getCompatibleAnalises(firstSectionOfFirstPart, secondSectionOfFirstPart);
+            LinkedHashSet<String> firstPartAnalises = CompoundWord.getCompatibleAnalises(firstSectionOfFirstPart, secondSectionOfFirstPart);
 
             for (String firstAnalyse : firstPartAnalises)
             {
@@ -14037,15 +13908,10 @@ public class NumberGuesser
      */
     public static Set<MorAna> guess(String number)
     {
-        Matcher matcher = null;
-
         Set<MorAna> stemSet = new TreeSet<MorAna>();
 
-        String root = null;
-        String suffix = null;
-
         // base number pattern
-        matcher = PATTERN_0.matcher(number);
+        Matcher matcher = PATTERN_0.matcher(number);
         if (!matcher.matches())
         {
             return stemSet;
@@ -14055,10 +13921,11 @@ public class NumberGuesser
 
         if (matcher.matches())
         {
-            root = matcher.group(1);
+            String root = matcher.group(1);
             // group 3!!!
             // 386-osok (386-(os))(ok)
-            suffix = matcher.group(3);
+            String suffix = matcher.group(3);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14088,8 +13955,9 @@ public class NumberGuesser
         matcher = PATTERN_3.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(3);
+            String root = matcher.group(1);
+            String suffix = matcher.group(3);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14108,8 +13976,9 @@ public class NumberGuesser
         matcher = PATTERN_4.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14130,8 +13999,9 @@ public class NumberGuesser
         {
             if (Integer.parseInt(matcher.group(2)) < 24 && Integer.parseInt(matcher.group(3)) < 60)
             {
-                root = matcher.group(1);
-                suffix = matcher.group(4);
+                String root = matcher.group(1);
+                String suffix = matcher.group(4);
+
                 if (suffix.length() > 0)
                     for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                     {
@@ -14149,8 +14019,9 @@ public class NumberGuesser
         matcher = PATTERN_5.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14186,8 +14057,9 @@ public class NumberGuesser
 
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14206,8 +14078,9 @@ public class NumberGuesser
         matcher = PATTERN_10.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14226,8 +14099,9 @@ public class NumberGuesser
         matcher = PATTERN_11.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
             {
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
@@ -14252,8 +14126,9 @@ public class NumberGuesser
         matcher = PATTERN_12.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
             {
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
@@ -14283,8 +14158,8 @@ public class NumberGuesser
 
         if (matcher.matches())
         {
-            root = matcher.group(2);
-            suffix = matcher.group(4);
+            String root = matcher.group(2);
+            String suffix = matcher.group(4);
 
             if (suffix.length() > 0)
             {
@@ -14320,8 +14195,8 @@ public class NumberGuesser
 
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
 
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
@@ -14341,8 +14216,9 @@ public class NumberGuesser
         matcher = PATTERN_13.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14361,8 +14237,9 @@ public class NumberGuesser
         matcher = PATTERN_14.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(2);
+            String root = matcher.group(1);
+            String suffix = matcher.group(2);
+
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
                 {
@@ -14381,8 +14258,8 @@ public class NumberGuesser
         matcher = PATTERN_15.matcher(number);
         if (matcher.matches())
         {
-            root = matcher.group(1);
-            suffix = matcher.group(3);
+            String root = matcher.group(1);
+            String suffix = matcher.group(3);
 
             if (suffix.length() > 0)
                 for (MorAna stem : MorPhonGuesser.guess(root, suffix))
@@ -14479,26 +14356,20 @@ public class MainPartOfSpeech
 {
     static Pattern pattern = Pattern.compile("(.*@)(.*)");
 
-    public static String readTrain(String file, String encoding, String out)
+    public static void readTrain(String file, String encoding, String out)
     {
-        BufferedReader reader = null;
-        Writer writer = null;
-        String line = null;
-
-        String[] splitted = null;
-        Matcher matcher = null;
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), encoding));
 
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                splitted = line.split(" ");
+                String[] splitted = line.split(" ");
 
                 for (int i = 0; i < splitted.length; ++i)
                 {
-                    matcher = pattern.matcher(splitted[i]);
+                    Matcher matcher = pattern.matcher(splitted[i]);
                     if (matcher.matches())
                     {
                         splitted[i] = matcher.group(1) + matcher.group(2).charAt(0);
@@ -14511,10 +14382,12 @@ public class MainPartOfSpeech
 
                 for (String s : splitted)
                 {
-                    writer.write(s + " ");
+                    writer.write(s);
+                    writer.write(" ");
                 }
                 writer.write("\n");
             }
+
             reader.close();
             writer.close();
         }
@@ -14522,8 +14395,6 @@ public class MainPartOfSpeech
         {
             e.printStackTrace();
         }
-
-        return null;
     }
 
     public static void main(String[] args)
@@ -14549,16 +14420,12 @@ public class HungarianMorphology
 {
     public static String[] getPossibleTags(String word, Set<String> possibleTags)
     {
-        Set<MorAna> morAnas = null;
-        Set<String> res = null;
-        String reduced = null;
-
-        morAnas = HunLemMor.getMorphologicalAnalyses(word);
-        res = new HashSet<String>();
+        Set<MorAna> morAnas = HunLemMor.getMorphologicalAnalyses(word);
+        Set<String> res = new HashSet<String>();
 
         for (MorAna morAna : morAnas)
         {
-            reduced = ResourceHolder.getMSDReducer().reduce(morAna.getMsd());
+            String reduced = ResourceHolder.getMSDReducer().reduce(morAna.getMsd());
             if (possibleTags.contains(reduced))
             {
                 res.add(reduced);
@@ -14575,14 +14442,12 @@ public class HungarianMorphology
 
     public static List<TaggedWord> recoverTags(List<TaggedWord> sentence)
     {
-        Set<MorAna> set = null;
         for (TaggedWord tw : sentence)
         {
-            set = HunLemMor.getMorphologicalAnalyses(tw.word());
             int max = -1;
             MorAna argmax = null;
 
-            for (MorAna morAna : set)
+            for (MorAna morAna : HunLemMor.getMorphologicalAnalyses(tw.word()))
             {
                 int freq = ResourceHolder.getFrequencies().containsKey(morAna.getMsd()) ? ResourceHolder.getFrequencies().get(morAna.getMsd()) : 0;
 
@@ -14644,31 +14509,35 @@ public class CoNLLPredicate
 
     private static void predicate(String[][][] sentences, String out)
     {
-        CoNLLSentence coNLLSentence = null;
-        String[] form = null;
-        String[][] morph = null;
-
-        BufferedWriter bufferedWriter = null;
         try
         {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String[][] sentence : sentences)
             {
-                coNLLSentence = new CoNLLSentence(sentence);
-                form = removeEmpty(coNLLSentence.getForm());
+                CoNLLSentence coNLLSentence = new CoNLLSentence(sentence);
 
-                morph = Magyarlanc.morphParseSentence(form);
+                String[] form = removeEmpty(coNLLSentence.getForm());
+                String[][] morph = Magyarlanc.morphParseSentence(form);
 
                 for (int i = 0; i < form.length; ++i)
                 {
-                    bufferedWriter.write((form[i] + "\t" + morph[i][1] + "\t" + morph[i][2] + "\n"));
-                    // bufferedWriter.write((form[i] + "\t" + morph[i][2] + "\n"));
+                    writer.write(form[i]);
+                    writer.write("\t");
+                    writer.write(morph[i][1]);
+                    writer.write("\t");
+                    writer.write(morph[i][2]);
+                    writer.write("\n");
+                    // writer.write((form[i]);
+                    // writer.write("\t");
+                    // writer.write(morph[i][2]);
+                    // writer.write("\n"));
                 }
-                bufferedWriter.write("\n");
+                writer.write("\n");
             }
-            bufferedWriter.flush();
-            bufferedWriter.close();
+
+            writer.flush();
+            writer.close();
         }
         catch (UnsupportedEncodingException e)
         {
@@ -14684,10 +14553,10 @@ public class CoNLLPredicate
         }
     }
 
-    public static int szam = 9;
-
     public static void main(String[] args)
     {
+        int szam = 9;
+
         predicate(CoNLLUtil.read("./data/newspaper/newspaper.conll2009_test" + szam), "./data/newspaper/newspaper.conll2009_test" + szam + ".pred2");
     }
 }
@@ -14799,27 +14668,28 @@ public class CoNLLToCorpus
 
     private static void write(Map<String, Set<MorAna>> corpus, String file)
     {
-        BufferedWriter bufferedWriter = null;
-
         try
         {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (Entry<String, Set<MorAna>> entry : corpus.entrySet())
             {
                 if (!entry.getKey().equals("<empty>"))
                 {
-                    bufferedWriter.write(entry.getKey());
+                    writer.write(entry.getKey());
                     for (MorAna morAna : entry.getValue())
                     {
-                        bufferedWriter.write("\t" + morAna.getLemma() + "\t" + morAna.getMsd());
+                        writer.write("\t");
+                        writer.write(morAna.getLemma());
+                        writer.write("\t");
+                        writer.write(morAna.getMsd());
                     }
-                    bufferedWriter.write("\n");
+                    writer.write("\n");
                 }
             }
 
-            bufferedWriter.flush();
-            bufferedWriter.close();
+            writer.flush();
+            writer.close();
         }
         catch (UnsupportedEncodingException e)
         {
@@ -14873,19 +14743,17 @@ public class CoNLLToFreq
 
         Map<String, Integer> freq = new TreeMap<String, Integer>();
 
-        String MSD = null;
-
         for (String[][] sentence : sentences)
             for (String[] token : sentence)
             {
-                MSD = coNLLFeaturesToMSD.convert(token[4], token[6]);
+                String msd = coNLLFeaturesToMSD.convert(token[4], token[6]);
 
-                if (!freq.containsKey(MSD))
+                if (!freq.containsKey(msd))
                 {
-                    freq.put(MSD, 0);
+                    freq.put(msd, 0);
                 }
 
-                freq.put(MSD, freq.get(MSD) + 1);
+                freq.put(msd, freq.get(msd) + 1);
             }
 
         return freq;
@@ -14893,19 +14761,20 @@ public class CoNLLToFreq
 
     private static void write(Map<String, Integer> freq, String file)
     {
-        BufferedWriter bufferedWriter = null;
-
         try
         {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (Entry<String, Integer> entry : freq.entrySet())
             {
-                bufferedWriter.write(entry.getKey() + "\t" + entry.getValue() + "\n");
+                writer.write(entry.getKey());
+                writer.write("\t");
+                writer.write(entry.getValue());
+                writer.write("\n");
             }
 
-            bufferedWriter.flush();
-            bufferedWriter.close();
+            writer.flush();
+            writer.close();
         }
         catch (UnsupportedEncodingException e)
         {
@@ -14956,9 +14825,9 @@ public class CoNLLUtil
 
         try
         {
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            for (String line; (line = bufferedReader.readLine()) != null; )
+            for (String line; (line = reader.readLine()) != null; )
             {
                 sb.append(line).append("\n");
             }
@@ -14981,19 +14850,17 @@ public class CoNLLUtil
 
     public static void merge(String out)
     {
-        BufferedWriter bufferedWriter = null;
-
         try
         {
-            bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (int i = 0; i < 10; ++i)
             {
-                bufferedWriter.write(readToString("./data/newspaper/newspaper.conll2009_test" + i + ".pred2"));
+                writer.write(readToString("./data/newspaper/newspaper.conll2009_test" + i + ".pred2"));
             }
 
-            bufferedWriter.flush();
-            bufferedWriter.close();
+            writer.flush();
+            writer.close();
         }
         catch (UnsupportedEncodingException e)
         {
@@ -15011,19 +14878,15 @@ public class CoNLLUtil
 
     static String[][][] read(String file)
     {
-        BufferedReader bufferedReader = null;
-        String line = null;
-
-        List<String[]> sentence = null;
-        List<String[][]> sentences = null;
-        sentence = new ArrayList<String[]>();
-        sentences = new ArrayList<String[][]>();
+        List<String[][]> sentences = new ArrayList<String[][]>();
 
         try
         {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = bufferedReader.readLine()) != null)
+            List<String[]> sentence = new ArrayList<String[]>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().equals(""))
                 {
@@ -15049,7 +14912,7 @@ public class CoNLLUtil
             e.printStackTrace();
         }
 
-        return sentences.toArray(new String[sentence.size()][][]);
+        return sentences.toArray(new String[sentences.size()][][]);
     }
 
     public static void main(String[] args)
@@ -15077,19 +14940,15 @@ public class Objfx
 {
     static String[][][] read(String file)
     {
-        BufferedReader bufferedReader = null;
-        String line = null;
-
-        List<String[]> sentence = null;
-        List<String[][]> sentences = null;
-        sentence = new ArrayList<String[]>();
-        sentences = new ArrayList<String[][]>();
+        List<String[][]> sentences = new ArrayList<String[][]>();
 
         try
         {
-            bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
-            while ((line = bufferedReader.readLine()) != null)
+            List<String[]> sentence = new ArrayList<String[]>();
+
+            for (String line; (line = reader.readLine()) != null; )
             {
                 if (line.trim().equals(""))
                 {
@@ -15115,7 +14974,7 @@ public class Objfx
             e.printStackTrace();
         }
 
-        return sentences.toArray(new String[sentence.size()][][]);
+        return sentences.toArray(new String[sentences.size()][][]);
     }
 
     public static void countSentences(String file)
@@ -15444,10 +15303,9 @@ public class HunSplitter
 
     public List<String> tokenize(String sentence)
     {
-        List<String> splitted = null;
         sentence = this.getStringCleaner().cleanString(sentence);
 
-        splitted = tokenizer.extractWords(sentence);
+        List<String> splitted = tokenizer.extractWords(sentence);
 
         splitted = reSplit2Sentence(splitted);
         splitted = reTokenizeSentence(splitted);
@@ -15525,8 +15383,6 @@ public class HunSplitter
 
     private List<List<String>> simpleSplit(String text)
     {
-        List<List<String>> splitted = null;
-
         text = this.getStringCleaner().cleanString(text);
 
         // text = normalizeQuotes(text);
@@ -15534,7 +15390,7 @@ public class HunSplitter
 
         // text = addSpaces(text);
 
-        splitted = splitter.extractSentences(text, tokenizer);
+        List<List<String>> splitted = splitter.extractSentences(text, tokenizer);
 
         splittedTemp = splitted;
 
@@ -15585,14 +15441,9 @@ public class HunSplitter
 
     public int[] getTokenOffsets(String text)
     {
-        int[] ret = null;
-        List<List<String>> splitted = null;
-        int[] sentenceOffsets = null;
-        int[] tokenOffsets = null;
-        String sentence = null;
+        int[] sentenceOffsets = this.getSentenceOffsets(text);
+        List<List<String>> splitted = this.split(text);
 
-        sentenceOffsets = this.getSentenceOffsets(text);
-        splitted = this.split(text);
         int counter = 0;
 
         for (int i = 0; i < splitted.size(); ++i)
@@ -15603,14 +15454,15 @@ public class HunSplitter
             }
         }
 
-        ret = new int[counter + 1];
+        int[] ret = new int[counter + 1];
 
         counter = 0;
 
         for (int i = 0; i < splitted.size(); ++i)
         {
-            sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
-            tokenOffsets = this.getTokenizer().findWordOffsets(sentence, splitted.get(i));
+            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
+            int[] tokenOffsets = this.getTokenizer().findWordOffsets(sentence, splitted.get(i));
+
             for (int j = 0; j < splitted.get(i).size(); ++j)
             {
                 ret[counter] = sentenceOffsets[i] + tokenOffsets[j];
@@ -15625,12 +15477,8 @@ public class HunSplitter
 
     public int[] getTokenOffsetsTemp(String text)
     {
-        int[] ret = null;
-        int[] sentenceOffsets = null;
-        int[] tokenOffsets = null;
-        String sentence = null;
+        int[] sentenceOffsets = this.getSentenceOffsetsTemp(text);
 
-        sentenceOffsets = this.getSentenceOffsetsTemp(text);
         int counter = 0;
 
         for (int i = 0; i < splittedTemp.size(); ++i)
@@ -15641,14 +15489,15 @@ public class HunSplitter
             }
         }
 
-        ret = new int[counter + 1];
+        int[] ret = new int[counter + 1];
 
         counter = 0;
 
         for (int i = 0; i < splittedTemp.size(); ++i)
         {
-            sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
-            tokenOffsets = this.getTokenizer().findWordOffsets(sentence, splittedTemp.get(i));
+            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
+            int[] tokenOffsets = this.getTokenizer().findWordOffsets(sentence, splittedTemp.get(i));
+
             for (int j = 0; j < splittedTemp.get(i).size(); ++j)
             {
                 ret[counter] = sentenceOffsets[i] + tokenOffsets[j];
@@ -15666,28 +15515,24 @@ public class HunSplitter
      */
     private static List<String> reTokenizeSentence(List<String> sentence)
     {
-        String token = null;
-        String tokenLowerCase = null;
-
         for (int i = 0; i < sentence.size(); ++i)
         {
-            token = sentence.get(i);
-            tokenLowerCase = token.toLowerCase();
-            if (tokenLowerCase.endsWith("'") && tokenLowerCase.length() > 1)
+            String token = sentence.get(i);
+            String tlc = token.toLowerCase();
+
+            if (tlc.endsWith("'") && tlc.length() > 1)
             {
                 sentence.set(i, token.substring(0, token.length() - 1));
                 sentence.add(i + 1, token.substring(token.length() - 1));
                 ++i;
             }
-            if ((tokenLowerCase.endsWith("'m") || tokenLowerCase.endsWith("'s") || tokenLowerCase.endsWith("'d")) && tokenLowerCase.length() > 2)
+            if ((tlc.endsWith("'m") || tlc.endsWith("'s") || tlc.endsWith("'d")) && tlc.length() > 2)
             {
                 sentence.set(i, token.substring(0, token.length() - 2));
                 sentence.add(i + 1, token.substring(token.length() - 2));
                 ++i;
             }
-            if ((tokenLowerCase.endsWith("'re") || tokenLowerCase.endsWith("'ve")
-                    || tokenLowerCase.endsWith("'ll") || tokenLowerCase.endsWith("n't"))
-                && tokenLowerCase.length() > 3)
+            if ((tlc.endsWith("'re") || tlc.endsWith("'ve") || tlc.endsWith("'ll") || tlc.endsWith("n't")) && tlc.length() > 3)
             {
                 sentence.set(i, token.substring(0, token.length() - 3));
                 sentence.add(i + 1, token.substring(token.length() - 3));
@@ -15710,16 +15555,13 @@ public class HunSplitter
 
     private List<List<String>> reSplit1(List<List<String>> sentences, String text)
     {
-        String lastToken = null;
-        String firstToken = null;
         int tokenNumber = 0;
-        int[] tokenOffsets = null;
-        List<String> sentence = null;
 
-        tokenOffsets = getTokenOffsetsTemp(text);
+        int[] tokenOffsets = getTokenOffsetsTemp(text);
+
         for (int i = 0; i < sentences.size(); i++)
         {
-            sentence = sentences.get(i);
+            List<String> sentence = sentences.get(i);
 
             // nem lehet üres mondat
             if (sentence.size() > 0)
@@ -15729,7 +15571,7 @@ public class HunSplitter
                  */
 
                 // utolsó token pl. (W.)
-                lastToken = sentence.get(sentence.size() - 1);
+                String lastToken = sentence.get(sentence.size() - 1);
                 // nem lehet üres token
                 if (lastToken.length() > 0)
                 {
@@ -15741,7 +15583,7 @@ public class HunSplitter
                         {
                             // ha betű nagybetű ('W.', de 'i.' nem)
                             if (Character.isUpperCase(lastToken.charAt(lastToken.length() - 2)))
-                                {
+                            {
                                 // ha nem az utolsó mondat
                                 if (sentences.size() > i + 1)
                                 {
@@ -15803,7 +15645,7 @@ public class HunSplitter
 
             if ((i < sentences.size() - 1) && (i > 0))
             {
-                firstToken = sentences.get(i + 1).get(0);
+                String firstToken = sentences.get(i + 1).get(0);
 
                 if (ResourceHolder.getHunAbbrev().contains(firstToken.toLowerCase()))
                 {
@@ -15835,9 +15677,6 @@ public class HunSplitter
 
     private static List<String> reSplit2Sentence(List<String> sentence)
     {
-        String lastToken = null;
-        char lastChar;
-
         // nem lehet üres mondat
         if (sentence.size() > 0)
         {
@@ -15845,12 +15684,12 @@ public class HunSplitter
              * mondtavégi írásjelek külön tokenek legyenek (.?!:;)
              */
             // utolsó token pl.: '1999.'
-            lastToken = sentence.get(sentence.size() - 1);
+            String lastToken = sentence.get(sentence.size() - 1);
             // ha hosszabb mint egy karakter '9.'
             if (lastToken.length() > 1)
             {
                 // utolsó karakter
-                lastChar = lastToken.charAt(lastToken.length() - 1);
+                char lastChar = lastToken.charAt(lastToken.length() - 1);
                 // írásjelre végződik
                 if (!Character.isLetterOrDigit(lastChar))
                 {
@@ -15858,7 +15697,7 @@ public class HunSplitter
                     lastToken = lastToken.substring(0, lastToken.length() - 1);
                     // utolsó token törlése
                     sentence.remove(sentence.size() - 1);
-                    // új utolsó előtti token hozzáadássa '1999'
+                    // új utolsó előtti token hozzáadása '1999'
                     sentence.add(sentence.size(), lastToken);
                     // új utolsó karaktertoken hozzáadása
                     sentence.add(String.valueOf(lastChar));
@@ -15911,11 +15750,8 @@ public class HunSplitter
 
     public String[][] splitToArray(String text)
     {
-        List<List<String>> splitted = null;
-        String[][] sentences = null;
-
-        splitted = this.split(text);
-        sentences = new String[splitted.size()][];
+        List<List<String>> splitted = this.split(text);
+        String[][] sentences = new String[splitted.size()][];
 
         for (int i = 0; i < sentences.length; ++i)
         {
@@ -16002,23 +15838,18 @@ public class HunSplitter
             System.err.println();
         }
 
-        int[] sentenceOffsets = null;
-        int[] tokenOffsets = null;
-        String sentence = null;
-        String token = null;
-
-        sentenceOffsets = hunSplitter.getSentenceOffsets(text);
+        int[] sentenceOffsets = hunSplitter.getSentenceOffsets(text);
 
         for (int i = 0; i < sentenceOffsets.length - 1; ++i)
         {
-            sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
+            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
 
             System.err.println(sentence);
 
-            tokenOffsets = hunSplitter.getTokenOffsets(sentence);
+            int[] tokenOffsets = hunSplitter.getTokenOffsets(sentence);
             for (int j = 0; j < tokenOffsets.length - 1; ++j)
             {
-                token = sentence.substring(tokenOffsets[j], tokenOffsets[j + 1]);
+                String token = sentence.substring(tokenOffsets[j], tokenOffsets[j + 1]);
                 System.err.println(token);
             }
         }
@@ -16054,14 +15885,9 @@ import java.util.TreeSet;
 
 public class StringCleaner
 {
-    private static Set<Integer> errorCharacters = null;
+    private static Set<Integer> errorCharacters = loadErrorCharacters();
 
-    public StringCleaner()
-    {
-        errorCharacters = loadErrorCharacters();
-    }
-
-    private Set<Integer> loadErrorCharacters()
+    private static Set<Integer> loadErrorCharacters()
     {
         Set<Integer> ecs = new TreeSet<Integer>();
 
@@ -16095,6 +15921,10 @@ public class StringCleaner
         ecs.add(65567);
 
         return ecs;
+    }
+
+    public StringCleaner()
+    {
     }
 
     public String cleanString(String text)
@@ -16295,11 +16125,8 @@ public class MultiWordSplitter
     {
         String[][] split = null;
 
-        String[] wordForms = null;
-        String[] lemmas = null;
-
-        wordForms = wordForm.split(" ");
-        lemmas = lemma.split(" ");
+        String[] wordForms = wordForm.split(" ");
+        String[] lemmas = lemma.split(" ");
 
         if (lemmas.length != wordForms.length)
         {
@@ -16470,7 +16297,7 @@ public class Train
 
     private static final String XML_EXTENSION = ".xml";
     private static final double DIVISION = 0.8;
-    private static final String ENCODING = "utf-8";
+    private static final String ENCODING = "UTF-8";
 
     private static final String WORDFORM_LEMMA_SEPARATOR = "\t";
     private static final String LEMMA_MSD_SEPARATOR = "\t";
@@ -16487,15 +16314,11 @@ public class Train
 
         List<Node> nodes = new LinkedList<Node>();
 
-        Node node = null;
         for (int i = 0; i < nodeList.getLength(); ++i)
         {
-            node = nodeList.item(i);
+            Node node = nodeList.item(i);
 
-            if (node.getAttributes().getNamedItem("type") == null)
-            {
-            }
-            else
+            if (node.getAttributes().getNamedItem("type") != null)
             {
                 if (node.getAttributes().getNamedItem("type").getTextContent().equals(type))
                 {
@@ -16514,25 +16337,20 @@ public class Train
 
     public static String getMsd(Node node)
     {
-        String msd = null;
-
-        msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
+        String msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
         return msd.substring(1, msd.length() - 1);
     }
 
     public static String wToTrain(Node node)
     {
-        String spelling = null;
-        String lemma = null;
-        String msd = null;
-        spelling = node.getChildNodes().item(0).getTextContent().trim();
+        String spelling = node.getChildNodes().item(0).getTextContent().trim();
 
         StringBuilder sb = new StringBuilder();
 
         NodeList nodes = ((Element) node).getElementsByTagName("ana");
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            lemma = getLemma(nodes.item(i));
+            String lemma = getLemma(nodes.item(i));
 
             if (spelling.contains(" "))
             {
@@ -16540,7 +16358,7 @@ public class Train
             }
             else
             {
-                msd = getMsd(nodes.item(i));
+                String msd = getMsd(nodes.item(i));
 
                 if (ResourceHolder.getPunctations().contains(lemma))
                 {
@@ -16638,11 +16456,9 @@ public class Train
     {
         StringBuilder sb = new StringBuilder();
 
-        String trainNode = null;
-
         for (Node node : getNodes(sentenceNode, new String[] { "w", "c", "choice" }))
         {
-            trainNode = nodeToTrain(node);
+            String trainNode = nodeToTrain(node);
 
             if (trainNode != null)
             {
@@ -16656,16 +16472,15 @@ public class Train
 
     public static List<Node> getNodes(Node node, String... tagNames)
     {
-        NodeList childNodes = ((Element) node).getChildNodes();
-
         List<Node> nodes = new LinkedList<Node>();
 
-        Node tempNode = null;
-        String tempNodeName = null;
+        NodeList childNodes = ((Element) node).getChildNodes();
+
         for (int i = 0; i < childNodes.getLength(); ++i)
         {
-            tempNode = childNodes.item(i);
-            tempNodeName = tempNode.getNodeName();
+            Node tempNode = childNodes.item(i);
+            String tempNodeName = tempNode.getNodeName();
+
             for (String tagName : tagNames)
             {
                 if (tempNodeName.equals(tagName))
@@ -16681,12 +16496,11 @@ public class Train
 
     private static List<Node> readXml(String xml)
     {
-        Document document = null;
         List<Node> divNodes = null;
 
         try
         {
-            document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(xml));
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(xml));
 
             if (xml.contains("10elb") || xml.contains("10erv") || xml.contains("8oelb"))
             {
@@ -16705,9 +16519,9 @@ public class Train
                 divNodes = getNodes(document, "div", "section");
             }
             else if (xml.contains("cwszt") || xml.contains("hvg")
-                    || xml.contains("mh") || xml.contains("newsml") || xml.contains("np")
-                    || xml.contains("nv") || xml.contains("pfred")
-                    || xml.contains("utas") || xml.contains("win2000"))
+                  || xml.contains("mh") || xml.contains("newsml") || xml.contains("np")
+                  || xml.contains("nv") || xml.contains("pfred")
+                  || xml.contains("utas") || xml.contains("win2000"))
             {
                 divNodes = getNodes(document, "div", "article");
             }
@@ -16732,7 +16546,6 @@ public class Train
         try
         {
             trainWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(trainFile), ENCODING));
-
             testWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(testFile), ENCODING));
         }
         catch (IOException e)
@@ -16740,7 +16553,6 @@ public class Train
             e.printStackTrace();
         }
 
-        int treshold = 0;
         List<Node> divNodes = null;
 
         for (String corpus : CORPUSES)
@@ -16748,7 +16560,7 @@ public class Train
             StringBuilder xml = new StringBuilder(corpusPath);
             xml.append(corpus + XML_EXTENSION);
             divNodes = readXml(xml.toString());
-            treshold = (int) (divNodes.size() * DIVISION);
+            int treshold = (int) (divNodes.size() * DIVISION);
 
             int sentenceCounter = 0;
             try
@@ -16780,6 +16592,7 @@ public class Train
 
             System.out.println(xml + "\t" + sentenceCounter);
         }
+
         try
         {
             trainWriter.close();
@@ -16803,21 +16616,17 @@ public class Train
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), ENCODING));
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
 
-            String line = null;
-            String[] split = null;
-
             StringBuilder sb = new StringBuilder();
 
-            String reducedMsd = null;
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                split = line.split("\t");
+                String[] split = line.split("\t");
                 if (split.length == 3)
                 {
                     sb.append(split[0]);
                     sb.append(STANFORD_TRAIN_WORDFORM_MSD_SEPARATOR);
 
-                    reducedMsd = ResourceHolder.getMSDReducer().reduce(split[2]);
+                    String reducedMsd = ResourceHolder.getMSDReducer().reduce(split[2]);
                     sb.append(reducedMsd);
                     msdCodes.add(reducedMsd);
 
@@ -16825,7 +16634,8 @@ public class Train
                 }
                 else
                 {
-                    writer.write(sb.toString().trim() + '\n');
+                    writer.write(sb.toString().trim());
+                    writer.write('\n');
                     sb = new StringBuilder();
                 }
             }
@@ -16870,7 +16680,10 @@ public class Train
                 writer.write(entry.getKey());
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t" + morAna.getLemma() + "\t" + morAna.getMsd());
+                    writer.write("\t");
+                    writer.write(morAna.getLemma());
+                    writer.write("\t");
+                    writer.write(morAna.getMsd());
                 }
                 writer.write('\n');
             }
@@ -16902,7 +16715,10 @@ public class Train
 
             for (Map.Entry<String, Integer> entry : frequencies.entrySet())
             {
-                writer.write(entry.getKey() + "\t" + entry.getValue() + '\n');
+                writer.write(entry.getKey());
+                writer.write("\t");
+                writer.write(entry.getValue());
+                writer.write('\n');
             }
         }
         catch (IOException e)
@@ -16924,20 +16740,17 @@ public class Train
 
     public static Map<String, Set<MorAna>> getLex(String file)
     {
-        BufferedReader reader = null;
-
         Map<String, Set<MorAna>> lexicon = new TreeMap<String, Set<MorAna>>();
+
+        BufferedReader reader = null;
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
 
-            String line = null;
-            String[] split = null;
-
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                split = line.split(WORDFORM_LEMMA_SEPARATOR);
+                String[] split = line.split(WORDFORM_LEMMA_SEPARATOR);
 
                 if (split.length == 3)
                 {
@@ -16970,20 +16783,17 @@ public class Train
 
     public static Map<String, Integer> getFreq(String file)
     {
-        BufferedReader reader = null;
-
         Map<String, Integer> frequencies = new TreeMap<String, Integer>();
+
+        BufferedReader reader = null;
 
         try
         {
             reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
 
-            String line = null;
-            String[] split = null;
-
-            while ((line = reader.readLine()) != null)
+            for (String line; (line = reader.readLine()) != null; )
             {
-                split = line.split(WORDFORM_LEMMA_SEPARATOR);
+                String[] split = line.split(WORDFORM_LEMMA_SEPARATOR);
 
                 if (split.length == 3)
                 {
@@ -17085,14 +16895,9 @@ public class XMLtoTXT
 
     public static List<String> splitSentenceNsamedEntites(List<String> sentence)
     {
-        String[] splittedLine = null;
-        String[] splittedNamedEntity = null;
-        String[] splittedLemma = null;
-        StringBuilder sb = null;
-
         for (int i = 0; i < sentence.size(); ++i)
         {
-            splittedLine = sentence.get(i).split("\t");
+            String[] splittedLine = sentence.get(i).split("\t");
 
             // nem kivanatos _ elejen/vegen
             if (splittedLine[1].length() > 1 && (splittedLine[1].startsWith("_") || splittedLine[1].endsWith("_")))
@@ -17108,10 +16913,11 @@ public class XMLtoTXT
                     && splittedLine[1].contains("_")
                     && splittedLine[1].length() > 1)
             {
-                splittedNamedEntity = splittedLine[1].split("_");
-                splittedLemma = splittedLine[2].split("_");
+                String[] splittedNamedEntity = splittedLine[1].split("_");
+                String[] splittedLemma = splittedLine[2].split("_");
 
-                sb = new StringBuilder(splittedLine[0]);
+                StringBuilder sb = new StringBuilder(splittedLine[0]);
+
                 try
                 {
                     sb.append("\t").append(splittedNamedEntity[0]);
@@ -17203,11 +17009,9 @@ public class XMLtoTXT
 
                 sentence.set(i, sb.toString());
 
-                // sentence = renumberOrdinal(sentence, i + 1,
-                // splittedNamedEntity.length - 1);
+                // sentence = renumberOrdinal(sentence, i + 1, splittedNamedEntity.length - 1);
 
-                // sentence = renumberParent(sentence, i + 1,
-                // splittedNamedEntity.length - 1);
+                // sentence = renumberParent(sentence, i + 1, splittedNamedEntity.length - 1);
 
                 int token = 1;
 
@@ -17341,14 +17145,13 @@ public class XMLtoTXT
 
     public static List<Node> getNodes(Document document, String tagName, String type)
     {
-        NodeList nodeList = document.getElementsByTagName(tagName);
-
         List<Node> nodes = new LinkedList<Node>();
 
-        Node node = null;
+        NodeList nodeList = document.getElementsByTagName(tagName);
+
         for (int i = 0; i < nodeList.getLength(); ++i)
         {
-            node = nodeList.item(i);
+            Node node = nodeList.item(i);
             if (node.getAttributes().getNamedItem("type").getTextContent().equals(type))
                 nodes.add(node);
         }
@@ -17362,12 +17165,11 @@ public class XMLtoTXT
 
         List<Node> nodes = new LinkedList<Node>();
 
-        Node tempNode = null;
-        String tempNodeName = null;
         for (int i = 0; i < childNodes.getLength(); ++i)
         {
-            tempNode = childNodes.item(i);
-            tempNodeName = tempNode.getNodeName();
+            Node tempNode = childNodes.item(i);
+            String tempNodeName = tempNode.getNodeName();
+
             for (String tagName : tagNames)
             {
                 if (tempNodeName.equals(tagName))
@@ -17393,20 +17195,14 @@ public class XMLtoTXT
 
     public static String getMsd(Node node, boolean reduce)
     {
-        String msd = null;
-
-        msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
+        String msd = getNodes(getNodes(node, "msd").get(0), "mscat").get(0).getTextContent();
 
         msd = msd.substring(1, msd.length() - 1);
 
         if (reduce)
-        {
-            return ResourceHolder.getMSDReducer().reduce(msd);
-        }
-        else
-        {
-            return msd;
-        }
+            msd = ResourceHolder.getMSDReducer().reduce(msd);
+
+        return msd;
     }
 
     public static void printW(Node node, boolean reduce, boolean train)
@@ -17421,13 +17217,18 @@ public class XMLtoTXT
         {
             if (train)
             {
-                writer.write("@" + getMsd(nodes.item(i), reduce));
+                writer.write("@");
+                writer.write(getMsd(nodes.item(i), reduce));
+
                 addTofreq(getMsd(nodes.item(i), false));
             }
 
             else
             {
-                writer.write("\t" + getLemma(nodes.item(i)).replace("+", "") + "\t" + getMsd(nodes.item(i), reduce));
+                writer.write("\t");
+                writer.write(getLemma(nodes.item(i)).replace("+", ""));
+                writer.write("\t");
+                writer.write(getMsd(nodes.item(i), reduce));
             }
         }
 
@@ -17442,7 +17243,10 @@ public class XMLtoTXT
 
             else
             {
-                writer.write("\t" + getLemma(nodes.item(i)) + "\t" + getMsd(nodes.item(i), reduce));
+                writer.write("\t");
+                writer.write(getLemma(nodes.item(i)));
+                writer.write("\t");
+                writer.write(getMsd(nodes.item(i), reduce));
             }
         }
     }
@@ -17455,13 +17259,25 @@ public class XMLtoTXT
 
         if (!ResourceHolder.getPunctations().contains(c))
         {
-            writer.write("\t" + node.getTextContent() + "\t" + "K" + "\t"
-                    + node.getTextContent() + "\t" + "K");
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write("K");
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write("K");
         }
         else
         {
-            writer.write("\t" + node.getTextContent() + "\t" + node.getTextContent()
-                    + "\t" + node.getTextContent() + "\t" + node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
+            writer.write("\t");
+            writer.write(node.getTextContent());
         }
     }
 
@@ -17545,14 +17361,13 @@ public class XMLtoTXT
     {
         for (Node node : nodes)
         {
-            writer.write(node.getAttributes().getNamedItem("id").getTextContent() + "\t");
+            writer.write(node.getAttributes().getNamedItem("id").getTextContent());
+            writer.write("\t");
         }
     }
 
     public static void write(String XML, String txt, boolean reduce, boolean train)
     {
-        Document document = null;
-
         if (train)
         {
             freqs = new TreeMap<String, Integer>();
@@ -17571,7 +17386,7 @@ public class XMLtoTXT
 
         try
         {
-            document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(XML));
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(XML));
 
             // for (Node partDivNode : getNodes(document, "div", "part")) {
             // for (Node chapterDivNode : getNodes(partDivNode, "div", "chapter")) {
@@ -17690,7 +17505,6 @@ public class XMLtoTXT
         // try {
         // writer.write(s + "\n");
         // } catch (IOException e) {
-        // // TODO Auto-generated catch block
         // e.printStackTrace();
         // }
         // }
@@ -17713,7 +17527,6 @@ public class XMLtoTXT
         // try {
         // writer.close();
         // } catch (IOException e) {
-        // // TODO Auto-generated catch block
         // e.printStackTrace();
         // }
         //
@@ -17782,13 +17595,10 @@ public class XMLtoTXT
         // document = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         // .parse(new File("./data/szk2.5/xml/newsml_1.xml"));
         // } catch (SAXException e) {
-        // // TODO Auto-generated catch block
         // e.printStackTrace();
         // } catch (IOException e) {
-        // // TODO Auto-generated catch block
         // e.printStackTrace();
         // } catch (ParserConfigurationException e) {
-        // // TODO Auto-generated catch block
         // e.printStackTrace();
         // }
     }
@@ -17987,10 +17797,9 @@ public class RFSAAnalyser
     public void online(RFSA rfsa)
         throws Exception
     {
-        BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println(">");
-        String line;
-        while ((line = r.readLine()) != null)
+        for (String line; (line = reader.readLine()) != null; )
         {
             Collection<String> a = rfsa.analyse(line);
             System.out.println(a.size() + ": ");
@@ -18647,7 +18456,7 @@ public class RFSA
     {
         Map<String, String> labelMap = new HashMap<String, String>();
 
-        LineNumberReader reader = new LineNumberReader(new BufferedReader(new InputStreamReader(new FileInputStream(file), "utf-8")));
+        LineNumberReader reader = new LineNumberReader(new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8")));
 
         String line = reader.readLine();
         StringTokenizer st = new StringTokenizer(line);
