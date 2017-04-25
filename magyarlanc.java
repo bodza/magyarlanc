@@ -18,7 +18,7 @@ import java.util.List;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.TaggedWord;
 
-import szte.pos.morphology.HungarianMorphology;
+import magyarlanc.Magyarlanc;
 
 public class SzteMaxentTagger extends MaxentTagger
 {
@@ -66,7 +66,7 @@ public class SzteMaxentTagger extends MaxentTagger
 
         sentence = this.apply(sentence);
 
-        sentence = (ArrayList<TaggedWord>) HungarianMorphology.recoverTags(sentence);
+        sentence = Magyarlanc.recoverTags(sentence);
 
         for (int i = 0; i < sentence.size(); ++i)
         {
@@ -82,7 +82,7 @@ EOF
 mkdir -p edu/stanford/nlp/tagger/maxent && cat > edu/stanford/nlp/tagger/maxent/SzteTestSentence.java <<'EOF'
 package edu.stanford.nlp.tagger.maxent;
 
-import szte.pos.morphology.HungarianMorphology;
+import magyarlanc.Magyarlanc;
 
 public class SzteTestSentence extends TestSentence
 {
@@ -106,7 +106,7 @@ public class SzteTestSentence extends TestSentence
 
         if (this.maxentTagger.dict.isUnknown(word))
         {
-            tags = HungarianMorphology.getPossibleTags(word, maxentTagger.tags.getOpenTags());
+            tags = Magyarlanc.getPossibleTags(word, maxentTagger.tags.getOpenTags());
         }
         else
         {
@@ -118,15 +118,14 @@ public class SzteTestSentence extends TestSentence
     }
 }
 EOF
-mkdir -p szte/dep/parser && cat > szte/dep/parser/MateParserWrapper.java <<'EOF'
-package szte.dep.parser;
-
-import szte.magyarlanc.resource.ResourceHolder;
-import is2.data.SentenceData09;
+mkdir -p magyarlanc && cat > magyarlanc/MateParser.java <<'EOF'
+package magyarlanc;
 
 import java.util.List;
 
-public class MateParserWrapper
+import is2.data.SentenceData09;
+
+public class MateParser
 {
     /**
      * Dependency parsing of a sentence, using the forms and morphological analysis.
@@ -273,8 +272,8 @@ public class MateParserWrapper
     }
 }
 EOF
-mkdir -p szte/dep/whatswrong && cat > szte/dep/whatswrong/WhatsWrongWrapper.java <<'EOF'
-package szte.dep.whatswrong;
+mkdir -p magyarlanc && cat > magyarlanc/WhatsWrong.java <<'EOF'
+package magyarlanc;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -292,7 +291,7 @@ import com.googlecode.whatswrong.NLPInstance;
 import com.googlecode.whatswrong.SingleSentenceRenderer;
 import com.googlecode.whatswrong.io.CoNLL2009;
 
-public class WhatsWrongWrapper
+public class WhatsWrong
 {
     private static SingleSentenceRenderer renderer = null;
     private static CoNLL2009 coNLL2009 = null;
@@ -420,12 +419,12 @@ public class WhatsWrongWrapper
         depParsedSentence[2] = new String[] { "3", "nagy", "nagy", "Afp-sn", "A", "SubPOS=f|Deg=p|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none", "0", "ROOT-VAN-PRED" };
         depParsedSentence[3] = new String[] { "4", ".", ".", ".", ".", "_", "0", "PUNCT" };
 
-        WhatsWrongWrapper.exportToPNG(depParsedSentence, "d:/feladat1.png");
+        WhatsWrong.exportToPNG(depParsedSentence, "d:/feladat1.png");
     }
 }
 EOF
-mkdir -p szte/gui && cat > szte/gui/GUI.java <<'EOF'
-package szte.gui;
+mkdir -p magyarlanc && cat > magyarlanc/GUI.java <<'EOF'
+package magyarlanc;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -448,10 +447,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-
-import szte.dep.whatswrong.WhatsWrongWrapper;
-import szte.magyarlanc.Magyarlanc;
-import szte.magyarlanc.resource.ResourceHolder;
 
 public class GUI
 {
@@ -504,7 +499,7 @@ public class GUI
                     BufferedImage bufferedImage = null;
                     try
                     {
-                        bufferedImage = ImageIO.read(new ByteArrayInputStream(WhatsWrongWrapper.exportToByteArray(depParsed)));
+                        bufferedImage = ImageIO.read(new ByteArrayInputStream(WhatsWrong.exportToByteArray(depParsed)));
                     }
                     catch (IOException e)
                     {
@@ -554,8 +549,8 @@ public class GUI
     }
 }
 EOF
-mkdir -p szte/magyarlanc && cat > szte/magyarlanc/Eval.java <<'EOF'
-package szte.magyarlanc;
+mkdir -p magyarlanc && cat > magyarlanc/Eval.java <<'EOF'
+package magyarlanc;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -634,14 +629,8 @@ public class Eval
     }
 }
 EOF
-mkdir -p szte/magyarlanc && cat > szte/magyarlanc/HunLemMor.java <<'EOF'
-package szte.magyarlanc;
-
-import szte.magyarlanc.resource.ResourceHolder;
-import szte.pos.guesser.CompoundWord;
-import szte.pos.guesser.HyphenicGuesser;
-import szte.pos.guesser.HyphenicWord;
-import szte.pos.guesser.NumberGuesser;
+mkdir -p magyarlanc && cat > magyarlanc/HunLemMor.java <<'EOF'
+package magyarlanc;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -659,7 +648,7 @@ public class HunLemMor
         Set<MorAna> morAnas = new TreeSet<MorAna>();
 
         // irasjelek
-        if (szte.magyarlanc.resource.Util.isPunctation(word))
+        if (Util.isPunctation(word))
         {
             // a legfontosabb irasjelek lemmaja maga az irasjel, POS kodja szinten
             // maga az irasjel lesz
@@ -697,7 +686,7 @@ public class HunLemMor
         }
 
         // szam
-        morAnas = NumberGuesser.guess(word);
+        morAnas = Guesser.numberGuess(word);
 
         if (morAnas.size() > 0)
         {
@@ -705,7 +694,7 @@ public class HunLemMor
         }
 
         // romai szam
-        morAnas.addAll(NumberGuesser.guessRomanNumber(word));
+        morAnas.addAll(Guesser.guessRomanNumber(word));
 
         // rfsa
         for (String kr : ResourceHolder.getRFSA().analyse(word))
@@ -720,7 +709,7 @@ public class HunLemMor
             // kotojeles
             if (word.contains("-") && word.indexOf("-") > 1)
             {
-                for (String morphCode : HyphenicWord.analyseHyphenicCompoundWord(word))
+                for (String morphCode : CompoundWord.analyseHyphenicCompoundWord(word))
                 {
                     morAnas.addAll(ResourceHolder.getKRToMSD().getMSD(morphCode));
                 }
@@ -745,7 +734,7 @@ public class HunLemMor
                 String root = word.substring(0, index);
                 String suffix = word.substring(index + 1);
 
-                morAnas.addAll(HyphenicGuesser.guess(root, suffix));
+                morAnas.addAll(Guesser.hyphenicGuess(root, suffix));
             }
         }
 
@@ -774,14 +763,8 @@ public class HunLemMor
     }
 }
 EOF
-mkdir -p szte/magyarlanc && cat > szte/magyarlanc/Magyarlanc.java <<'EOF'
-package szte.magyarlanc;
-
-import szte.dep.parser.MateParserWrapper;
-import szte.gui.GUI;
-import szte.magyarlanc.resource.ResourceHolder;
-import szte.magyarlanc.resource.Util;
-import szte.magyarlanc.util.SafeReader;
+mkdir -p magyarlanc && cat > magyarlanc/Magyarlanc.java <<'EOF'
+package magyarlanc;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -793,14 +776,17 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import edu.stanford.nlp.ling.TaggedWord;
 
 public class Magyarlanc
 {
     public static final String DEFAULT_NOUN = "Nn-sn";
-
-    private static final String USAGE_MESSAGE = "usage: -mode gui|morana|morphparse|depparse|eval";
 
     public static void init()
     {
@@ -919,7 +905,44 @@ public class Magyarlanc
 
     public static String[][] depParseSentence(String[] form)
     {
-        return MateParserWrapper.parseSentence(Magyarlanc.morphParseSentence(form));
+        return MateParser.parseSentence(Magyarlanc.morphParseSentence(form));
+    }
+
+    public static List<String> read(String file)
+    {
+        List<String> lines = new LinkedList<>();
+
+        BufferedReader reader = null;
+
+        try
+        {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                if (line.trim().length() > 0)
+                {
+                    lines.add(line.trim());
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                reader.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return lines;
     }
 
     public static void print(String[][][] array)
@@ -1099,9 +1122,11 @@ public class Magyarlanc
 
     public static void main(String[] args)
     {
+        final String usage = "usage: -mode gui|morana|morphparse|depparse|eval";
+
         if (args.length < 2)
         {
-            System.out.println(USAGE_MESSAGE);
+            System.out.println(usage);
             System.exit(0);
         }
 
@@ -1116,7 +1141,7 @@ public class Magyarlanc
             }
             catch (Exception e)
             {
-                System.out.println(USAGE_MESSAGE);
+                System.out.println(usage);
                 System.exit(0);
             }
         }
@@ -1163,7 +1188,7 @@ public class Magyarlanc
                 case "morphparse":
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
-                        List<String> lines = SafeReader.read(params.get("-input"));
+                        List<String> lines = read(params.get("-input"));
 
                         write(morphParse(lines), params.get("-output"));
                     }
@@ -1176,7 +1201,7 @@ public class Magyarlanc
                 case "depparse":
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
-                        List<String> lines = SafeReader.read(params.get("-input"));
+                        List<String> lines = read(params.get("-input"));
 
                         write(depParse(lines), params.get("-output"));
                     }
@@ -1198,19 +1223,74 @@ public class Magyarlanc
                     break;
 
                 default:
-                    System.out.println(USAGE_MESSAGE);
+                    System.out.println(usage);
                     break;
             }
         }
     }
+
+    public static String[] getPossibleTags(String word, Set<String> possibleTags)
+    {
+        Set<MorAna> morAnas = HunLemMor.getMorphologicalAnalyses(word);
+        Set<String> tags = new HashSet<String>();
+
+        for (MorAna morAna : morAnas)
+        {
+            String reduced = ResourceHolder.getMSDReducer().reduce(morAna.getMsd());
+            if (possibleTags.contains(reduced))
+            {
+                tags.add(reduced);
+            }
+        }
+
+        if (tags.size() == 0)
+        {
+            tags.add("X");
+        }
+
+        return tags.toArray(new String[tags.size()]);
+    }
+
+    public static List<TaggedWord> recoverTags(List<TaggedWord> sentence)
+    {
+        for (TaggedWord tw : sentence)
+        {
+            int max = -1;
+            MorAna argmax = null;
+
+            for (MorAna morAna : HunLemMor.getMorphologicalAnalyses(tw.word()))
+            {
+                int freq = ResourceHolder.getFrequencies().containsKey(morAna.getMsd()) ? ResourceHolder.getFrequencies().get(morAna.getMsd()) : 0;
+
+                if (!morAna.getMsd().equals(null))
+                {
+                    if (ResourceHolder.getMSDReducer().reduce(morAna.getMsd()).equals(tw.tag()) && (max < freq))
+                    {
+                        argmax = morAna;
+                        max = freq;
+                    }
+                }
+            }
+
+            if (argmax != null)
+            {
+                tw.setValue(argmax.getLemma());
+                tw.setTag(argmax.getMsd());
+            }
+            else
+            {
+                tw.setValue(tw.word());
+            }
+        }
+
+        return sentence;
+    }
 }
 EOF
-mkdir -p szte/magyarlanc && cat > szte/magyarlanc/MorAna.java <<'EOF'
-package szte.magyarlanc;
+mkdir -p magyarlanc && cat > magyarlanc/MorAna.java <<'EOF'
+package magyarlanc;
 
-import java.io.Serializable;
-
-public class MorAna implements Comparable<MorAna>, Serializable
+public class MorAna implements Comparable<MorAna>
 {
     private String lemma;
     private String msd;
@@ -1277,8 +1357,8 @@ public class MorAna implements Comparable<MorAna>, Serializable
     }
 }
 EOF
-mkdir -p szte/magyarlanc/resource && cat > szte/magyarlanc/resource/ResourceHolder.java <<'EOF'
-package szte.magyarlanc.resource;
+mkdir -p magyarlanc && cat > magyarlanc/ResourceHolder.java <<'EOF'
+package magyarlanc;
 
 import java.io.IOException;
 import java.util.Map;
@@ -1290,15 +1370,6 @@ import edu.stanford.nlp.tagger.maxent.SzteMaxentTagger;
 
 import is2.parser.Options;
 import is2.parser.Parser;
-
-import rfsa.RFSA;
-
-import szte.magyarlanc.MorAna;
-import szte.pos.converter.CoNLLFeaturesToMSD;
-import szte.pos.converter.KRToMSD;
-import szte.pos.converter.MSDReducer;
-import szte.pos.converter.MSDToCoNLLFeatures;
-import szte.splitter.HunSplitter;
 
 import data.Data;
 
@@ -1638,8 +1709,8 @@ public class ResourceHolder
     }
 }
 EOF
-mkdir -p szte/magyarlanc/resource && cat > szte/magyarlanc/resource/Util.java <<'EOF'
-package szte.magyarlanc.resource;
+mkdir -p magyarlanc && cat > magyarlanc/Util.java <<'EOF'
+package magyarlanc;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -1657,8 +1728,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import szte.magyarlanc.MorAna;
 
 import data.Data;
 
@@ -1963,58 +2032,8 @@ public class Util
     }
 }
 EOF
-mkdir -p szte/magyarlanc/util && cat > szte/magyarlanc/util/SafeReader.java <<'EOF'
-package szte.magyarlanc.util;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.List;
-
-public class SafeReader
-{
-    public static List<String> read(String file)
-    {
-        List<String> lines = new LinkedList<>();
-
-        BufferedReader reader = null;
-
-        try
-        {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                if (line.trim().length() > 0)
-                {
-                    lines.add(line.trim());
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        finally
-        {
-            try
-            {
-                reader.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        return lines;
-    }
-}
-EOF
-mkdir -p szte/pos/converter && cat > szte/pos/converter/CoNLLFeaturesToMSD.java <<'EOF'
-package szte.pos.converter;
+mkdir -p magyarlanc && cat > magyarlanc/CoNLLFeaturesToMSD.java <<'EOF'
+package magyarlanc;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -2064,27 +2083,29 @@ public class CoNLLFeaturesToMSD
         return map;
     }
 
+    /**
+     * possible conll-2009 feature names
+     */
+    private static final String[] CONLL_2009_FEATURES =
+    {
+        "SubPOS", "Num", "Cas", "NumP", "PerP", "NumPd", "Mood", "Tense", "Per", "Def", "Deg", "Clitic", "Form", "Coord", "Type"
+    };
+
     private Set<String> possibleFeatures;
 
     public CoNLLFeaturesToMSD()
     {
-        /**
-         * possible conll-2009 feature names
-         */
-        String[] features = new String[] { "SubPOS", "Num", "Cas", "NumP", "PerP",
-            "NumPd", "Mood", "Tense", "Per", "Def", "Deg", "Clitic", "Form",
-            "Coord", "Type" };
-        this.setPossibleFeatures(new TreeSet<String>());
+        Set<String> features = new TreeSet<String>();
 
-        for (String feature : features)
-        {
-            this.getPossibleFeatures().add(feature);
-        }
+        for (String feature : CONLL_2009_FEATURES)
+            features.add(feature);
+
+        setPossibleFeatures(features);
     }
 
-    private void setPossibleFeatures(Set<String> possibleFeatures)
+    private void setPossibleFeatures(Set<String> features)
     {
-        this.possibleFeatures = possibleFeatures;
+        possibleFeatures = features;
     }
 
     private Set<String> getPossibleFeatures()
@@ -2093,8 +2114,7 @@ public class CoNLLFeaturesToMSD
     }
 
     /**
-     * clean the unnecessary - signs from the end of the MSD code for ex. the
-     * Nc-sn------ will be cleandet to Nc-sn.
+     * Strip the unnecessary - signs from the end of the MSD code.
      */
     private String cleanMsd(String msd)
     {
@@ -2109,8 +2129,7 @@ public class CoNLLFeaturesToMSD
     }
 
     /**
-     * Split the String of the features via the | sing, and put the featurenames
-     * and its values to a map.
+     * Split the String of the features via the | sing, and put the featurenames and its values to a map.
      */
     private Map<String, String> getFeaturesMap(String features)
     {
@@ -2139,8 +2158,7 @@ public class CoNLLFeaturesToMSD
     }
 
     /**
-     * Convert the features to MSD code, using the MSD positions and
-     * featurevalues, that belongs to the current POS.
+     * Convert the features to MSD code, using the MSD positions and featurevalues, that belongs to the current POS.
      */
     private String convert(Character pos, Map<String, Integer> positionsMap, Map<String, String> featuresMap)
     {
@@ -2191,9 +2209,6 @@ public class CoNLLFeaturesToMSD
          * itself.
          */
 
-        /**
-         * featuresstring can't be empy or null
-         */
         if (features == "" || features == null)
         {
             System.err.println("Empty (or null) features");
@@ -2213,10 +2228,6 @@ public class CoNLLFeaturesToMSD
             }
 
             Map<String, String> featuresMap = getFeaturesMap(features);
-
-            if ((featuresMap == null) && (pos != 'X' && pos != 'Y' && pos != 'Z' && pos != 'I'))
-            {
-            }
 
             switch (pos)
             {
@@ -2269,17 +2280,13 @@ public class CoNLLFeaturesToMSD
     }
 }
 EOF
-mkdir -p szte/pos/converter && cat > szte/pos/converter/KRToMSD.java <<'EOF'
-package szte.pos.converter;
+mkdir -p magyarlanc && cat > magyarlanc/KRToMSD.java <<'EOF'
+package magyarlanc;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import szte.magyarlanc.Magyarlanc;
-import szte.magyarlanc.MorAna;
-import szte.magyarlanc.resource.ResourceHolder;
 
 public class KRToMSD
 {
@@ -2295,22 +2302,16 @@ public class KRToMSD
      */
     public boolean isParticiple(String krAnalysis)
     {
-        int verbIndex = krAnalysis.indexOf("/VERB");
-        int adjIndex = krAnalysis.indexOf("/ADJ");
+        int verbIndex = krAnalysis.indexOf("/VERB"), adjIndex = krAnalysis.indexOf("/ADJ");
 
-        if (verbIndex > -1 && adjIndex > -1 && adjIndex > verbIndex)
-        {
-            return true;
-        }
-
-        return false;
+        return (verbIndex > -1 && adjIndex > -1 && adjIndex > verbIndex);
     }
 
     public String getPostPLemma(String analysis)
     {
         if (analysis.startsWith("$én/NOUN<POSTP<")
          || analysis.startsWith("$te/NOUN<POSTP<")
-         || analysis.startsWith("$ők/NOUN<POSTP<")
+         || analysis.startsWith("$ő/NOUN<POSTP<")
          || analysis.startsWith("$mi/NOUN<POSTP<")
          || analysis.startsWith("$ti/NOUN<POSTP<")
          || analysis.startsWith("$ők/NOUN<POSTP<"))
@@ -2373,7 +2374,7 @@ public class KRToMSD
         StringBuilder msd = new StringBuilder(Magyarlanc.DEFAULT_NOUN + "------");
 
         /*
-         * nevmas minden PERS-t tartalmazo NOUN
+         * névmás minden PERS-t tartalmazó NOUN
          */
 
         // velem
@@ -2382,8 +2383,9 @@ public class KRToMSD
         if (kr.contains("PERS"))
         {
             msd = new StringBuilder("Pp--sn-----------");
+
             /*
-             * szemely
+             * személy
              */
 
             // 1
@@ -2405,7 +2407,7 @@ public class KRToMSD
             }
 
             /*
-             * szam
+             * szám
              */
 
             if (kr.contains("<PLUR>"))
@@ -2417,7 +2419,7 @@ public class KRToMSD
              * eset
              */
 
-            // n nincs jelolve alapeset
+            // n nincs jelölve alapeset
 
             // a
             if (kr.contains("<CAS<ACC>>"))
@@ -2425,7 +2427,7 @@ public class KRToMSD
                 msd.setCharAt(5, 'a');
             }
 
-            // g nincs jelolve
+            // g nincs jelölve
             if (kr.contains("<CAS<GEN>>"))
             {
                 msd.setCharAt(5, 'g');
@@ -2549,7 +2551,7 @@ public class KRToMSD
         }
 
         /*
-         * nevmas minden POSTP-t tartalmazo NOUN
+         * névmás minden POSTP-t tartalmazó NOUN
          */
 
         if (kr.contains("POSTP"))
@@ -2593,7 +2595,7 @@ public class KRToMSD
         }
 
         /*
-         * egyes szam/tobbes szam NOUN<PLUR> NUON<PLUR<FAM>>
+         * egyes szám/többes szám NOUN<PLUR> NUON<PLUR<FAM>>
          */
 
         if (kr.contains("NOUN<PLUR"))
@@ -2605,7 +2607,7 @@ public class KRToMSD
          * eset
          */
 
-        // n nincs jelolve alapeset
+        // n nincs jelölve alapeset
 
         // a
         if (kr.contains("<CAS<ACC>>"))
@@ -2734,7 +2736,7 @@ public class KRToMSD
         }
 
         /*
-         * birtokos szama/szemelye
+         * birtokos száma/személye
          */
         if (kr.contains("<POSS>"))
         {
@@ -2768,7 +2770,7 @@ public class KRToMSD
         }
 
         /*
-         * birtok(olt) szama
+         * birtok(olt) száma
          */
         if (kr.contains("<ANP>"))
         {
@@ -2787,12 +2789,12 @@ public class KRToMSD
         StringBuilder msd = new StringBuilder("Afp-sn-------");
 
         /*
-         * tipus (melleknev vagy melleknevi igenev)
+         * típus (melléknév vagy melléknévi igenév)
          */
 
-        // f (melleknev) nincs jelolve, alapeset
+        // f (melléknév) nincs jelölve, alapeset
 
-        // p (folyamatos melleknevi igenev)
+        // p (folyamatos melléknévi igenév)
 
         if (kr.contains("[IMPERF_PART"))
         {
@@ -2817,7 +2819,7 @@ public class KRToMSD
          * fok
          */
 
-        // p nincs jelolve alapeset
+        // p nincs jelölve alapeset
 
         // c
         if (kr.contains("[COMPAR"))
@@ -2838,7 +2840,7 @@ public class KRToMSD
         /*
          * szam
          */
-        // s nincs jelolve alapeset
+        // s nincs jelölve alapeset
 
         // p
         if (kr.contains("ADJ<PLUR>"))
@@ -2850,7 +2852,7 @@ public class KRToMSD
          * eset
          */
 
-        // n nincs jelolve alapeset
+        // n nincs jelölve alapeset
 
         // a
         if (kr.contains("<CAS<ACC>>"))
@@ -2858,7 +2860,7 @@ public class KRToMSD
             msd.setCharAt(5, 'a');
         }
 
-        // g nincs jelolve
+        // g nincs jelölve
         if (kr.contains("<CAS<GEN>>"))
         {
             msd.setCharAt(5, 'g');
@@ -2979,7 +2981,7 @@ public class KRToMSD
         }
 
         /*
-         * birtokos szama/szemelye
+         * birtokos száma/személye
          */
         if (kr.contains("<POSS>"))
         {
@@ -3013,7 +3015,7 @@ public class KRToMSD
         }
 
         /*
-         * birtok(olt) szama
+         * birtok(olt) száma
          */
         if (kr.contains("<ANP>"))
         {
@@ -3031,48 +3033,46 @@ public class KRToMSD
     {
         StringBuilder msd = new StringBuilder("Vmip3s---n-");
 
-        /*
-         * magyarlanc 2.5-től
-         */
+        boolean modal = kr.contains("<MODAL>"), freq = kr.contains("[FREQ]"), caus = kr.contains("[CAUS]");
 
-        // hato
-        if (kr.contains("<MODAL>") && !kr.contains("[FREQ]") && !kr.contains("[CAUS]"))
+        // ható
+        if (modal && !freq && !caus)
         {
             msd.setCharAt(1, 'o');
         }
 
-        // gyakorito
-        if (!kr.contains("<MODAL>") && kr.contains("[FREQ]") && !kr.contains("[CAUS]"))
+        // gyakorító
+        if (!modal && freq && !caus)
         {
             msd.setCharAt(1, 'f');
         }
 
-        // muvelteto
-        if (!kr.contains("<MODAL>") && !kr.contains("[FREQ]") && kr.contains("[CAUS]"))
+        // műveltető
+        if (!modal && !freq && caus)
         {
             msd.setCharAt(1, 's');
         }
 
-        // gyakorito + hato
-        if (kr.contains("<MODAL>") && kr.contains("[FREQ]") && !kr.contains("[CAUS]"))
+        // gyakorító + ható
+        if (modal && freq && !caus)
         {
             msd.setCharAt(1, '1');
         }
 
-        // muvelteto + hato
-        if (kr.contains("<MODAL>") && !kr.contains("[FREQ]") && kr.contains("[CAUS]"))
+        // műveltető + ható
+        if (modal && !freq && caus)
         {
             msd.setCharAt(1, '2');
         }
 
-        // muvelteto + hato
-        if (!kr.contains("<MODAL>") && kr.contains("[FREQ]") && kr.contains("[CAUS]"))
+        // műveltető + ható
+        if (!modal && freq && caus)
         {
             msd.setCharAt(1, '3');
         }
 
-        // muvelteto + gyakorito + hato
-        if (kr.contains("<MODAL>") && kr.contains("[FREQ]") && kr.contains("[CAUS]"))
+        // műveltető + gyakorító + ható
+        if (modal && freq && caus)
         {
             msd.setCharAt(1, '4');
         }
@@ -3081,10 +3081,12 @@ public class KRToMSD
         {
             msd.setCharAt(2, 'c');
         }
+
         if (kr.contains("<INF>"))
         {
             msd.setCharAt(2, 'n');
             msd.setCharAt(9, '-');
+
             if (!kr.contains("<PERS"))
             {
                 msd.setCharAt(3, '-');
@@ -3121,6 +3123,7 @@ public class KRToMSD
         {
             msd.setCharAt(9, 'y');
         }
+
         if (kr.contains("<PERS<1<OBJ<2>>>>"))
         {
             msd.setCharAt(4, '1');
@@ -3134,7 +3137,7 @@ public class KRToMSD
     {
         StringBuilder msd = new StringBuilder("Mc-snl-------");
 
-        // c alapeset, nincs jelolve
+        // c alapeset, nincs jelölve
 
         // o
         if (kr.contains("[ORD"))
@@ -3150,7 +3153,7 @@ public class KRToMSD
         // l nincs a magyarban
         // d nincs KRben
 
-        // s alapeset, nincs jelolve
+        // s alapeset, nincs jelölve
         // p
         if (kr.contains("NUM<PLUR>"))
         {
@@ -3161,7 +3164,7 @@ public class KRToMSD
          * eset
          */
 
-        // n nincs jelolve alapeset
+        // n nincs jelölve alapeset
 
         // a
         if (kr.contains("<CAS<ACC>>"))
@@ -3169,7 +3172,7 @@ public class KRToMSD
             msd.setCharAt(4, 'a');
         }
 
-        // g nincs jelolve
+        // g nincs jelölve
         if (kr.contains("<CAS<GEN>>"))
         {
             msd.setCharAt(4, 'g');
@@ -3296,7 +3299,7 @@ public class KRToMSD
         }
 
         /*
-         * birtokos szama/szemelye
+         * birtokos száma/személye
          */
         if (analysis.contains("<POSS>"))
         {
@@ -3376,7 +3379,7 @@ public class KRToMSD
 
         // $forog(-.)/VERB[CAUS](at)/VERB[FREQ](gat)/VERB<PAST><PERS<1>>
 
-        String stem = null;
+        String stem;
 
         if (krAnalysis.contains("(") && krAnalysis.indexOf("(") < krAnalysis.indexOf("/"))
         {
@@ -3406,11 +3409,9 @@ public class KRToMSD
             }
         }
 
-        String msd = null;
-
         if (krCode.startsWith("NOUN"))
         {
-            msd = convertNoun(lemma, krCode);
+            String msd = convertNoun(lemma, krCode);
 
             // pronoun
             if (msd.startsWith("P"))
@@ -3435,11 +3436,9 @@ public class KRToMSD
 
         if (krCode.startsWith("ADJ"))
         {
-            /*
-             * magyarlanc 2.5-től
-             */
+            String msd;
 
-            // melleknevi igenev
+            // melléknévi igenév
             if (isParticiple(krAnalysis))
             {
                 msd = convertAdjective(krAnalysis);
@@ -3450,9 +3449,6 @@ public class KRToMSD
                 msd = convertAdjective(krCode);
                 analisis.add(new MorAna(lemma, msd));
             }
-
-            // msd = convertAdjective(krCode);
-            // analisis.add(new MorAna(lemma, msd));
 
             // dative
             if (msd.charAt(5) == 'd')
@@ -3480,7 +3476,7 @@ public class KRToMSD
 
         if (krCode.startsWith("NUM"))
         {
-            msd = convertNumber(krCode, krAnalysis);
+            String msd = convertNumber(krCode, krAnalysis);
             analisis.add(new MorAna(lemma, msd));
 
             // dative
@@ -3597,8 +3593,8 @@ public class KRToMSD
     }
 }
 EOF
-mkdir -p szte/pos/converter && cat > szte/pos/converter/KRUtils.java <<'EOF'
-package szte.pos.converter;
+mkdir -p magyarlanc && cat > magyarlanc/KRUtils.java <<'EOF'
+package magyarlanc;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -3619,19 +3615,11 @@ public class KRUtils
      * @author zsjanos
      *
      */
-    public enum KRPOS
+    public static enum KRPOS
     {
         VERB, NOUN, ADJ, NUM, ADV, PREV, ART, POSTP, UTT_INT, DET, CONJ, ONO, PREP, X;
     }
 
-    /**
-     * Search for a pattern in a text by group number.
-     *
-     * @param text
-     * @param pattern
-     * @param group
-     * @return
-     */
     private static String findPattern(String text, String pattern, int group)
     {
         Matcher m = Pattern.compile(pattern).matcher(text);
@@ -3640,14 +3628,6 @@ public class KRUtils
         return m.group(group);
     }
 
-    /**
-     *
-     * Search for the first occurence of the pattern in the text.
-     *
-     * @param text
-     * @param pattern
-     * @return
-     */
     private static String findPattern(String text, String pattern)
     {
         return findPattern(text, pattern, 1);
@@ -3669,21 +3649,15 @@ public class KRUtils
     {
         // több
         if (morph.startsWith("$sok/NUM[COMPAR]/NUM<CAS<"))
-        {
             return "$több/NUM<CAS<ACC>>";
-        }
 
         // legtöbb
         if (morph.startsWith("$sok/NUM[SUPERLAT]/NUM<CAS<"))
-        {
             return "$legtöbb/NUM<CAS<ACC>>";
-        }
 
         // legeslegtöbb
         if (morph.startsWith("$sok/NUM[SUPER-SUPERLAT]/NUM<CAS<"))
-        {
             return "$legeslegtöbb/NUM<CAS<ACC>>";
-        }
 
         String root = null;
 
@@ -3695,20 +3669,17 @@ public class KRUtils
         {
             String igekoto = "";
 
-            // igekoto
+            // igekötő
             if (morph.contains("/PREV+"))
             {
                 igekoto = morph.split("/PREV\\+")[0];
                 morph = morph.split("/PREV\\+")[1];
             }
 
-            String[] tovek = morph.split("/");
-            tovek = preProcess(tovek);
+            String[] tovek = preProcess(morph.split("/"));
 
             String vegsoto = findPatterns(tovek[0], "^([^\\(\\/]*)").get(0);
             boolean ikes = false;
-
-            List<String> feladatok;
 
             if (tovek.length > 2)
             {
@@ -3716,9 +3687,9 @@ public class KRUtils
                 {
                     if (tovek[i].matches(".*\\(.*\\).*"))
                     {
-                        feladatok = findPatterns(tovek[i], "\\((.*?)\\)");
                         int backValue = 0;
-                        for (String feladat : feladatok)
+
+                        for (String feladat : findPatterns(tovek[i], "\\((.*?)\\)"))
                         {
                             if (feladat.matches("^\\-\\d.*"))
                             {
@@ -3736,17 +3707,14 @@ public class KRUtils
                             {
                                 // -.
 
-                                String firsPart;
-                                String secondPart;
-                                firsPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 1);
-                                secondPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 2);
+                                String firsPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 1);
+                                String secondPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 2);
                                 vegsoto = firsPart + "!" + secondPart;
                             }
                             else if (feladat.matches("^\\.(.*)"))
                             {
                                 // .a .e .i .o .� .u .�
-                                String csere;
-                                csere = findPattern(feladat, "^\\.(.*)", 1);
+                                String csere = findPattern(feladat, "^\\.(.*)", 1);
                                 if (vegsoto.contains("!"))
                                 {
                                     vegsoto = vegsoto.replace("!", csere);
@@ -3856,9 +3824,9 @@ public class KRUtils
 
             // futva, futván -> fut
             if (tovek[i].contains("VERB[PART](va)")
-                    || tovek[i].contains("VERB[PART](ve)")
-                    || tovek[i].contains("VERB[PERF_PART](ván)")
-                    || tovek[i].contains("VERB[PERF_PART](vén)"))
+             || tovek[i].contains("VERB[PART](ve)")
+             || tovek[i].contains("VERB[PERF_PART](ván)")
+             || tovek[i].contains("VERB[PERF_PART](vén)"))
             {
                 tovek[tovek.length - 1] = tovek[i];
             }
@@ -3896,62 +3864,30 @@ public class KRUtils
 
         end = (end1 < end2) ? end1 : end2;
 
-        if ((end > code.length()))
+        if (end > code.length())
         {
             end = code.length();
         }
 
-        if (code.substring(start, end).equals("VERB"))
+        switch (code.substring(start, end))
         {
-            return KRPOS.VERB;
+            case "VERB":    return KRPOS.VERB;
+            case "NOUN":    return KRPOS.NOUN;
         }
-        if (code.substring(start, end).equals("NOUN"))
+
+        switch (code.substring(start + 1, end))
         {
-            return KRPOS.NOUN;
-        }
-        if (code.substring(start + 1, end).equals("ADJ"))
-        {
-            return KRPOS.ADJ;
-        }
-        if (code.substring(start + 1, end).equals("NUM"))
-        {
-            return KRPOS.NUM;
-        }
-        if (code.substring(start + 1, end).equals("ADV"))
-        {
-            return KRPOS.ADV;
-        }
-        if (code.substring(start + 1, end).equals("PREV"))
-        {
-            return KRPOS.PREV;
-        }
-        if (code.substring(start + 1, end).equals("ART"))
-        {
-            return KRPOS.ART;
-        }
-        if (code.substring(start + 1, end).equals("POSTP"))
-        {
-            return KRPOS.POSTP;
-        }
-        if (code.substring(start + 1, end).equals("UTT-INT"))
-        {
-            return KRPOS.UTT_INT;
-        }
-        if (code.substring(start + 1, end).equals("DET"))
-        {
-            return KRPOS.DET;
-        }
-        if (code.substring(start + 1, end).equals("CONJ"))
-        {
-            return KRPOS.CONJ;
-        }
-        if (code.substring(start + 1, end).equals("ONO"))
-        {
-            return KRPOS.ONO;
-        }
-        if (code.substring(start + 1, end).equals("PREP"))
-        {
-            return KRPOS.PREP;
+            case "ADJ":     return KRPOS.ADJ;
+            case "NUM":     return KRPOS.NUM;
+            case "ADV":     return KRPOS.ADV;
+            case "PREV":    return KRPOS.PREV;
+            case "ART":     return KRPOS.ART;
+            case "POSTP":   return KRPOS.POSTP;
+            case "UTT-INT": return KRPOS.UTT_INT;
+            case "DET":     return KRPOS.DET;
+            case "CONJ":    return KRPOS.CONJ;
+            case "ONO":     return KRPOS.ONO;
+            case "PREP":    return KRPOS.PREP;
         }
 
         return KRPOS.X;
@@ -3965,8 +3901,8 @@ public class KRUtils
     }
 }
 EOF
-mkdir -p szte/pos/converter && cat > szte/pos/converter/MSDReducer.java <<'EOF'
-package szte.pos.converter;
+mkdir -p magyarlanc && cat > magyarlanc/MSDReducer.java <<'EOF'
+package magyarlanc;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -4399,17 +4335,14 @@ public class MSDReducer
     }
 }
 EOF
-mkdir -p szte/pos/converter && cat > szte/pos/converter/MSDToCoNLLFeatures.java <<'EOF'
-package szte.pos.converter;
+mkdir -p magyarlanc && cat > magyarlanc/MSDToCoNLLFeatures.java <<'EOF'
+package magyarlanc;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-
-import szte.magyarlanc.resource.ResourceHolder;
-import szte.magyarlanc.resource.Util;
 
 public class MSDToCoNLLFeatures
 {
@@ -5431,129 +5364,75 @@ public class MSDToCoNLLFeatures
     }
 }
 EOF
-mkdir -p szte/pos/guesser && cat > szte/pos/guesser/CompoundWord.java <<'EOF'
-/**
- * This file is part of magyarlanc 2.0.
- *
- * magyarlanc 2.0 is free software for evaluation, research and
- * educational purposes: you can use it under the terms of the license
- * available here: http://www.inf.u-szeged.hu/rgai/magyarlanc_license
- *
- * magyarlanc 2.0 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * license for more details.
- *
- * http://www.inf.u-szeged.hu/rgai/magyarlanc
- *
- * Developed by:
- * Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
- * http://www.inf.u-szeged.hu/rgai/
- *
- * Contact:
- * Richárd Farkas
- * rfarkas@inf.u-szeged.hu
- */
-package szte.pos.guesser;
+mkdir -p magyarlanc && cat > magyarlanc/CompoundWord.java <<'EOF'
+package magyarlanc;
 
-import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
-import szte.magyarlanc.resource.ResourceHolder;
-import szte.pos.converter.KRUtils;
-import szte.pos.converter.KRUtils.KRPOS;
+import magyarlanc.KRUtils.KRPOS;
 
-/**
- * összetett szavak elemzése
- *
- * @author zsjanos
- *
- */
 public class CompoundWord
 {
-    public static boolean isCompatibleAnalyises(String firstPartKR, String secondPartKR)
+    public static boolean isCompatibleAnalyises(String kr1, String kr2)
     {
-        KRPOS secondPartPOS = KRUtils.getPOS(secondPartKR);
-        KRPOS firstPartPOS = KRUtils.getPOS(secondPartKR);
+        KRPOS pos1 = KRUtils.getPOS(kr1), pos2 = KRUtils.getPOS(kr2);
 
         // UTT-INT nem lehet a második rész
-        if (secondPartPOS.equals(KRPOS.UTT_INT))
-        {
+        if (pos2.equals(KRPOS.UTT_INT))
             return false;
-        }
 
         // ART nem lehet a második rész
-        if (secondPartPOS.equals(KRPOS.ART))
-        {
+        if (pos2.equals(KRPOS.ART))
             return false;
-        }
 
         // NUM előtt csak NUM állhat
-        if (secondPartPOS.equals(KRPOS.NUM) && !firstPartPOS.equals(KRPOS.NUM))
-        {
+        if (pos2.equals(KRPOS.NUM) && !pos1.equals(KRPOS.NUM))
             return false;
-        }
 
         // PREV nem lehet a második rész
-        if (secondPartPOS.equals(KRPOS.PREV))
-        {
+        if (pos2.equals(KRPOS.PREV))
             return false;
-        }
 
         // NOUN + ADV letiltva
-        if (firstPartPOS.equals(KRPOS.NOUN) && secondPartPOS.equals(KRPOS.ADV))
-        {
+        if (pos1.equals(KRPOS.NOUN) && pos2.equals(KRPOS.ADV))
             return false;
-        }
 
         // VERB + ADV letiltva
-        if (firstPartPOS.equals(KRPOS.VERB) && secondPartPOS.equals(KRPOS.ADV))
-        {
+        if (pos1.equals(KRPOS.VERB) && pos2.equals(KRPOS.ADV))
             return false;
-        }
 
         // PREV + NOUN letiltva
-        if (firstPartPOS.equals(KRPOS.PREV) && secondPartPOS.equals(KRPOS.NOUN))
-        {
+        if (pos1.equals(KRPOS.PREV) && pos2.equals(KRPOS.NOUN))
             return false;
-        }
 
         // ADJ + VERB letiltva
-        if (firstPartPOS.equals(KRPOS.ADJ) && secondPartPOS.equals(KRPOS.VERB))
-        {
+        if (pos1.equals(KRPOS.ADJ) && pos2.equals(KRPOS.VERB))
             return false;
-        }
 
         // VERB + NOUN letiltva
-        if (firstPartPOS.equals(KRPOS.VERB) && secondPartPOS.equals(KRPOS.NOUN))
-        {
+        if (pos1.equals(KRPOS.VERB) && pos2.equals(KRPOS.NOUN))
             return false;
-        }
 
         // NOUN + VERB csak akkor lehet, ha van a NOUN-nak <CAS>
-        if (firstPartPOS.equals(KRPOS.NOUN) && secondPartPOS.equals(KRPOS.VERB)
-                && !firstPartKR.contains("CAS"))
-        {
+        if (pos1.equals(KRPOS.NOUN) && pos2.equals(KRPOS.VERB) && !kr1.contains("CAS"))
             return false;
-        }
 
-        // NOUN + VERB<PAST><DEF> �s nincs a NOUN-nak <CAS> akkor /ADJ
-        if (firstPartPOS.equals(KRPOS.NOUN) && secondPartPOS.equals(KRPOS.VERB)
-                && !firstPartKR.contains("CAS") && secondPartKR.contains("<PAST><DEF>")
-                && secondPartKR.contains("<DEF>"))
-        {
+        // NOUN + VERB<PAST><DEF> és nincs a NOUN-nak <CAS> akkor /ADJ
+        if (pos1.equals(KRPOS.NOUN) && pos2.equals(KRPOS.VERB) && !kr1.contains("CAS") && kr2.contains("<PAST><DEF>") && kr2.contains("<DEF>"))
             return false;
-        }
 
         return true;
     }
 
-    public static boolean isBisectable(String compoundWord)
+    public static boolean isBisectable(String word)
     {
-        for (int i = 2; i < compoundWord.length() - 1; ++i)
+        RFSA rfsa = ResourceHolder.getRFSA();
+
+        for (int i = 2; i < word.length() - 1; ++i)
         {
-            if (ResourceHolder.getRFSA().analyse(compoundWord.substring(0, i)).size() > 0
-                    && ResourceHolder.getRFSA().analyse(compoundWord.substring(i)).size() > 0)
+            if (rfsa.analyse(word.substring(0, i)).size() > 0 && rfsa.analyse(word.substring(i)).size() > 0)
             {
                 return true;
             }
@@ -5562,12 +5441,13 @@ public class CompoundWord
         return false;
     }
 
-    public static int bisectIndex(String compoundWord)
+    public static int bisectIndex(String word)
     {
-        for (int i = 2; i < compoundWord.length() - 1; ++i)
+        RFSA rfsa = ResourceHolder.getRFSA();
+
+        for (int i = 2; i < word.length() - 1; ++i)
         {
-            if (ResourceHolder.getRFSA().analyse(compoundWord.substring(0, i)).size() > 0
-                    && ResourceHolder.getRFSA().analyse(compoundWord.substring(i)).size() > 0)
+            if (rfsa.analyse(word.substring(0, i)).size() > 0 && rfsa.analyse(word.substring(i)).size() > 0)
             {
                 return i;
             }
@@ -5576,36 +5456,36 @@ public class CompoundWord
         return 0;
     }
 
-    public static LinkedHashSet<String> getCompatibleAnalises(String firstPart, String secondPart)
+    public static Set<String> getCompatibleAnalises(String part1, String part2)
     {
-        return getCompatibleAnalises(firstPart, secondPart, false);
+        return getCompatibleAnalises(part1, part2, false);
     }
 
-    public static LinkedHashSet<String> getCompatibleAnalises(String firstPart, String secondPart, boolean hyphenic)
+    public static Set<String> getCompatibleAnalises(String part1, String part2, boolean hyphenic)
     {
-        LinkedHashSet<String> analises = new LinkedHashSet<String>();
+        Set<String> analises = new LinkedHashSet<String>();
 
-        Collection<String> firstAnalises = ResourceHolder.getRFSA().analyse(firstPart);
-        Collection<String> secondAnalises = ResourceHolder.getRFSA().analyse(secondPart);
+        RFSA rfsa = ResourceHolder.getRFSA();
 
-        if (firstAnalises.size() > 0 && secondAnalises.size() > 0)
+        List<String> ans1 = rfsa.analyse(part1), ans2 = rfsa.analyse(part2);
+
+        if (ans1.size() > 0 && ans2.size() > 0)
         {
-            for (String f : firstAnalises)
+            for (String f : ans1)
             {
-                for (String s : secondAnalises)
+                for (String s : ans2)
                 {
-                    String firstPartKR = KRUtils.getRoot(f);
-                    String secondPartKR = KRUtils.getRoot(s);
+                    String kr1 = KRUtils.getRoot(f), kr2 = KRUtils.getRoot(s);
 
-                    if (isCompatibleAnalyises(firstPartKR, secondPartKR))
+                    if (isCompatibleAnalyises(kr1, kr2))
                     {
                         if (hyphenic)
                         {
-                            analises.add(secondPartKR.replace("$", "$" + firstPart + "-"));
+                            analises.add(kr2.replace("$", "$" + part1 + "-"));
                         }
                         else
                         {
-                            analises.add(secondPartKR.replace("$", "$" + firstPart));
+                            analises.add(kr2.replace("$", "$" + part1));
                         }
                     }
                 }
@@ -5615,46 +5495,45 @@ public class CompoundWord
         return analises;
     }
 
-    public static LinkedHashSet<String> analyseCompoundWord(String compoundWord)
+    public static Set<String> analyseCompoundWord(String word)
     {
         // 2 részre vágható van elemzés
-        if (isBisectable(compoundWord))
+        if (isBisectable(word))
         {
-            int bisectIndex = bisectIndex(compoundWord);
-            String firstPart = compoundWord.substring(0, bisectIndex);
-            // System.out.println(firstPart);
-            String secondPart = compoundWord.substring(bisectIndex);
-            // System.out.println(secondPart);
-            return getCompatibleAnalises(firstPart, secondPart);
+            int bi = bisectIndex(word);
+            String part1 = word.substring(0, bi);
+            String part2 = word.substring(bi);
+
+            return getCompatibleAnalises(part1, part2);
         }
 
-        LinkedHashSet<String> analises = new LinkedHashSet<String>();
+        Set<String> analises = new LinkedHashSet<String>();
 
         // ha nem bontható 2 részre
-        for (int i = 2; i < compoundWord.length() - 1; ++i)
+        for (int i = 2; i < word.length() - 1; ++i)
         {
-            String firstPart = compoundWord.substring(0, i);
-            String secondPart = compoundWord.substring(i);
+            String part1 = word.substring(0, i);
+            String part2 = word.substring(i);
 
-            Collection<String> firstPartAnalises = ResourceHolder.getRFSA().analyse(firstPart);
-            if (firstPartAnalises.size() > 0)
+            List<String> ans1 = ResourceHolder.getRFSA().analyse(part1);
+            if (ans1.size() > 0)
             {
                 // ha a második rész két részre bontható
-                if (isBisectable(secondPart))
+                if (isBisectable(part2))
                 {
-                    int bisectIndex = bisectIndex(secondPart);
-                    String firstPartOfSecondSection = secondPart.substring(0, bisectIndex);
-                    String secondPartOfSecondSection = secondPart.substring(bisectIndex);
+                    int bi = bisectIndex(part2);
+                    String part21 = part2.substring(0, bi);
+                    String part22 = part2.substring(bi);
 
-                    LinkedHashSet<String> secondPartAnalises = getCompatibleAnalises(firstPartOfSecondSection, secondPartOfSecondSection);
+                    Set<String> ans2 = getCompatibleAnalises(part21, part22);
 
-                    for (String firstAnalyse : firstPartAnalises)
+                    for (String a1 : ans1)
                     {
-                        for (String secondAnalyse : secondPartAnalises)
+                        for (String a2 : ans2)
                         {
-                            if (isCompatibleAnalyises(KRUtils.getRoot(firstAnalyse), KRUtils.getRoot(secondAnalyse)))
+                            if (isCompatibleAnalyises(KRUtils.getRoot(a1), KRUtils.getRoot(a2)))
                             {
-                                analises.add(KRUtils.getRoot(secondAnalyse).replace("$", "$" + firstPart));
+                                analises.add(KRUtils.getRoot(a2).replace("$", "$" + part1));
                             }
                         }
                     }
@@ -5664,43 +5543,134 @@ public class CompoundWord
 
         return analises;
     }
+
+    public static Set<String> analyseHyphenicCompoundWord(String word)
+    {
+        Set<String> analises = new LinkedHashSet<String>();
+
+        if (!word.contains("-"))
+        {
+            return analises;
+        }
+
+        RFSA rfsa = ResourceHolder.getRFSA();
+
+        int hp = word.indexOf('-');
+        String part1 = word.substring(0, hp), part2 = word.substring(hp + 1);
+
+        // a kötőjel előtti és a kötőjel utáni résznek is van elemzése (pl.: adat-kezelőt)
+        if (isBisectable(part1 + part2))
+        {
+            analises = getCompatibleAnalises(part1, part2, true);
+        }
+
+        // a kötőjel előtti résznek is van elemzése, a kötőjel utáni rész két részre bontható
+        else if (rfsa.analyse(part1).size() > 0 && isBisectable(part2))
+        {
+            List<String> ans1 = rfsa.analyse(part1);
+
+            int bi = bisectIndex(part2);
+            String part21 = part2.substring(0, bi), part22 = part2.substring(bi);
+
+            Set<String> ans2 = getCompatibleAnalises(part21, part22);
+
+            for (String a1 : ans1)
+            {
+                for (String a2 : ans2)
+                {
+                    if (isCompatibleAnalyises(KRUtils.getRoot(a1), KRUtils.getRoot(a2)))
+                    {
+                        if (analises == null)
+                        {
+                            analises = new LinkedHashSet<String>();
+                        }
+                        analises.add(KRUtils.getRoot(a2).replace("$", "$" + part1 + "-"));
+                    }
+                }
+            }
+        }
+
+        else if (isBisectable(part1) && rfsa.analyse(part2).size() > 0)
+        {
+            List<String> ans2 = rfsa.analyse(part2);
+
+            int bi = bisectIndex(part1);
+            String part11 = part1.substring(0, bi), part12 = part1.substring(bi);
+
+            Set<String> ans1 = getCompatibleAnalises(part11, part12);
+
+            for (String a1 : ans1)
+            {
+                for (String a2 : ans2)
+                {
+                    if (isCompatibleAnalyises(KRUtils.getRoot(a1), KRUtils.getRoot(a2)))
+                    {
+                        if (analises == null)
+                        {
+                            analises = new LinkedHashSet<String>();
+                        }
+                        analises.add(KRUtils.getRoot(a2).replace("$", "$" + part1 + "-"));
+                    }
+                }
+            }
+        }
+
+        return analises;
+    }
 }
 EOF
-mkdir -p szte/pos/guesser && cat > szte/pos/guesser/HyphenicGuesser.java <<'EOF'
-/**
- * Developed by:
- *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
- *   http://www.inf.u-szeged.hu/rgai/
- *
- * Contact:
- *  János Zsibrita
- *  zsibrita@inf.u-szeged.hu
- *
- * Licensed by Creative Commons Attribution Share Alike
- *
- * http://creativecommons.org/licenses/by-sa/3.0/legalcode
- */
-package szte.pos.guesser;
+mkdir -p magyarlanc && cat > magyarlanc/Guesser.java <<'EOF'
+package magyarlanc;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import szte.magyarlanc.MorAna;
-import szte.magyarlanc.resource.ResourceHolder;
-
-/**
- *
- * @author zsjanos
- */
-
-public class HyphenicGuesser
+public class Guesser
 {
-    public static Set<MorAna> guess(String root, String suffix)
+    /**
+     * A morPhonGuess függvény egy ismeretlen (nem elemezhető) főnévi szótő és
+     * tetszőleges suffix guesselésére szolgál. A guesselés során az adott suffixet
+     * a rendszer morPhonDir szótárának elemeire illesztve probáljuk elemezni. A
+     * szótár reprezentálja a magyar nyelv minden (nem hasonuló) illeszkedési
+     * szabályát, így biztosak lehetünk benne, hogy egy valós toldalék mindenképp
+     * illeszkedni fog legalább egy szótárelemre. Például egy 'hoz'rag esetén,
+     * először a kód elemre próbálunk illeszteni, majd elemezni. A kapott szóalak
+     * így a kódhoz lesz, melyre a KR elemzőnk nem ad elemzést. A következő
+     * szótárelem a talány, a szóalak a talányhoz lesz, melyre megkapjuk az Nc-st
+     * (külső közelítő/allative) főnévi elemzést.
+     */
+    public static Set<MorAna> morPhonGuess(String root, String suffix)
+    {
+        Set<MorAna> stems = new TreeSet<MorAna>();
+
+        RFSA rfsa = ResourceHolder.getRFSA();
+
+        for (String guess : ResourceHolder.getMorPhonDir())
+        {
+            for (String kr : rfsa.analyse(guess + suffix))
+            {
+                for (MorAna stem : ResourceHolder.getKRToMSD().getMSD(kr))
+                {
+                    if (stem.getMsd().startsWith("N"))
+                    {
+                        stems.add(new MorAna(root, stem.getMsd()));
+                    }
+                }
+            }
+        }
+
+        return stems;
+    }
+
+    public static Set<MorAna> hyphenicGuess(String root, String suffix)
     {
         Set<MorAna> morAnas = new TreeSet<MorAna>();
 
         // kötőjeles suffix (pl.: Bush-hoz)
-        morAnas.addAll(MorPhonGuesser.guess(root, suffix));
+        morAnas.addAll(morPhonGuess(root, suffix));
 
         // suffix főnév (pl.: Bush-kormannyal)
         for (String kr : ResourceHolder.getRFSA().analyse(suffix))
@@ -5718,257 +5688,72 @@ public class HyphenicGuesser
         return morAnas;
     }
 
-    public static void main(String[] args)
-    {
-        System.out.println(HyphenicGuesser.guess("Bush", "hoz"));
-        System.out.println(HyphenicGuesser.guess("Bush", "kormánynak"));
-    }
-}
-EOF
-mkdir -p szte/pos/guesser && cat > szte/pos/guesser/HyphenicWord.java <<'EOF'
-package szte.pos.guesser;
+    /**
+     * Minden számmal kezdődő token elemzését reguláris kifejezések végzik.
+     * Egy szóalakhoz több elemzés is tartozhat.
+     * Egy számmal kezdődő token lehet főnév (N) (pl.: 386-os@Nn-sn),
+     * melléknév (pl.: 16-ai@Afp-sn), számnév (pl.: 5.@Mo-snd)
+     * vagy nyílt tokenosztályba tartozó (pl.: 20%@Onp-sn).
+     */
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
+        private static final String abc = "([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)";
 
-import szte.magyarlanc.resource.ResourceHolder;
-import szte.pos.converter.KRUtils;
+    private static final Pattern
+        rxN_0 = Pattern.compile("\\d+.*"),
 
-public class HyphenicWord
-{
-    public static LinkedHashSet<String> analyseHyphenicCompoundWord(String hyphenicCompoundWord)
-    {
-        LinkedHashSet<String> analises = new LinkedHashSet<String>();
+        // 1-es 1.3-as 1,5-ös 1/6-os 16-17-es [Afp-sn, Nn-sn]
+        rxN_1 = Pattern.compile("(\\d+[0-9\\.,%-/]*-(as|ás|es|os|ös)+)" + abc),
 
-        if (!hyphenicCompoundWord.contains("-"))
-        {
-            return analises;
-        }
+        // 16-i
+        rxN_2 = Pattern.compile("\\d+[0-9\\.,-/]*-i"),
 
-        int hyphenPosition = hyphenicCompoundWord.indexOf('-');
-        String firstPart = hyphenicCompoundWord.substring(0, hyphenPosition);
-        String secondPart = hyphenicCompoundWord.substring(hyphenPosition + 1);
+        // 16-(ai/ei/jei)
+        rxN_3 = Pattern.compile("(\\d+-(ai|ei|jei)+)" + abc),
 
-        // a kötőjel előtti és a kötőjel utáni résznek is van elemzése (pl.: adat-kezelőt)
-        if (CompoundWord.isBisectable(firstPart + secondPart))
-        {
-            analises = CompoundWord.getCompatibleAnalises(firstPart, secondPart, true);
-        }
+        // +12345
+        rxN_4 = Pattern.compile("([\\+|\\-]{1}\\d+[0-9\\.,-/]*)-??" + abc),
 
-        // a kötőjel előtti résznek is van elemzése, a kötőjel utáni rész két részre bontható
-        else if (ResourceHolder.getRFSA().analyse(firstPart).size() > 0 && CompoundWord.isBisectable(secondPart))
-        {
-            Collection<String> firstPartAnalises = ResourceHolder.getRFSA().analyse(firstPart);
+        // 12345-12345
+        rxN_5 = Pattern.compile("(\\d+-\\d+)-??" + abc),
 
-            int bisectIndex = CompoundWord.bisectIndex(secondPart);
-            String firstPartOfSecondSection = secondPart.substring(0, bisectIndex);
-            String secondPartOfSecondSection = secondPart.substring(bisectIndex);
+        // 12:30 12.30 Ont-sn
+        rxN_6 = Pattern.compile("((\\d{1,2})[\\.:](\\d{2}))-??" + abc),
 
-            LinkedHashSet<String> secondSectionAnalises = CompoundWord.getCompatibleAnalises(firstPartOfSecondSection, secondPartOfSecondSection);
+        // 123,45-12345
+        rxN_7 = Pattern.compile("(\\d+,\\d+-\\d+)-??" + abc),
 
-            for (String firstAnalyse : firstPartAnalises)
-            {
-                for (String secondAnalyse : secondSectionAnalises)
-                {
-                    if (CompoundWord.isCompatibleAnalyises(KRUtils.getRoot(firstAnalyse), KRUtils.getRoot(secondAnalyse)))
-                    {
-                        if (analises == null)
-                        {
-                            analises = new LinkedHashSet<String>();
-                        }
-                        analises.add(KRUtils.getRoot(secondAnalyse).replace("$", "$" + firstPart + "-"));
-                    }
-                }
-            }
-        }
+        // 12345-12345,12345
+        rxN_8 = Pattern.compile("(\\d+-\\d+,\\d+)-??" + abc),
 
-        else if (CompoundWord.isBisectable(firstPart) && ResourceHolder.getRFSA().analyse(secondPart).size() > 0)
-        {
-            Collection<String> secondPartAnalises = ResourceHolder.getRFSA().analyse(secondPart);
+        // 12345,12345-12345,12345
+        rxN_9 = Pattern.compile("(\\d+,\\d+-\\d+,\\d+)-??" + abc),
 
-            int bisectIndex = CompoundWord.bisectIndex(firstPart);
-            String firstSectionOfFirstPart = firstPart.substring(0, bisectIndex);
-            String secondSectionOfFirstPart = firstPart.substring(bisectIndex);
+        // 12345.12345,12345
+        rxN_10 = Pattern.compile("(\\d+\\.\\d+,\\d+)-??" + abc),
 
-            LinkedHashSet<String> firstPartAnalises = CompoundWord.getCompatibleAnalises(firstSectionOfFirstPart, secondSectionOfFirstPart);
+        // 10:30
+        rxN_11 = Pattern.compile("(\\d+:\\d+)-??" + abc),
 
-            for (String firstAnalyse : firstPartAnalises)
-            {
-                for (String secondAnalyse : secondPartAnalises)
-                {
-                    if (CompoundWord.isCompatibleAnalyises(KRUtils.getRoot(firstAnalyse), KRUtils.getRoot(secondAnalyse)))
-                    {
-                        if (analises == null)
-                        {
-                            analises = new LinkedHashSet<String>();
-                        }
-                        analises.add(KRUtils.getRoot(secondAnalyse).replace("$", "$" + firstPart + "-"));
-                    }
-                }
-            }
-        }
+        // 12345.12345.1234-.
+        rxN_12 = Pattern.compile("(\\d+\\.\\d+[0-9\\.]*)-??" + abc),
 
-        return analises;
-    }
-}
-EOF
-mkdir -p szte/pos/guesser && cat > szte/pos/guesser/MorPhonGuesser.java <<'EOF'
-/**
- * Developed by:
- *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
- *   http://www.inf.u-szeged.hu/rgai/
- *
- * Contact:
- *  Janos Zsibrita
- *  zsibrita@inf.u-szeged.hu
- *
- * Licensed by Creative Commons Attribution Share Alike
- *
- * http://creativecommons.org/licenses/by-sa/3.0/legalcode
- */
-package szte.pos.guesser;
+        // 12,3-nak
+        rxN_13 = Pattern.compile("(\\d+,\\d+)-??" + abc),
 
-import java.util.Set;
-import java.util.TreeSet;
+        // 20-nak
+        rxN_14 = Pattern.compile("(\\d+)-??" + abc),
 
-import szte.magyarlanc.MorAna;
-import szte.magyarlanc.resource.ResourceHolder;
+        // 20.
+        rxN_15 = Pattern.compile("((\\d+-??\\d*)\\.)-??" + abc),
 
-/**
- * A MorPhonGuesser osztaly egy ismeretlen (nem elemezheto) fonevi szoto es
- * tetszoleges suffix guesselesere szolgal. A guesseles soran az adott suffixet
- * a rendszer morPhonDir szotaranak elemeire illesztve probajuk elemezni. A
- * szotar reprezentalja a magyar nyelv minden (nem hasonulo) illeszkedesi
- * szabalyat, igy biztosak lehetenk benne, hogy egy valos toldalek mindenkepp
- * illeszkedni fog legalabb egy szotarelemre. Peldaul egy 'hoz'rag eseten,
- * eleszor a kod elemre probalunk illeszteni, majd elemezni. A kapott szoalak
- * igy a kodhez lesz, melyre a KR elemzonk nem ad elemzest. A kovetkezo
- * szotarelem a talany, a szoalak a talanyhoz lesz, melyre megkapjuk az Nc-st
- * (kulso kozelito/allative) fonevi elemzest.
- */
-public class MorPhonGuesser
-{
-    public static Set<MorAna> guess(String root, String suffix)
-    {
-        Set<MorAna> stems = new TreeSet<MorAna>();
+        // 16-áig
+        rxN_16 = Pattern.compile("((\\d{1,2})-(á|é|jé))" + abc),
 
-        for (String guess : ResourceHolder.getMorPhonDir())
-        {
-            if (ResourceHolder.getRFSA().analyse(guess + suffix).size() > 0)
-            {
-                for (String kr : ResourceHolder.getRFSA().analyse(guess + suffix))
-                {
-                    for (MorAna stem : ResourceHolder.getKRToMSD().getMSD(kr))
-                    {
-                        if (stem.getMsd().startsWith("N"))
-                        {
-                            stems.add(new MorAna(root, stem.getMsd()));
-                        }
-                    }
-                }
-            }
-        }
+        // 16-a
+        rxN_17 = Pattern.compile("((\\d{1,2})-(a|e|je))()"),
 
-        return stems;
-    }
-
-    public static void main(String[] args)
-    {
-        System.out.println(guess("London", "ban"));
-    }
-}
-EOF
-mkdir -p szte/pos/guesser && cat > szte/pos/guesser/NumberGuesser.java <<'EOF'
-/**
- * Developed by:
- *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
- *   http://www.inf.u-szeged.hu/rgai/
- *
- * Contact:
- *  Janos Zsibrita
- *  zsibrita@inf.u-szeged.hu
- *
- * Licensed by Creative Commons Attribution Share Alike
- *
- * http://creativecommons.org/licenses/by-sa/3.0/legalcode
- */
-package szte.pos.guesser;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import szte.magyarlanc.Magyarlanc;
-import szte.magyarlanc.MorAna;
-import szte.magyarlanc.resource.ResourceHolder;
-
-/**
- * Minden szammal kezdodo token elemzesét a NumberGuesser osztaly végzi,
- * regularis kifejezések segitsegevel. Egy szolakhoz tobb elemzes is tartozhat.
- * Egy szammal kezdodo token lehet fonev (N) (pl.: 386-os@Nn-sn), melleknev
- * (pl.: 16-ai@Afp-sn), szamnev (pl. 5.@Mo-snd) vagy nyilt tokenosztalyba
- * tartozo (pl.: 20%@Onp-sn).
- */
-public class NumberGuesser
-{
-    // main number pattern
-    private final static Pattern PATTERN_0 = Pattern.compile("[0-9]+.*");
-
-    // 1-es 1.3-as 1,5-ös 1/6-os 16-17-es [Afp-sn, Nn-sn]
-    private static Pattern PATTERN_1 = Pattern.compile("([0-9]+[0-9\\.,%-/]*-(as|ás|es|os|ös)+)([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 16-i
-    private static Pattern PATTERN_2 = Pattern.compile("[0-9]+[0-9\\.,-/]*-i");
-
-    // 16-(ai/ei/jei)
-    private static Pattern PATTERN_3 = Pattern.compile("([0-9]+-(ai|ei|jei)+)([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // +12345
-    private static Pattern PATTERN_4 = Pattern.compile("([\\+|\\-]{1}[0-9]+[0-9\\.,-/]*)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12345-12345
-    private static Pattern PATTERN_5 = Pattern.compile("([0-9]+-[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12:30 12.30 Ont-sn
-    private static Pattern PATTERN_6 = Pattern.compile("(([0-9]{1,2})[\\.:]([0-9]{2}))-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 123,45-12345
-    private static Pattern PATTERN_7 = Pattern.compile("([0-9]+,[0-9]+-[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12345-12345,12345
-    private static final Pattern PATTERN_8 = Pattern.compile("([0-9]+-[0-9]+,[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12345,12345-12345,12345
-    private static final Pattern PATTERN_9 = Pattern.compile("([0-9]+,[0-9]+-[0-9]+,[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12345.12345,12345
-    private static final Pattern PATTERN_10 = Pattern.compile("([0-9]+\\.[0-9]+,[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 10:30
-    private static final Pattern PATTERN_11 = Pattern.compile("([0-9]+:[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12345.12345.1234-.
-    private static final Pattern PATTERN_12 = Pattern.compile("([0-9]+\\.[0-9]+[0-9\\.]*)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 12,3-nak
-    private static final Pattern PATTERN_13 = Pattern.compile("([0-9]+,[0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 20-nak
-    private static final Pattern PATTERN_14 = Pattern.compile("([0-9]+)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 20.
-    private static final Pattern PATTERN_15 = Pattern.compile("(([0-9]+-??[0-9]*)\\.)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 16-áig
-    private static final Pattern PATTERN_16 = Pattern.compile("(([0-9]{1,2})-(á|é|jé))([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
-
-    // 16-a
-    private static final Pattern PATTERN_17 = Pattern.compile("(([0-9]{1,2})-(a|e|je))()");
-
-    // 50%
-    private static final Pattern PATTERN_18 = Pattern.compile("([0-9]+,??[0-9]*%)-??([a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]*)");
+        // 50%
+        rxN_18 = Pattern.compile("(\\d+,??\\d*%)-??" + abc);
 
     private static String nounToNumeral(String nounMsd, String numeralMsd)
     {
@@ -6089,513 +5874,442 @@ public class NumberGuesser
      *          egy (számmal kezdődő) String
      * @return lehetséges elemzéseket (lemma-msd párok)
      */
-    public static Set<MorAna> guess(String number)
+    public static Set<MorAna> numberGuess(String number)
     {
-        Set<MorAna> stemSet = new TreeSet<MorAna>();
+        Set<MorAna> stems = new TreeSet<MorAna>();
 
-        // base number pattern
-        Matcher matcher = PATTERN_0.matcher(number);
-        if (!matcher.matches())
+        Matcher m = rxN_0.matcher(number);
+        if (!m.matches())
         {
-            return stemSet;
+            return stems;
         }
 
-        matcher = PATTERN_1.matcher(number);
-
-        if (matcher.matches())
+        m = rxN_1.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
+            String root = m.group(1);
             // group 3!!!
             // 386-osok (386-(os))(ok)
-            String suffix = matcher.group(3);
+            String suffix = m.group(3);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, stem.getMsd()));
-                    stemSet.add(new MorAna(root, stem.getMsd().replace(Magyarlanc.DEFAULT_NOUN.substring(0, 2), "Afp")));
+                    stems.add(new MorAna(root, stem.getMsd()));
+                    stems.add(new MorAna(root, stem.getMsd().replace(Magyarlanc.DEFAULT_NOUN.substring(0, 2), "Afp")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(matcher.group(1), "Afp-sn"));
-                stemSet.add(new MorAna(matcher.group(1), Magyarlanc.DEFAULT_NOUN));
+                stems.add(new MorAna(root, "Afp-sn"));
+                stems.add(new MorAna(root, Magyarlanc.DEFAULT_NOUN));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 16-i
-        matcher = PATTERN_2.matcher(number);
-        if (matcher.matches())
+        m = rxN_2.matcher(number);
+        if (m.matches())
         {
-            stemSet.add(new MorAna(number, "Afp-sn"));
-            stemSet.add(new MorAna(number, "Onf-sn"));
-            return stemSet;
+            stems.add(new MorAna(number, "Afp-sn"));
+            stems.add(new MorAna(number, "Onf-sn"));
+            return stems;
         }
 
         // 16-(ai/ei/1-jei)
-        matcher = PATTERN_3.matcher(number);
-        if (matcher.matches())
+        m = rxN_3.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(3);
+            String root = m.group(1);
+            String suffix = m.group(3);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, "Afp-" + stem.getMsd().substring(3)));
+                    stems.add(new MorAna(root, "Afp-" + stem.getMsd().substring(3)));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(matcher.group(1), "Afp-sn"));
+                stems.add(new MorAna(root, "Afp-sn"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // +/-12345
-        matcher = PATTERN_4.matcher(number);
-        if (matcher.matches())
+        m = rxN_4.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Ons----------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Ons----------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Ons-sn"));
+                stems.add(new MorAna(number, "Ons-sn"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 12:30 12.30 Ont-sn
-        matcher = PATTERN_6.matcher(number);
-        if (matcher.matches())
+        m = rxN_6.matcher(number);
+        if (m.matches())
         {
-            if (Integer.parseInt(matcher.group(2)) < 24 && Integer.parseInt(matcher.group(3)) < 60)
+            if (Integer.parseInt(m.group(2)) < 24 && Integer.parseInt(m.group(3)) < 60)
             {
-                String root = matcher.group(1);
-                String suffix = matcher.group(4);
+                String root = m.group(1);
+                String suffix = m.group(4);
 
                 if (suffix.length() > 0)
-                    for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                    for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                     {
-                        stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Ont---------")));
+                        stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Ont---------")));
                     }
 
-                if (stemSet.size() == 0)
+                if (stems.size() == 0)
                 {
-                    stemSet.add(new MorAna(number, "Ont-sn"));
+                    stems.add(new MorAna(number, "Ont-sn"));
                 }
             }
         }
 
         // 12345-12345-*
-        matcher = PATTERN_5.matcher(number);
-        if (matcher.matches())
+        m = rxN_5.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Onr---------")));
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Onf----------")));
-                    stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d-------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Onr---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Onf----------")));
+                    stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d-------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Onr-sn"));
-                stemSet.add(new MorAna(number, "Onf-sn"));
-                stemSet.add(new MorAna(number, "Mc-snd"));
+                stems.add(new MorAna(number, "Onr-sn"));
+                stems.add(new MorAna(number, "Onf-sn"));
+                stems.add(new MorAna(number, "Mc-snd"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 12345,12345-12345,12345-*
         // 12345-12345,12345-*
         // 12345,12345-12345-*
 
-        matcher = PATTERN_7.matcher(number);
+        m = rxN_7.matcher(number);
 
-        if (!matcher.matches())
-        {
-            matcher = PATTERN_8.matcher(number);
-        }
-        if (!matcher.matches())
-        {
-            matcher = PATTERN_9.matcher(number);
-        }
+        if (!m.matches())
+            m = rxN_8.matcher(number);
+        if (!m.matches())
+            m = rxN_9.matcher(number);
 
-        if (matcher.matches())
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mf---d-------")));
+                    stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mf---d-------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Mf-snd"));
+                stems.add(new MorAna(number, "Mf-snd"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 12345.12345,12345
-        matcher = PATTERN_10.matcher(number);
-        if (matcher.matches())
+        m = rxN_10.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Ond---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Ond---------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Ond-sn"));
+                stems.add(new MorAna(number, "Ond-sn"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 10:30-*
-        matcher = PATTERN_11.matcher(number);
-        if (matcher.matches())
+        m = rxN_11.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
             {
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Onf---------")));
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Onq---------")));
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Onr---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Onf---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Onq---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Onr---------")));
                 }
             }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Onf-sn"));
-                stemSet.add(new MorAna(number, "Onq-sn"));
-                stemSet.add(new MorAna(number, "Onr-sn"));
+                stems.add(new MorAna(number, "Onf-sn"));
+                stems.add(new MorAna(number, "Onq-sn"));
+                stems.add(new MorAna(number, "Onr-sn"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 12345.12345.1234-.
-        matcher = PATTERN_12.matcher(number);
-        if (matcher.matches())
+        m = rxN_12.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
             {
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Oi----------")));
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Ond---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Oi----------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Ond---------")));
                 }
             }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Oi--sn"));
-                stemSet.add(new MorAna(number, "Ond-sn"));
+                stems.add(new MorAna(number, "Oi--sn"));
+                stems.add(new MorAna(number, "Ond-sn"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 16-a 17-e 16-áig 17-éig 1-je 1-jéig
 
-        matcher = PATTERN_16.matcher(number);
+        m = rxN_16.matcher(number);
 
-        if (!matcher.matches())
-        {
-            matcher = PATTERN_17.matcher(number);
-        }
+        if (!m.matches())
+            m = rxN_17.matcher(number);
 
-        if (matcher.matches())
+        if (m.matches())
         {
-            String root = matcher.group(2);
-            String suffix = matcher.group(4);
+            String root = m.group(2);
+            String suffix = m.group(4);
 
             if (suffix.length() > 0)
             {
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d----s3-")));
-                    if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                    stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d----s3-")));
+                    if (Util.isDate(root))
                     {
-                        stemSet.add(new MorAna(root + ".", nounToNoun(stem.getMsd(), Magyarlanc.DEFAULT_NOUN.substring(0, 2) + "------s3-")));
+                        stems.add(new MorAna(root + ".", nounToNoun(stem.getMsd(), Magyarlanc.DEFAULT_NOUN.substring(0, 2) + "------s3-")));
                     }
 
-                    if (matcher.group(3).equals("�"))
+                    if (m.group(3).equals("�"))
                     {
-                        stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d------s")));
+                        stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d------s")));
                     }
                 }
             }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(matcher.group(2), "Mc-snd----s3"));
-                if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                stems.add(new MorAna(root, "Mc-snd----s3"));
+                if (Util.isDate(root))
                 {
-                    stemSet.add(new MorAna(matcher.group(2) + ".", Magyarlanc.DEFAULT_NOUN + "---s3"));
+                    stems.add(new MorAna(root + ".", Magyarlanc.DEFAULT_NOUN + "---s3"));
                 }
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 50%
-        matcher = PATTERN_18.matcher(number);
-
-        if (matcher.matches())
+        m = rxN_18.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToOther(stem.getMsd(), "Onp---------")));
+                    stems.add(new MorAna(root, nounToOther(stem.getMsd(), "Onp---------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(root, "Onp-sn"));
+                stems.add(new MorAna(root, "Onp-sn"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 12,3-nak
-        matcher = PATTERN_13.matcher(number);
-        if (matcher.matches())
+        m = rxN_13.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mf---d-------")));
+                    stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mf---d-------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Mf-snd"));
+                stems.add(new MorAna(number, "Mf-snd"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 20-nak
-        matcher = PATTERN_14.matcher(number);
-        if (matcher.matches())
+        m = rxN_14.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(2);
+            String root = m.group(1);
+            String suffix = m.group(2);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d-------")));
+                    stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mc---d-------")));
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Mc-snd"));
+                stems.add(new MorAna(number, "Mc-snd"));
             }
 
-            return stemSet;
+            return stems;
         }
 
         // 15.
-        matcher = PATTERN_15.matcher(number);
-        if (matcher.matches())
+        m = rxN_15.matcher(number);
+        if (m.matches())
         {
-            String root = matcher.group(1);
-            String suffix = matcher.group(3);
+            String root = m.group(1);
+            String suffix = m.group(3);
 
             if (suffix.length() > 0)
-                for (MorAna stem : MorPhonGuesser.guess(root, suffix))
+                for (MorAna stem : Guesser.morPhonGuess(root, suffix))
                 {
-                    stemSet.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mo---d-------")));
+                    stems.add(new MorAna(root, nounToNumeral(stem.getMsd(), "Mo---d-------")));
 
-                    if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                    if (Util.isDate(m.group(2)))
                     {
-                        stemSet.add(new MorAna(root, stem.getMsd()));
+                        stems.add(new MorAna(root, stem.getMsd()));
                     }
                 }
 
-            if (stemSet.size() == 0)
+            if (stems.size() == 0)
             {
-                stemSet.add(new MorAna(number, "Mo-snd"));
-                if (szte.magyarlanc.resource.Util.isDate(matcher.group(2)))
+                stems.add(new MorAna(number, "Mo-snd"));
+                if (Util.isDate(m.group(2)))
                 {
-                    stemSet.add(new MorAna(number, Magyarlanc.DEFAULT_NOUN));
-                    stemSet.add(new MorAna(number, Magyarlanc.DEFAULT_NOUN + "---s3"));
+                    stems.add(new MorAna(number, Magyarlanc.DEFAULT_NOUN));
+                    stems.add(new MorAna(number, Magyarlanc.DEFAULT_NOUN + "---s3"));
                 }
             }
 
-            return stemSet;
+            return stems;
         }
 
-        if (stemSet.size() == 0)
+        if (stems.size() == 0)
         {
-            stemSet.add(new MorAna(number, "Oi--sn"));
+            stems.add(new MorAna(number, "Oi--sn"));
         }
 
-        return stemSet;
+        return stems;
     }
+
+        private static final String
+            rMDC = "(CM|CD|D?C{0,3})",
+            rCLX = "(XC|XL|L?X{0,3})",
+            rXVI = "(IX|IV|V?I{0,3})";
 
     public static Set<MorAna> guessRomanNumber(String word)
     {
-        Set<MorAna> stemSet = new HashSet<MorAna>();
+        Set<MorAna> stems = new HashSet<MorAna>();
 
         // MCMLXXXIV
-        if (word.matches("^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$"))
+        if (word.matches("^M{0,4}" + rMDC + rCLX + rXVI + "$"))
         {
-            stemSet.add(new MorAna(String.valueOf(romanToArabic(word)), "Mc-snr"));
+            int n = romanToArabic(word);
+            stems.add(new MorAna(String.valueOf(n), "Mc-snr"));
         }
 
         // MCMLXXXIV.
-        else if (word.matches("^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\\.$"))
+        else if (word.matches("^M{0,4}" + rMDC + rCLX + rXVI + "\\.$"))
         {
-            stemSet.add(new MorAna(String.valueOf(romanToArabic(word.substring(0, word.length() - 1))) + ".", "Mo-snr"));
+            int n = romanToArabic(word.substring(0, word.length() - 1));
+            stems.add(new MorAna(String.valueOf(n) + ".", "Mo-snr"));
         }
 
         // MCMLXXXIV-MMIX
-        else if (word.matches("^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})-M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$"))
+        else if (word.matches("^M{0,4}" + rMDC + rCLX + rXVI + "-M{0,4}" + rMDC + rCLX + rXVI + "$"))
         {
-            stemSet.add(new MorAna(String.valueOf(romanToArabic(word.substring(0, word.indexOf("-"))))
-                        + "-"
-                        + String.valueOf(romanToArabic(word.substring(word.indexOf("-") + 1, word.length()))), "Mc-snr"));
+            int n = romanToArabic(word.substring(0, word.indexOf("-")));
+            int m = romanToArabic(word.substring(word.indexOf("-") + 1, word.length()));
+            stems.add(new MorAna(String.valueOf(n) + "-" + String.valueOf(m), "Mc-snr"));
         }
 
         // MCMLXXXIV-MMIX.
-        else if (word.matches("^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})-M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})\\.$"))
+        else if (word.matches("^M{0,4}" + rMDC + rCLX + rXVI + "-M{0,4}" + rMDC + rCLX + rXVI + "\\.$"))
         {
-            stemSet.add(new MorAna(String.valueOf(romanToArabic(word.substring(0, word.indexOf("-"))))
-                        + "-"
-                        + String.valueOf(romanToArabic(word.substring(word.indexOf("-") + 1, word.length()))) + ".", "Mo-snr"));
+            int n = romanToArabic(word.substring(0, word.indexOf("-")));
+            int m = romanToArabic(word.substring(word.indexOf("-") + 1, word.length()));
+            stems.add(new MorAna(String.valueOf(n) + "-" + String.valueOf(m) + ".", "Mo-snr"));
         }
 
-        return stemSet;
+        return stems;
     }
 
     public static void main(String[] args)
     {
-        System.err.println(Magyarlanc.DEFAULT_NOUN.substring(0, 2));
-        System.out.println(NumberGuesser.guess("386-osok"));
-        System.out.println(NumberGuesser.guess("16-ai"));
-        System.out.println(NumberGuesser.guess("5."));
-        System.out.println(NumberGuesser.guess("20%"));
+        System.out.println(morPhonGuess("London", "ban"));
+
+        System.out.println(hyphenicGuess("Bush", "hoz"));
+        System.out.println(hyphenicGuess("Bush", "kormánynak"));
+
+        System.out.println(numberGuess("386-osok"));
+        System.out.println(numberGuess("16-ai"));
+        System.out.println(numberGuess("5."));
+        System.out.println(numberGuess("20%"));
     }
 }
 EOF
-mkdir -p szte/pos/morphology && cat > szte/pos/morphology/HungarianMorphology.java <<'EOF'
-package szte.pos.morphology;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import edu.stanford.nlp.ling.TaggedWord;
-
-import szte.magyarlanc.HunLemMor;
-import szte.magyarlanc.MorAna;
-import szte.magyarlanc.resource.ResourceHolder;
-
-public class HungarianMorphology
-{
-    public static String[] getPossibleTags(String word, Set<String> possibleTags)
-    {
-        Set<MorAna> morAnas = HunLemMor.getMorphologicalAnalyses(word);
-        Set<String> res = new HashSet<String>();
-
-        for (MorAna morAna : morAnas)
-        {
-            String reduced = ResourceHolder.getMSDReducer().reduce(morAna.getMsd());
-            if (possibleTags.contains(reduced))
-            {
-                res.add(reduced);
-            }
-        }
-
-        if (res.size() == 0)
-        {
-            res.add("X");
-        }
-
-        return res.toArray(new String[res.size()]);
-    }
-
-    public static List<TaggedWord> recoverTags(List<TaggedWord> sentence)
-    {
-        for (TaggedWord tw : sentence)
-        {
-            int max = -1;
-            MorAna argmax = null;
-
-            for (MorAna morAna : HunLemMor.getMorphologicalAnalyses(tw.word()))
-            {
-                int freq = ResourceHolder.getFrequencies().containsKey(morAna.getMsd()) ? ResourceHolder.getFrequencies().get(morAna.getMsd()) : 0;
-
-                if (!morAna.getMsd().equals(null))
-                {
-                    if (ResourceHolder.getMSDReducer().reduce(morAna.getMsd()).equals(tw.tag()) && (max < freq))
-                    {
-                        argmax = morAna;
-                        max = freq;
-                    }
-                }
-            }
-
-            if (argmax != null)
-            {
-                tw.setValue(argmax.getLemma());
-                tw.setTag(argmax.getMsd());
-            }
-            else
-            {
-                tw.setValue(tw.word());
-            }
-        }
-
-        return sentence;
-    }
-}
-EOF
-mkdir -p szte/splitter && cat > szte/splitter/HunSplitter.java <<'EOF'
-package szte.splitter;
+mkdir -p magyarlanc && cat > magyarlanc/HunSplitter.java <<'EOF'
+package magyarlanc;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -6606,30 +6320,27 @@ import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.Sente
 import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.DefaultWordTokenizer;
 import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.WordTokenizer;
 
-import szte.magyarlanc.resource.ResourceHolder;
-
 public class HunSplitter
 {
-    private boolean lineSentence = false;
+    public static final char[] HYPHENS = new char[] { '-', '­', '–', '—', '―', '−', '─' };
+    public static final char DEFAULT_HYPHEN = '-';
 
-    private WordTokenizer tokenizer = null;
-    private SentenceSplitter splitter = null;
-    private StringCleaner stringCleaner = null;
+    public static final char[] QUOTES = new char[] { '"', '\'', '`', '´', '‘', '’', '“', '”', '„' };
+    public static final char DEFAULT_QUOTE = '"';
+
+    public static final char[] FORCE_TOKEN_SEPARATORS = new char[] { ',', '.', ':' };
+
+    private boolean lineSentence;
+    private StringCleaner stringCleaner;
+
+    private SentenceSplitter splitter;
+    private WordTokenizer tokenizer;
 
     private List<List<String>> splittedTemp = null;
 
     public HunSplitter()
     {
         this(false);
-    }
-
-    public HunSplitter(WordTokenizer wordTokenizer, SentenceSplitter sentenceSplitter, boolean lineSentence)
-    {
-        this.setLineSentence(lineSentence);
-        this.setStringCleaner(new StringCleaner());
-
-        this.setSplitter(sentenceSplitter);
-        this.setTokenizer(wordTokenizer);
     }
 
     public HunSplitter(boolean lineSentence)
@@ -6639,6 +6350,15 @@ public class HunSplitter
 
         this.setSplitter(new DefaultSentenceSplitter());
         this.setTokenizer(new DefaultWordTokenizer());
+    }
+
+    public HunSplitter(WordTokenizer wordTokenizer, SentenceSplitter sentenceSplitter, boolean lineSentence)
+    {
+        this.setLineSentence(lineSentence);
+        this.setStringCleaner(new StringCleaner());
+
+        this.setSplitter(sentenceSplitter);
+        this.setTokenizer(wordTokenizer);
     }
 
     public List<String> tokenize(String sentence)
@@ -6660,15 +6380,6 @@ public class HunSplitter
         return tokenized.toArray(new String[tokenized.size()]);
     }
 
-    /**
-     * Insert the specified character, between the tokens.
-     *
-     * @param tokens
-     *          splitted tokens
-     * @param c
-     *          character to instert
-     * @return
-     */
     private static String[] insertChars(String[] tokens, char c)
     {
         List<String> ret = new ArrayList<String>();
@@ -6683,43 +6394,6 @@ public class HunSplitter
 
         return ret.toArray(new String[ret.size()]);
     }
-
-    /**
-     * Retokenize the sentence via the specified HYPHENS.
-     *
-     * @param sentence
-     *          tokenized sentence
-     * @return retokenzied sentence
-     */
-    // private static List<String> splitSentenceHypens(List<String> sentence) {
-    //
-    // List<String> tokens = null;
-    // tokens = new LinkedList<String>(sentence);
-    //
-    // String[] splitted = null;
-    // for (int i = 0; i < tokens.size(); ++i) {
-    // splitted = tokens.get(i).split(
-    // String.valueOf(HunSplitterResources.DEFAULT_HYPHEN));
-    //
-    // if (splitted.length > 1) {
-    // splitted = insertChars(splitted, HunSplitterResources.DEFAULT_HYPHEN);
-    // tokens.remove((int) i);
-    // for (int j = 0; j < splitted.length; ++j) {
-    // tokens.add(i + j, splitted[j]);
-    // }
-    // }
-    // }
-    // return tokens;
-    // }
-
-    // private static List<List<String>> splitHyphens(List<List<String>>
-    // sentences) {
-    // for (int i = 0; i < sentences.size(); ++i) {
-    // sentences.set(i, splitSentenceHypens(sentences.get(i)));
-    // }
-    //
-    // return sentences;
-    // }
 
     private List<List<String>> simpleSplit(String text)
     {
@@ -6741,7 +6415,6 @@ public class HunSplitter
         splitted = reTokenize(splitted);
         splittedTemp = splitted;
 
-        // return splitHyphens(splitted);
         return splitted;
     }
 
@@ -6969,7 +6642,6 @@ public class HunSplitter
             {
                 if (tokenOffsets[tokenNumber] + 1 == tokenOffsets[tokenNumber + 1])
                 {
-                    // System.out.println(sentences.get(i) + "i: " +i + " ss: " + sentences.size());
                     if ((sentences.size() > i + 1 && (i > -1)))
                     {
                         sentences.get(i).addAll(sentences.get(i + 1));
@@ -7110,9 +6782,9 @@ public class HunSplitter
      */
     private static String normalizeQuotes(String text)
     {
-        for (char c : HunSplitterResources.QUOTES)
+        for (char c : HunSplitter.QUOTES)
         {
-            text = text.replaceAll(String.valueOf(c), String.valueOf(HunSplitterResources.DEFAULT_QUOTE));
+            text = text.replaceAll(String.valueOf(c), String.valueOf(HunSplitter.DEFAULT_QUOTE));
         }
 
         return text;
@@ -7127,9 +6799,9 @@ public class HunSplitter
      */
     private static String normalizeHyphans(String text)
     {
-        for (char c : HunSplitterResources.HYPHENS)
+        for (char c : HunSplitter.HYPHENS)
         {
-            text = text.replaceAll(String.valueOf(c), String.valueOf(HunSplitterResources.DEFAULT_HYPHEN));
+            text = text.replaceAll(String.valueOf(c), String.valueOf(HunSplitter.DEFAULT_HYPHEN));
         }
 
         return text;
@@ -7146,7 +6818,7 @@ public class HunSplitter
     {
         StringBuilder sb = new StringBuilder(String.valueOf(text));
 
-        for (char c : HunSplitterResources.FORCE_TOKEN_SEPARATORS)
+        for (char c : HunSplitter.FORCE_TOKEN_SEPARATORS)
         {
             int index = sb.indexOf(String.valueOf(c));
 
@@ -7161,6 +6833,77 @@ public class HunSplitter
         }
 
         return sb.toString();
+    }
+
+    public static class StringCleaner
+    {
+        public static String cleanString(String text)
+        {
+            StringBuilder sb = new StringBuilder(text);
+
+            for (int i = 0; i < sb.length(); ++i)
+            {
+                switch ((int) sb.charAt(i))
+                {
+                    case 11: case 12:
+                    case 28: case 29: case 30: case 31:
+                    case 5760:
+                    case 6158:
+                    case 8192: case 8193: case 8194: case 8195: case 8196: case 8197: case 8198:
+                    case 8200: case 8201: case 8202: case 8203: case 8232: case 8233: case 8287:
+                    case 12288:
+                    case 65547: case 65564: case 65565: case 65566: case 65567:
+                        sb.setCharAt(i, ' '); break;
+
+                    case 733: sb.setCharAt(i, '"'); break;
+                    case 768:
+                    case 769: sb.setCharAt(i, '\''); break;
+                    case 771: sb.setCharAt(i, '"'); break;
+                    case 803: sb.setCharAt(i, '.'); break;
+                    case 900: sb.setCharAt(i, '\''); break;
+                    case 1475: sb.setCharAt(i, ':'); break;
+                    case 1523: sb.setCharAt(i, '\''); break;
+                    case 1524: sb.setCharAt(i, '"'); break;
+                    case 1614: sb.setCharAt(i, '\''); break;
+                    case 1643: sb.setCharAt(i, ','); break;
+                    case 1648: sb.setCharAt(i, '\''); break;
+                    case 1764: sb.setCharAt(i, '"'); break;
+                    case 8211:
+                    case 8212: sb.setCharAt(i, '-'); break;
+                    case 8216:
+                    case 8217:
+                    case 8218:
+                    case 8219: sb.setCharAt(i, '\''); break;
+                    case 8220:
+                    case 8221:
+                    case 8243: sb.setCharAt(i, '"'); break;
+                    case 8722: sb.setCharAt(i, '-'); break;
+                    case 61448:
+                    case 61449: sb.setCharAt(i, '\''); break;
+                    case 61472:
+                    case 61474:
+                    case 61475:
+                    case 61476:
+                    case 61477:
+                    case 61480:
+                    case 61481:
+                    case 61482:
+                    case 61483:
+                    case 61484: sb.setCharAt(i, '.'); break;
+                    case 61485:
+                    case 61486:
+                    case 61487:
+                    case 61488: sb.setCharAt(i, '"'); break;
+                    case 65533: sb.setCharAt(i, '-'); break;
+                }
+            }
+
+            return sb.toString();
+        }
+
+        public StringCleaner()
+        {
+        }
     }
 
     public static void main(String[] args)
@@ -7196,331 +6939,8 @@ public class HunSplitter
     }
 }
 EOF
-mkdir -p szte/splitter && cat > szte/splitter/HunSplitterResources.java <<'EOF'
-package szte.splitter;
-
-public class HunSplitterResources
-{
-    // static array of the hyphen characters
-    public static final char[] HYPHENS = new char[] { '-', '­', '–', '—', '―', '−', '─' };
-
-    // default hyphen character
-    public static final char DEFAULT_HYPHEN = '-';
-
-    // static array of the quotes
-    public static final char[] QUOTES = new char[] { '"', '\'', '`', '´', '‘', '’', '“', '”', '„' };
-
-    // default quote character
-    public static final char DEFAULT_QUOTE = '"';
-
-    // static array of the force token separators
-    public static final char[] FORCE_TOKEN_SEPARATORS = new char[] { ',', '.', ':' };
-}
-EOF
-mkdir -p szte/splitter && cat > szte/splitter/StringCleaner.java <<'EOF'
-package szte.splitter;
-
-import java.util.Set;
-import java.util.TreeSet;
-
-public class StringCleaner
-{
-    private static Set<Integer> errorCharacters = loadErrorCharacters();
-
-    private static Set<Integer> loadErrorCharacters()
-    {
-        Set<Integer> ecs = new TreeSet<Integer>();
-
-        ecs.add(11);
-        ecs.add(12);
-        ecs.add(28);
-        ecs.add(29);
-        ecs.add(30);
-        ecs.add(31);
-        ecs.add(5760);
-        ecs.add(6158);
-        ecs.add(8192);
-        ecs.add(8193);
-        ecs.add(8194);
-        ecs.add(8195);
-        ecs.add(8196);
-        ecs.add(8197);
-        ecs.add(8198);
-        ecs.add(8200);
-        ecs.add(8201);
-        ecs.add(8202);
-        ecs.add(8203);
-        ecs.add(8232);
-        ecs.add(8233);
-        ecs.add(8287);
-        ecs.add(12288);
-        ecs.add(65547);
-        ecs.add(65564);
-        ecs.add(65565);
-        ecs.add(65566);
-        ecs.add(65567);
-
-        return ecs;
-    }
-
-    public StringCleaner()
-    {
-    }
-
-    public String cleanString(String text)
-    {
-        StringBuilder sb = new StringBuilder(text);
-
-        for (int i = 0; i < sb.length(); ++i)
-        {
-            if (errorCharacters.contains((int) sb.charAt(i)))
-            {
-                // System.err.println("unknown character: " + text.charAt(i) + " has been removed");
-                sb.setCharAt(i, ' ');
-            }
-
-            if ((int) sb.charAt(i) == 733)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 768)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 769)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 771)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 803)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 900)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 1475)
-            {
-                sb.setCharAt(i, ':');
-            }
-            if ((int) sb.charAt(i) == 1523)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 1524)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 1614)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 1643)
-            {
-                sb.setCharAt(i, ',');
-            }
-            if ((int) sb.charAt(i) == 1648)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 1764)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 8211)
-            {
-                sb.setCharAt(i, '-');
-            }
-            if ((int) sb.charAt(i) == 8212)
-            {
-                sb.setCharAt(i, '-');
-            }
-            if ((int) sb.charAt(i) == 8216)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 8217)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 8218)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 8219)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 8220)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 8221)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 8243)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 8722)
-            {
-                sb.setCharAt(i, '-');
-            }
-            if ((int) sb.charAt(i) == 61448)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 61449)
-            {
-                sb.setCharAt(i, '\'');
-            }
-            if ((int) sb.charAt(i) == 61472)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61474)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61475)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61476)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61477)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61480)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61481)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61482)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61483)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61484)
-            {
-                sb.setCharAt(i, '.');
-            }
-            if ((int) sb.charAt(i) == 61485)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 61486)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 61487)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 61488)
-            {
-                sb.setCharAt(i, '"');
-            }
-            if ((int) sb.charAt(i) == 65533)
-            {
-                sb.setCharAt(i, '-');
-            }
-        }
-
-        return sb.toString();
-    }
-}
-EOF
-mkdir -p rfsa && cat > rfsa/Pair.java <<'EOF'
-package rfsa;
-
-import java.io.Serializable;
-
-@SuppressWarnings("serial")
-public class Pair<A, B> implements Serializable
-{
-    protected A a;
-    protected B b;
-
-    // for deserialize extensions
-    protected Pair()
-    {
-    }
-
-    public Pair(A a, B b)
-    {
-        this.a = a;
-        this.b = b;
-    }
-
-    public A getA()
-    {
-        return a;
-    }
-
-    public B getB()
-    {
-        return b;
-    }
-
-    boolean myEq(Object o1, Object o2)
-    {
-        if (o1 == null)
-        {
-            return o2 == null;
-        }
-
-        return o1.equals(o2);
-    }
-
-    @SuppressWarnings("unchecked")
-    public boolean equals(Object obj)
-    {
-        if (!(obj instanceof Pair))
-        {
-            return false;
-        }
-        Pair p = (Pair) obj;
-        return myEq(a, p.a) && myEq(b, p.b);
-    }
-
-    int myHash(Object o)
-    {
-        if (o == null)
-        {
-            return 0;
-        }
-
-        return o.hashCode();
-    }
-
-    public int hashCode()
-    {
-        return 31 * myHash(a) + myHash(b);
-    }
-
-    public String toString()
-    {
-        return "(" + a + "; " + b + ")";
-    }
-}
-EOF
-mkdir -p rfsa && cat > rfsa/RFSA.java <<'EOF'
-package rfsa;
+mkdir -p magyarlanc && cat > magyarlanc/RFSA.java <<'EOF'
+package magyarlanc;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -7532,27 +6952,87 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 public class RFSA
 {
+    public static class Pair<A, B>
+    {
+        protected A a;
+        protected B b;
+
+        public Pair(A a, B b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+
+        public A getA()
+        {
+            return a;
+        }
+
+        public B getB()
+        {
+            return b;
+        }
+
+        boolean myEq(Object o1, Object o2)
+        {
+            if (o1 == null)
+            {
+                return o2 == null;
+            }
+
+            return o1.equals(o2);
+        }
+
+        public boolean equals(Object obj)
+        {
+            if (!(obj instanceof Pair))
+            {
+                return false;
+            }
+            Pair p = (Pair) obj;
+            return myEq(a, p.a) && myEq(b, p.b);
+        }
+
+        int myHash(Object o)
+        {
+            if (o == null)
+            {
+                return 0;
+            }
+
+            return o.hashCode();
+        }
+
+        public int hashCode()
+        {
+            return 31 * myHash(a) + myHash(b);
+        }
+
+        public String toString()
+        {
+            return "(" + a + "; " + b + ")";
+        }
+    }
+
     protected int stateCount;
-
     protected int edgeCount;
-
     protected int startingState;
 
     protected boolean[] ab;
 
     protected int[] indices;
-
     protected int[] targets;
 
     protected String[] symbols; // input char + output
@@ -7668,22 +7148,22 @@ public class RFSA
     }
 
     // assume sorted!
-    public Collection<String> analyse(String s)
+    public List<String> analyse(String s)
     {
         char[] ac = s.toLowerCase().toCharArray();
         return analyse(ac);
     }
 
-    public Collection<String> analyse(char[] ac)
+    public List<String> analyse(char[] ac)
     {
-        Collection<String> analyses = new ArrayList<String>();
+        List<String> analyses = new ArrayList<String>();
         symbolhistory = new String[ac.length + 1];
         analyse(startingState, ac, 0, "", analyses);
         return analyses;
     }
 
     // binary search
-    public void analyse(int q, char[] ac, int pos, String symbol, Collection<String> analyses)
+    public void analyse(int q, char[] ac, int pos, String symbol, List<String> analyses)
     {
         // System.out.println(symbol);
         // System.out.println(new String(ac).substring(0,pos) + " " + q + (ab[q]?" veg":"") );
@@ -7737,7 +7217,7 @@ public class RFSA
     }
 
     // linear search
-    public void analyse1(int q, char[] ac, int pos, String symbol, Collection<String> analyses)
+    public void analyse1(int q, char[] ac, int pos, String symbol, List<String> analyses)
     {
         if (pos == ac.length)
         {
@@ -8048,7 +7528,7 @@ public class RFSA
 
     public int valid()
     {
-        Collection<Integer> valid = new HashSet<Integer>();
+        Set<Integer> valid = new HashSet<Integer>();
         for (int i = 0; i < stateCount; i++)
         {
             if (ab[i])
@@ -8220,47 +7700,41 @@ public class RFSA
         rfsa.sort();
         return rfsa;
     }
-}
-EOF
-mkdir -p rfsa && cat > rfsa/StateIterator.java <<'EOF'
-package rfsa;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
-public class StateIterator implements Iterable<Integer>, Iterator<Integer>
-{
-    protected int size;
-    protected int next;
-
-    public StateIterator(int size)
+    public static class StateIterator implements Iterable<Integer>, Iterator<Integer>
     {
-        this.size = size;
-    }
+        protected int size;
+        protected int next;
 
-    public Iterator<Integer> iterator()
-    {
-        return new StateIterator(size);
-    }
-
-    public boolean hasNext()
-    {
-        return next < size;
-    }
-
-    public Integer next()
-    {
-        if (!hasNext())
+        public StateIterator(int size)
         {
-            throw new NoSuchElementException();
+            this.size = size;
         }
 
-        return next++;
-    }
+        public Iterator<Integer> iterator()
+        {
+            return new StateIterator(size);
+        }
 
-    public void remove()
-    {
-        throw new UnsupportedOperationException();
+        public boolean hasNext()
+        {
+            return next < size;
+        }
+
+        public Integer next()
+        {
+            if (!hasNext())
+            {
+                throw new NoSuchElementException();
+            }
+
+            return next++;
+        }
+
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 }
 EOF
