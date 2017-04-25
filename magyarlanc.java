@@ -1,4 +1,4 @@
-EOF  edu/stanford/nlp/tagger/maxent/SzteMaxentTagger.java
+mkdir -p edu/stanford/nlp/tagger/maxent && cat > edu/stanford/nlp/tagger/maxent/SzteMaxentTagger.java <<'EOF'
 package edu.stanford.nlp.tagger.maxent;
 
 import hu.u_szeged.pos.morphology.HungarianMorphology;
@@ -69,7 +69,8 @@ public class SzteMaxentTagger extends MaxentTagger
         return morph;
     }
 }
-EOF  edu/stanford/nlp/tagger/maxent/SzteTestSentence.java
+EOF
+mkdir -p edu/stanford/nlp/tagger/maxent && cat > edu/stanford/nlp/tagger/maxent/SzteTestSentence.java <<'EOF'
 package edu.stanford.nlp.tagger.maxent;
 
 import hu.u_szeged.pos.morphology.HungarianMorphology;
@@ -107,7 +108,8 @@ public class SzteTestSentence extends TestSentence
         return tags;
     }
 }
-EOF  hu/u_szeged/converter/nooj/Dep2Nooj.java
+EOF
+mkdir -p hu/u_szeged/converter/nooj && cat > hu/u_szeged/converter/nooj/Dep2Nooj.java <<'EOF'
 package hu.u_szeged.converter.nooj;
 
 import java.io.BufferedReader;
@@ -289,7 +291,8 @@ public class Dep2Nooj
         }
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/Conll2007To2009.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Conll2007To2009.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
@@ -396,7 +399,8 @@ public class Conll2007To2009
         convert("./data/webcorpus_1222/web_1222.conll", "./data/webcorpus_1222/web_1222.conll-2009");
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/Converter.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Converter.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -418,11 +422,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.PropertyConfigurator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -454,13 +456,6 @@ public class Converter
 
     // full lex (no train/test parts)
     private static final Map<String, Set<MorAna>> FULL_LEX = new TreeMap<String, Set<MorAna>>();
-
-    static
-    {
-        PropertyConfigurator.configure("data/log4j/properties");
-    }
-
-    public static Logger logger = Logger.getLogger(Converter.class.getName());
 
     /**
      * Get all nodes from the document by the given tag name.
@@ -808,7 +803,7 @@ public class Converter
                 e.printStackTrace();
             }
 
-            logger.info(xml + "\t" + sentenceCounter);
+            System.out.println(xml + "\t" + sentenceCounter);
         }
         try
         {
@@ -1128,7 +1123,8 @@ public class Converter
         batch();
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/DepPrediction.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/DepPrediction.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import hu.u_szeged.dep.parser.MateParserWrapper;
@@ -1280,7 +1276,8 @@ public class DepPrediction
         // write("./data/webcorpus/web.conll2007");
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/Eval.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Eval.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import hu.u_szeged.magyarlanc.Magyarlanc;
@@ -1291,7 +1288,8 @@ public class Eval
     {
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/Test.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/Test.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import java.io.BufferedReader;
@@ -1337,7 +1335,8 @@ public class Test
         }
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/TrainResources.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/TrainResources.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import hu.u_szeged.dep.parser.MateParserWrapper;
@@ -1990,7 +1989,8 @@ public class TrainResources
         // predictAndEvalConll2009UsingGoldFeatures("./data/webcorpus_1222/face_1222.conll-2009", "./data/webcorpus_1222/face_1222.conll-2009.dep.out");
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/TwitterQuestion.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/TwitterQuestion.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 import hu.u_szeged.magyarlanc.Magyarlanc;
@@ -2210,7 +2210,8 @@ public class TwitterQuestion
         System.err.println(getAnswers("A Kínai Nagy Fal étterembe vagy a sarki kifőzdébe menjünk enni?"));
     }
 }
-EOF  hu/u_szeged/converter/webcorpus/TwitterUtil.java
+EOF
+mkdir -p hu/u_szeged/converter/webcorpus && cat > hu/u_szeged/converter/webcorpus/TwitterUtil.java <<'EOF'
 package hu.u_szeged.converter.webcorpus;
 
 public class TwitterUtil
@@ -2234,7 +2235,8 @@ public class TwitterUtil
         return ret;
     }
 }
-EOF  hu/u_szeged/dep/parser/MateParserWrapper.java
+EOF
+mkdir -p hu/u_szeged/dep/parser && cat > hu/u_szeged/dep/parser/MateParserWrapper.java <<'EOF'
 package hu.u_szeged.dep.parser;
 
 import hu.u_szeged.magyarlanc.resource.ResourceHolder;
@@ -2403,7 +2405,8 @@ public class MateParserWrapper
         return result;
     }
 }
-EOF  hu/u_szeged/dep/removevirtual/CoNLL2009Sentence.java
+EOF
+mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/CoNLL2009Sentence.java <<'EOF'
 package hu.u_szeged.dep.removevirtual;
 
 import java.util.ArrayList;
@@ -2789,7 +2792,8 @@ public class CoNLL2009Sentence
         this.removeVirtualRoot("VAN", new String[] { "PRED", "SUBJ", "ATT" });
     }
 }
-EOF  hu/u_szeged/dep/removevirtual/CorrectPUNCT.java
+EOF
+mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/CorrectPUNCT.java <<'EOF'
 package hu.u_szeged.dep.removevirtual;
 
 import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
@@ -2866,7 +2870,8 @@ public class CorrectPUNCT
         Util.writeCoNLL2009(coNLL2009, out);
     }
 }
-EOF  hu/u_szeged/dep/removevirtual/RemoveVirtualNodes.java
+EOF
+mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/RemoveVirtualNodes.java <<'EOF'
 package hu.u_szeged.dep.removevirtual;
 
 import java.io.BufferedWriter;
@@ -2915,7 +2920,8 @@ public class RemoveVirtualNodes
         }
     }
 }
-EOF  hu/u_szeged/dep/removevirtual/Util.java
+EOF
+mkdir -p hu/u_szeged/dep/removevirtual && cat > hu/u_szeged/dep/removevirtual/Util.java <<'EOF'
 package hu.u_szeged.dep.removevirtual;
 
 import hu.u_szeged.pos.converter.MSDToCoNLLFeatures;
@@ -3072,7 +3078,8 @@ public class Util
         writeCoNLL2009(conll, "newspaper.conll2009.pred.2");
     }
 }
-EOF  hu/u_szeged/dep/util/EmptyNodeEvaluator.java
+EOF
+mkdir -p hu/u_szeged/dep/util && cat > hu/u_szeged/dep/util/EmptyNodeEvaluator.java <<'EOF'
 package hu.u_szeged.dep.util;
 
 public class EmptyNodeEvaluator
@@ -3084,7 +3091,8 @@ public class EmptyNodeEvaluator
     public static final int PRED_LABEL_COLUMN = 11;
     public static final String SEPARATOR = "@";
 }
-EOF  hu/u_szeged/dep/util/RemoveEmptyNodes.java
+EOF
+mkdir -p hu/u_szeged/dep/util && cat > hu/u_szeged/dep/util/RemoveEmptyNodes.java <<'EOF'
 package hu.u_szeged.dep.util;
 
 import java.io.*;
@@ -3298,7 +3306,8 @@ public class RemoveEmptyNodes
         // processStd();
     }
 }
-EOF  hu/u_szeged/dep/whatswrong/WhatsWrongWrapper.java
+EOF
+mkdir -p hu/u_szeged/dep/whatswrong && cat > hu/u_szeged/dep/whatswrong/WhatsWrongWrapper.java <<'EOF'
 package hu.u_szeged.dep.whatswrong;
 
 import hu.u_szeged.dep.parser.MateParserWrapper;
@@ -3464,7 +3473,8 @@ public class WhatsWrongWrapper
         WhatsWrongWrapper.exportToPNG(depParsedSentence, "d:/feladat1.png");
     }
 }
-EOF  hu/u_szeged/eval/Eval.java
+EOF
+mkdir -p hu/u_szeged/eval && cat > hu/u_szeged/eval/Eval.java <<'EOF'
 package hu.u_szeged.eval;
 
 import hu.u_szeged.magyarlanc.Magyarlanc;
@@ -3475,7 +3485,8 @@ public class Eval
     {
     }
 }
-EOF  hu/u_szeged/gui/GUI.java
+EOF
+mkdir -p hu/u_szeged/gui && cat > hu/u_szeged/gui/GUI.java <<'EOF'
 package hu.u_szeged.gui;
 
 import hu.u_szeged.dep.whatswrong.WhatsWrongWrapper;
@@ -3596,7 +3607,8 @@ public class GUI
         init();
     }
 }
-EOF  hu/u_szeged/gui/GUIUtil.java
+EOF
+mkdir -p hu/u_szeged/gui && cat > hu/u_szeged/gui/GUIUtil.java <<'EOF'
 package hu.u_szeged.gui;
 
 import java.awt.Component;
@@ -3611,7 +3623,8 @@ public class GUIUtil
                 (int) ((Toolkit.getDefaultToolkit().getScreenSize().getHeight() - component.getPreferredSize().getHeight()) / 2));
     }
 }
-EOF  hu/u_szeged/magyarlanc/Eval.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/Eval.java <<'EOF'
 package hu.u_szeged.magyarlanc;
 
 import java.util.Map;
@@ -3690,7 +3703,8 @@ public class Eval
                 + correct / (double) (correct + error));
     }
 }
-EOF  hu/u_szeged/magyarlanc/HunLemMor.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/HunLemMor.java <<'EOF'
 package hu.u_szeged.magyarlanc;
 
 import hu.u_szeged.magyarlanc.resource.ResourceHolder;
@@ -3848,7 +3862,8 @@ public class HunLemMor
         }
     }
 }
-EOF  hu/u_szeged/magyarlanc/MagyarlacTest.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/MagyarlacTest.java <<'EOF'
 package hu.u_szeged.magyarlanc;
 
 public class MagyarlacTest
@@ -3866,7 +3881,8 @@ public class MagyarlacTest
         // System.err.println(HunLemMor.getMorphologicalAnalyses("dolgozgathat"));
     }
 }
-EOF  hu/u_szeged/magyarlanc/Magyarlanc.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/Magyarlanc.java <<'EOF'
 package hu.u_szeged.magyarlanc;
 
 import hu.u_szeged.converter.nooj.Dep2Nooj;
@@ -4359,7 +4375,8 @@ public class Magyarlanc
         }
     }
 }
-EOF  hu/u_szeged/magyarlanc/MorAna.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/MorAna.java <<'EOF'
 package hu.u_szeged.magyarlanc;
 
 import java.io.Serializable;
@@ -4430,7 +4447,8 @@ public class MorAna implements Comparable<MorAna>, Serializable
         return false;
     }
 }
-EOF  hu/u_szeged/magyarlanc/resource/ResourceBuilder.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/resource && cat > hu/u_szeged/magyarlanc/resource/ResourceBuilder.java <<'EOF'
 package hu.u_szeged.magyarlanc.resource;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -5063,7 +5081,8 @@ public class ResourceBuilder
         writeDepTrain("c:/mszny2012/huge/szeged.train", "c:/mszny2012/hugews/szeged.dep.train");
     }
 }
-EOF  hu/u_szeged/magyarlanc/resource/ResourceHolder.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/resource && cat > hu/u_szeged/magyarlanc/resource/ResourceHolder.java <<'EOF'
 package hu.u_szeged.magyarlanc.resource;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -5468,7 +5487,8 @@ public class ResourceHolder
         return hunAbbrev;
     }
 }
-EOF  hu/u_szeged/magyarlanc/resource/Util.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/resource && cat > hu/u_szeged/magyarlanc/resource/Util.java <<'EOF'
 package hu.u_szeged.magyarlanc.resource;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -5823,7 +5843,8 @@ public class Util
         return sentences.toArray(new String[sentences.size()][]);
     }
 }
-EOF  hu/u_szeged/magyarlanc/Settings.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc && cat > hu/u_szeged/magyarlanc/Settings.java <<'EOF'
 package hu.u_szeged.magyarlanc;
 
 public class Settings
@@ -5832,7 +5853,8 @@ public class Settings
     public static final String DEFAULT_ENCODING = "utf-8";
     public static final String DEFAULT_SEPARATOR = "\t";
 }
-EOF  hu/u_szeged/magyarlanc/util/CorpusStats.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/CorpusStats.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import java.util.List;
@@ -5877,7 +5899,8 @@ public class CorpusStats
         extension = ".conll-2009-msd";
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/Ethnography.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/Ethnography.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import java.io.BufferedReader;
@@ -5961,7 +5984,8 @@ public class Ethnography
         System.out.println(ethnography.getStandardForm("acskó"));
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/Eval.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/Eval.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import hu.u_szeged.dep.parser.MateParserWrapper;
@@ -6594,7 +6618,8 @@ public class Eval
         eval("c:/p2.ppp");
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/FxDepParse.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/FxDepParse.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import is2.data.SentenceData09;
@@ -7275,7 +7300,8 @@ public class FxDepParse
         // writeFolds("./data/objfx/law.out");
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/FXIAA.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/FXIAA.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import java.io.BufferedReader;
@@ -7453,7 +7479,8 @@ public class FXIAA
         eval("./data/fxiaa/vera.fx.iob", "./data/fxiaa/adam.fx.iob");
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/SafeReader.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/SafeReader.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import java.io.BufferedReader;
@@ -7508,7 +7535,8 @@ public class SafeReader
         return lines;
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/SzK25.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/SzK25.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import hu.u_szeged.magyarlanc.Magyarlanc;
@@ -8669,7 +8697,8 @@ public class SzK25
         // predicate("./25.test", "./data/szk2.5/xml/newsml_1.xml.txt.split.test.pred");
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/Tools.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/Tools.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import hu.u_szeged.magyarlanc.HunLemMor;
@@ -9452,7 +9481,8 @@ public class Tools
         }
     }
 }
-EOF  hu/u_szeged/magyarlanc/util/TrainTest.java
+EOF
+mkdir -p hu/u_szeged/magyarlanc/util && cat > hu/u_szeged/magyarlanc/util/TrainTest.java <<'EOF'
 package hu.u_szeged.magyarlanc.util;
 
 import hu.u_szeged.dep.parser.MateParserWrapper;
@@ -10096,7 +10126,8 @@ public class TrainTest
         // }
     }
 }
-EOF  hu/u_szeged/pos/converter/CoNLLFeaturesToMSD.java
+EOF
+mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/CoNLLFeaturesToMSD.java <<'EOF'
 package hu.u_szeged.pos.converter;
 
 import java.util.LinkedHashMap;
@@ -10382,7 +10413,8 @@ public class CoNLLFeaturesToMSD
         System.err.println(new CoNLLFeaturesToMSD().convert("O", "SubPOS=e|Type=w|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none"));
     }
 }
-EOF  hu/u_szeged/pos/converter/KRToMSD.java
+EOF
+mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/KRToMSD.java <<'EOF'
 package hu.u_szeged.pos.converter;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -11706,7 +11738,8 @@ public class KRToMSD
         System.err.println(ResourceHolder.getKRToMSD().getMSD("$én/NOUN<POSTP<UTÁN>><PERS<1>>"));
     }
 }
-EOF  hu/u_szeged/pos/converter/KRUtils.java
+EOF
+mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/KRUtils.java <<'EOF'
 package hu.u_szeged.pos.converter;
 
 import java.util.LinkedList;
@@ -12087,7 +12120,8 @@ public class KRUtils
         System.out.println(getPOS("$árapály/NOUN"));
     }
 }
-EOF  hu/u_szeged/pos/converter/MSDReducer.java
+EOF
+mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/MSDReducer.java <<'EOF'
 package hu.u_szeged.pos.converter;
 
 import java.util.HashMap;
@@ -12520,7 +12554,8 @@ public class MSDReducer
         return this.getClass().getName();
     }
 }
-EOF  hu/u_szeged/pos/converter/MSDToCoNLLFeatures.java
+EOF
+mkdir -p hu/u_szeged/pos/converter && cat > hu/u_szeged/pos/converter/MSDToCoNLLFeatures.java <<'EOF'
 package hu.u_szeged.pos.converter;
 
 import hu.u_szeged.magyarlanc.resource.ResourceHolder;
@@ -13553,7 +13588,8 @@ public class MSDToCoNLLFeatures
         return features;
     }
 }
-EOF  hu/u_szeged/pos/guesser/CompoundWord.java
+EOF
+mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/CompoundWord.java <<'EOF'
 /**
  * This file is part of magyarlanc 2.0.
  *
@@ -13804,7 +13840,8 @@ public class CompoundWord
         return analises;
     }
 }
-EOF  hu/u_szeged/pos/guesser/HyphenicGuesser.java
+EOF
+mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/HyphenicGuesser.java <<'EOF'
 /**
  * Developed by:
  *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
@@ -13863,7 +13900,8 @@ public class HyphenicGuesser
         System.out.println(HyphenicGuesser.guess("Bush", "kormánynak"));
     }
 }
-EOF  hu/u_szeged/pos/guesser/HyphenicWord.java
+EOF
+mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/HyphenicWord.java <<'EOF'
 package hu.u_szeged.pos.guesser;
 
 import hu.u_szeged.magyarlanc.resource.ResourceHolder;
@@ -13963,7 +14001,8 @@ public class HyphenicWord
         return analises;
     }
 }
-EOF  hu/u_szeged/pos/guesser/MorPhonGuesser.java
+EOF
+mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/MorPhonGuesser.java <<'EOF'
 /**
  * Developed by:
  *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
@@ -14029,7 +14068,8 @@ public class MorPhonGuesser
         System.out.println(guess("London", "ban"));
     }
 }
-EOF  hu/u_szeged/pos/guesser/NumberGuesser.java
+EOF
+mkdir -p hu/u_szeged/pos/guesser && cat > hu/u_szeged/pos/guesser/NumberGuesser.java <<'EOF'
 /**
  * Developed by:
  *   Research Group on Artificial Intelligence of the Hungarian Academy of Sciences
@@ -14666,7 +14706,8 @@ public class NumberGuesser
         System.out.println(NumberGuesser.guess("20%"));
     }
 }
-EOF  hu/u_szeged/pos/mainpartofspeech/MainPartOfSpeech.java
+EOF
+mkdir -p hu/u_szeged/pos/mainpartofspeech && cat > hu/u_szeged/pos/mainpartofspeech/MainPartOfSpeech.java <<'EOF'
 package hu.u_szeged.pos.mainpartofspeech;
 
 import java.io.BufferedReader;
@@ -14736,7 +14777,8 @@ public class MainPartOfSpeech
         readTrain("d:/szeged.pos.train", "UTF-8", "d:/szeged.pos.train.main");
     }
 }
-EOF  hu/u_szeged/pos/morphology/HungarianMorphology.java
+EOF
+mkdir -p hu/u_szeged/pos/morphology && cat > hu/u_szeged/pos/morphology/HungarianMorphology.java <<'EOF'
 package hu.u_szeged.pos.morphology;
 
 import hu.u_szeged.magyarlanc.HunLemMor;
@@ -14814,7 +14856,8 @@ public class HungarianMorphology
         return sentence;
     }
 }
-EOF  hu/u_szeged/pos/util/CoNLLPredicate.java
+EOF
+mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLPredicate.java <<'EOF'
 package hu.u_szeged.pos.util;
 
 import hu.u_szeged.magyarlanc.Magyarlanc;
@@ -14894,7 +14937,8 @@ public class CoNLLPredicate
         predicate(CoNLLUtil.read("./data/newspaper/newspaper.conll2009_test" + szam), "./data/newspaper/newspaper.conll2009_test" + szam + ".pred2");
     }
 }
-EOF  hu/u_szeged/pos/util/CoNLLSentence.java
+EOF
+mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLSentence.java <<'EOF'
 package hu.u_szeged.pos.util;
 
 public class CoNLLSentence
@@ -14955,7 +14999,8 @@ public class CoNLLSentence
         return tokens;
     }
 }
-EOF  hu/u_szeged/pos/util/CoNLLToCorpus.java
+EOF
+mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLToCorpus.java <<'EOF'
 package hu.u_szeged.pos.util;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -15047,7 +15092,8 @@ public class CoNLLToCorpus
             coNLLToCorpus("./data/newspaper/newspaper.conll2009_train" + i, "./data/newspaper/newspaper.conll2009_train" + i + ".corpus");
     }
 }
-EOF  hu/u_szeged/pos/util/CoNLLToFreq.java
+EOF
+mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLToFreq.java <<'EOF'
 package hu.u_szeged.pos.util;
 
 import hu.u_szeged.pos.converter.CoNLLFeaturesToMSD;
@@ -15132,7 +15178,8 @@ public class CoNLLToFreq
             coNLLToFreq("./data/newspaper/newspaper.conll2009_train" + i, "./data/newspaper/newspaper.conll2009_train" + i + ".freq");
     }
 }
-EOF  hu/u_szeged/pos/util/CoNLLUtil.java
+EOF
+mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/CoNLLUtil.java <<'EOF'
 package hu.u_szeged.pos.util;
 
 import java.io.BufferedReader;
@@ -15259,7 +15306,8 @@ public class CoNLLUtil
         merge("./newspaper.pred2");
     }
 }
-EOF  hu/u_szeged/pos/util/Objfx.java
+EOF
+mkdir -p hu/u_szeged/pos/util && cat > hu/u_szeged/pos/util/Objfx.java <<'EOF'
 package hu.u_szeged.pos.util;
 
 import java.io.BufferedReader;
@@ -15514,7 +15562,8 @@ public class Objfx
         System.err.println((float) correct / cntr);
     }
 }
-EOF  hu/u_szeged/splitter/ForceSplit.java
+EOF
+mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/ForceSplit.java <<'EOF'
 package hu.u_szeged.splitter;
 
 import java.util.ArrayList;
@@ -15594,7 +15643,8 @@ public class ForceSplit
         return forced;
     }
 }
-EOF  hu/u_szeged/splitter/HunSplitter.java
+EOF
+mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/HunSplitter.java <<'EOF'
 package hu.u_szeged.splitter;
 
 import hu.u_szeged.magyarlanc.resource.ResourceHolder;
@@ -16224,7 +16274,8 @@ public class HunSplitter
         }
     }
 }
-EOF  hu/u_szeged/splitter/HunSplitterResources.java
+EOF
+mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/HunSplitterResources.java <<'EOF'
 package hu.u_szeged.splitter;
 
 public class HunSplitterResources
@@ -16244,7 +16295,8 @@ public class HunSplitterResources
     // static array of the force token separators
     public static final char[] FORCE_TOKEN_SEPARATORS = new char[] { ',', '.', ':' };
 }
-EOF  hu/u_szeged/splitter/StringCleaner.java
+EOF
+mkdir -p hu/u_szeged/splitter && cat > hu/u_szeged/splitter/StringCleaner.java <<'EOF'
 package hu.u_szeged.splitter;
 
 import java.util.Set;
@@ -16472,7 +16524,8 @@ public class StringCleaner
         return sb.toString();
     }
 }
-EOF  hu/u_szeged/train/MultiWordSplitter.java
+EOF
+mkdir -p hu/u_szeged/train && cat > hu/u_szeged/train/MultiWordSplitter.java <<'EOF'
 package hu.u_szeged.train;
 
 import java.util.Arrays;
@@ -16481,18 +16534,8 @@ import hu.u_szeged.magyarlanc.Settings;
 import hu.u_szeged.magyarlanc.resource.ResourceHolder;
 import hu.u_szeged.magyarlanc.resource.Util;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-
 public class MultiWordSplitter
 {
-    static
-    {
-        PropertyConfigurator.configure("data/log4j/properties");
-    }
-
-    public static Logger logger = Logger.getLogger(MultiWordSplitter.class.getName());
-
     private static final String DEFAULT_ADJECTIVE_MSD = "Afp-sn";
     private static final String DEFAULT_NUMERAL_MSD = "Mc-snd";
     private static final String DEFAULT_NUMERAL_FRACTION_MSD = "Mf-snd";
@@ -16510,7 +16553,7 @@ public class MultiWordSplitter
 
         if (lemmas.length != wordForms.length)
         {
-            logger.debug("Different wordform and lemma length: " + wordForm + "\t" + lemma);
+            System.err.println("Different wordform and lemma length: " + wordForm + "\t" + lemma);
             split = new String[][] { { wordForm.replace(" ", "_"), lemma.replace(" ", "_"), msd } };
         }
         else
@@ -16527,7 +16570,7 @@ public class MultiWordSplitter
                 split = splitA(wordForms, lemmas, msd);
                 break;
             default:
-                logger.debug("Can't resolve split: " + wordForm + "\t" + lemma + "\t" + msd);
+                System.err.println("Can't resolve split: " + wordForm + "\t" + lemma + "\t" + msd);
                 split = new String[][] { { wordForm.replace(" ", "_"), lemma.replace(" ", "_"), msd } };
             }
         }
@@ -16635,7 +16678,8 @@ public class MultiWordSplitter
         return ret;
     }
 }
-EOF  hu/u_szeged/train/Train.java
+EOF
+mkdir -p hu/u_szeged/train && cat > hu/u_szeged/train/Train.java <<'EOF'
 package hu.u_szeged.train;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -16663,8 +16707,6 @@ import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -16688,13 +16730,6 @@ public class Train
     private static final String STANFORD_TRAIN_TOKEN_SEPARATOR = " ";
 
     private static final String CLOSED_TAGS = "! , - . : ; ? Cccp Cccw Ccsp Ccsw Cscp Cssp Cssw S T Z";
-
-    static
-    {
-        PropertyConfigurator.configure("data/log4j/properties");
-    }
-
-    public static Logger logger = Logger.getLogger(Train.class.getName());
 
     public static List<Node> getNodes(Document document, String tagName, String type)
     {
@@ -16995,7 +17030,7 @@ public class Train
                 e.printStackTrace();
             }
 
-            logger.info(xml + "\t" + sentenceCounter);
+            System.out.println(xml + "\t" + sentenceCounter);
         }
         try
         {
@@ -17261,7 +17296,8 @@ public class Train
         batch();
     }
 }
-EOF  hu/u_szeged/train/XMLtoTXT.java
+EOF
+mkdir -p hu/u_szeged/train && cat > hu/u_szeged/train/XMLtoTXT.java <<'EOF'
 package hu.u_szeged.train;
 
 import hu.u_szeged.magyarlanc.MorAna;
@@ -18009,7 +18045,8 @@ public class XMLtoTXT
         // }
     }
 }
-EOF  rfsa/Dumper.java
+EOF
+mkdir -p rfsa && cat > rfsa/Dumper.java <<'EOF'
 package rfsa;
 
 import java.io.InputStreamReader;
@@ -18115,7 +18152,8 @@ public class Dumper extends Thread
         System.out.println(memDump());
     }
 }
-EOF  rfsa/Pair.java
+EOF
+mkdir -p rfsa && cat > rfsa/Pair.java <<'EOF'
 package rfsa;
 
 import java.io.Serializable;
@@ -18188,7 +18226,8 @@ public class Pair<A, B> implements Serializable
         return "(" + a + "; " + b + ")";
     }
 }
-EOF  rfsa/RFSAAnalyser.java
+EOF
+mkdir -p rfsa && cat > rfsa/RFSAAnalyser.java <<'EOF'
 package rfsa;
 
 import java.io.BufferedReader;
@@ -18215,7 +18254,8 @@ public class RFSAAnalyser
         }
     }
 }
-EOF  rfsa/RFSA.java
+EOF
+mkdir -p rfsa && cat > rfsa/RFSA.java <<'EOF'
 package rfsa;
 
 import java.io.BufferedReader;
@@ -18970,7 +19010,8 @@ public class RFSA
         return rfsa;
     }
 }
-EOF  rfsa/StateIterator.java
+EOF
+mkdir -p rfsa && cat > rfsa/StateIterator.java <<'EOF'
 package rfsa;
 
 import java.util.Iterator;
@@ -19011,3 +19052,4 @@ public class StateIterator implements Iterable<Integer>, Iterator<Integer>
         throw new UnsupportedOperationException();
     }
 }
+EOF
