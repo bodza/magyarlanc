@@ -21,7 +21,7 @@
 (declare getPossibleTags)
 
 (defn- maxentTagger [model]
-    (proxy [MaxentTagger] [model (TaggerConfig. (into-array ["-model" model "-verbose" "false"])) false]
+    (proxy [MaxentTagger] [model (TaggerConfig. ^"[Ljava.lang.String;" (into-array ["-model" model "-verbose" "false"])) false]
         (apply [in]
             (.tagSentence (SzteSentence. this getPossibleTags) in false))))
 
@@ -30,7 +30,7 @@
 (declare recoverTags)
 
 (defn morphParseTokens [tokens]
-    (let [sentence (->> (map #(TaggedWord. %) tokens) (.apply @tagger*) recoverTags)]
+    (let [sentence (->> (map #(TaggedWord. ^String %) tokens) (.apply ^MaxentTagger @tagger*) recoverTags)]
         (map #(vector %1 (.value %2) (.tag %2)) tokens sentence)))
 
 (defn morphParseSentence [sentence]
@@ -41,7 +41,7 @@
 
 ; adott szó csak írásjeleket tartalmaz-e
 (defn- punctation? [spelling]
-    (not-any? #(Character/isLetterOrDigit %) spelling))
+    (not-any? #(Character/isLetterOrDigit ^Character %) spelling))
 
 (def ^:private punctations* (delay (into #{} (map str "!,-.:;?–"))))	; red!
 
@@ -57,7 +57,7 @@
 (declare numberGuess guessRomanNumber analyseHyphenicCompoundWord analyseCompoundWord hyphenicGuess)
 
 ; adott szó lehetséges morfológiai elemzéseinek meghatározása
-(defn getMorphologicalAnalyses [word]
+(defn getMorphologicalAnalyses [^String word]
     ; írásjel
     (or (puncs word)
         ; szerepel a corpus.lex-ben (kisbetűvel)
@@ -101,7 +101,7 @@
         (into-array (persistent! tags)))) ; ouch!
 
 (defn- recoverTags [sentence]
-    (doseq [tw sentence]
+    (doseq [^TaggedWord tw sentence]
         (let [max (atom -1) top (atom nil) word (.word tw) tag (.tag tw)]
             (doseq [stem (getMorphologicalAnalyses word)]
                 (let [msd (.msd stem)]
@@ -115,7 +115,7 @@
                 (.setValue tw word))))
     sentence)
 
-(defn- isCompatibleAnalyises [kr1 kr2]
+(defn- isCompatibleAnalyises [^String kr1 ^String kr2]
     (let [pos1 (kr/getPOS kr1) pos2 (kr/getPOS kr2)]
         (not (or
             (= pos2 :UTT-INT)                    ; UTT-INT nem lehet a második rész
@@ -135,7 +135,7 @@
           #_(and (= pos1 :NOUN) (= pos2 :VERB) (not (.contains kr1 "CAS")) (.contains kr2 "<PAST><DEF>") #_(.contains kr2 "<DEF>"))
         ))))
 
-(defn- bisectIndex [word]
+(defn- bisectIndex [^String word]
     (let [n (dec (count word))]
         (loop [i 2]
             (if-not (< i n)
@@ -150,11 +150,11 @@
     ([part1 part2 hyphenic]
         (into #{} (remove nil?
             (for [a1 (rfsa/analyse part1) a2 (rfsa/analyse part2)]
-                (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
+                (let [^String kr1 (kr/getRoot a1) ^String kr2 (kr/getRoot a2)]
                     (if (isCompatibleAnalyises kr1 kr2)
                         (.replace kr2 "$" (str "$" part1 (if hyphenic "-"))))))))))
 
-(defn analyseCompoundWord [word]
+(defn analyseCompoundWord [^String word]
     (let [bi (bisectIndex word)]
         (if (< 0 bi)
             (getCompatibleAnalises (.substring word 0 bi) (.substring word bi))
@@ -167,12 +167,12 @@
                                 (let [part2 (.substring word i) bi (bisectIndex part2)]
                                     (if (< 0 bi)
                                         (doseq [a1 ans1 a2 (getCompatibleAnalises (.substring part2 0 bi) (.substring part2 bi))]
-                                            (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
+                                            (let [^String kr1 (kr/getRoot a1) ^String kr2 (kr/getRoot a2)]
                                                 (if (isCompatibleAnalyises kr1 kr2)
                                                     (conj! ans (.replace kr2 "$" (str "$" part1)))))))))
                             (recur (inc i)))))))))
 
-(defn analyseHyphenicCompoundWord [word]
+(defn analyseHyphenicCompoundWord [^String word]
     (let [ans (transient #{}) hp (.indexOf word "-")]
         (if (< 0 hp)
             (let [part1 (.substring word 0 hp) part2 (.substring word (inc hp))]
@@ -183,14 +183,14 @@
                         (if (and (seq ans1) (< 0 bi))
                             ; a kötőjel előtti résznek van elemzése, a kötőjel utáni rész két részre bontható
                             (doseq [a1 ans1 a2 (getCompatibleAnalises (.substring part2 0 bi) (.substring part2 bi))]
-                                (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
+                                (let [^String kr1 (kr/getRoot a1) ^String kr2 (kr/getRoot a2)]
                                     (if (isCompatibleAnalyises kr1 kr2)
                                         (conj! ans (.replace kr2 "$" (str "$" part1 "-"))))))
                             (let [bi (bisectIndex part1) ans2 (rfsa/analyse part2)]
                                 (if (and (< 0 bi) (seq ans2))
                                     ; a kötőjel előtti rész két részre bontható, a kötőjel utáni résznek van elemzése
                                     (doseq [a1 (getCompatibleAnalises (.substring part1 0 bi) (.substring part1 bi)) a2 ans2]
-                                        (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
+                                        (let [^String kr1 (kr/getRoot a1) ^String kr2 (kr/getRoot a2)]
                                             (if (isCompatibleAnalyises kr1 kr2)
                                                 (conj! ans (.replace kr2 "$" (str "$" part1 "-")))))))))))))
         (persistent! ans)))
@@ -208,7 +208,7 @@
 (defn morPhonGuess [root suffix]
     (let [ans (transient #{})] ; (sorted-set)
         (doseq [guess morPhonDir kr (rfsa/analyse (str guess suffix)) stem (kr/getMSD kr)]
-            (let [msd (.msd stem)]
+            (let [^String msd (.msd stem)]
                 (if (.startsWith msd "N") ; csak főnevi elemzesek
                     (conj! ans (new/morAna root msd)))))
         (persistent! ans)))
@@ -216,7 +216,7 @@
 (defn hyphenicGuess [root suffix]
     (let [ans (transient (morPhonGuess root suffix))] ; kötőjeles suffix (pl.: Bush-hoz)
         (doseq [kr (rfsa/analyse suffix) stem (kr/getMSD kr)] ; suffix főnév (pl.: Bush-kormánnyal)
-            (let [msd (.msd stem)]
+            (let [^String msd (.msd stem)]
                 (if (.startsWith msd "N") ; csak főnevi elemzesek
                     (conj! ans (new/morAna (str root "-" (.lemma stem)) msd)))))
         (persistent! ans)))
@@ -252,7 +252,7 @@
   #_18  (str #"(\d+,??\d*%)-??"                     abc) ; 50%
 ]))
 
-(defn- nounToNumeral [noun numeral]
+(defn- nounToNumeral [^String noun ^String numeral]
     (let [sb (StringBuilder. numeral) n (.length noun)]
         (doseq [[a b]
         [
@@ -265,7 +265,7 @@
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
         (kr/chopMSD (.toString sb))))
 
-(defn- nounToOther [noun other]
+(defn- nounToOther [^String noun ^String other]
     (let [sb (StringBuilder. other) n (.length noun)]
         (doseq [[a b]
         [
@@ -278,7 +278,7 @@
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
         (kr/chopMSD (.toString sb))))
 
-(defn- nounToNoun [noun other]
+(defn- nounToNoun [^String noun ^String other]
     (let [sb (StringBuilder. other) n (.length noun)]
         (doseq [[a b]
         [
@@ -309,7 +309,7 @@
                 (when-let [[_ root _ suffix] (re-matches (rxN 1) number)]
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
-                            (let [msd (.msd stem)]
+                            (let [^String msd (.msd stem)]
                                 (conj! stems (new/morAna root msd))
                                 (conj! stems (new/morAna root (.replace msd (.substring "Nn-sn" 0 2) "Afp"))))))
                     (when (zero? (count stems))
@@ -486,7 +486,7 @@
    #_3  (str #"M{0,4}" rMDC rCLX rXVI #"-M{0,4}" rMDC rCLX rXVI #"\.")
 ]))
 
-(defn guessRomanNumber [word]
+(defn guessRomanNumber [^String word]
     (let [stems (transient #{})]
         (cond
             (re-matches (rxR 0) word) ; MCMLXXXIV

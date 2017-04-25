@@ -22,7 +22,7 @@
                 (.setPPos   (into-array (cons "<root-POS>" pos)))
                 (.setFeats  (into-array (cons "<no-type>" conll))))]
             (if (< 1 (.length data))
-                (let [data (.apply @parser* data)]
+                (let [data (.apply ^Parser @parser* data)]
                     (map #(vector (inc %1) %2 %3 %4 %5 %6 (str %7) %8)
                             (range) word lemma msd pos conll (.pheads data) (.plabels data)))))))
 

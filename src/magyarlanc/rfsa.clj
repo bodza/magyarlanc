@@ -8,8 +8,8 @@
     ([word] (let [ans (transient [])] (analyse word 0 [] ans) (persistent! ans)))
     ([word n syms ans] (let [state (@rfsa* n) accept (true? (first state))]
         (if (seq word)
-            (let [c (Character/toLowerCase (first word)) word (rest word)]
-                (doseq [[[a & z] n] (partition 2 (if accept (rest state) state))]
+            (let [c (Character/toLowerCase ^Character (first word)) word (rest word)]
+                (doseq [[[^Character a & z] n] (partition 2 (if accept (rest state) state))]
                     (if (= a c) (analyse word n (apply conj syms z) ans))))
             (if accept (conj! ans (apply str syms)))))))
 

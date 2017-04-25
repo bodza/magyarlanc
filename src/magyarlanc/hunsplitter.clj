@@ -12,7 +12,7 @@
 (def ^:private splitter* (delay (DefaultSentenceSplitter.)))
 (def ^:private tokenizer* (delay (DefaultWordTokenizer.)))
 
-(defn- normalize [text]
+(defn- normalize [^String text]
     (let [sb (StringBuilder. text)]
         (doseq [i (range (.length sb))]
             (when-let [ch (case (int (.charAt sb i))
@@ -43,14 +43,14 @@
 (defn- eosApart [sentence]
     (let [words (vec sentence)] (if-let [eos (peek words)]
         (let [chars (vec eos)] (if-let [eow (peek chars)]
-            (if (or (Character/isLetterOrDigit eow) (< (count chars) 2))
+            (if (or (Character/isLetterOrDigit ^Character eow) (< (count chars) 2))
                 words
                 (conj (pop words) (apply str (pop chars)) (str eow)))
             words))
         words)))
 
 ; separate ' 'm 's 'd 're 've 'll n't endings into apart tokens
-(defn- aposApart [token]
+(defn- aposApart [^String token]
     (let [n (.length token) tlc (.toLowerCase token)]
         (cond
             (and (< 1 n) (.endsWith tlc "'"))
@@ -69,20 +69,20 @@
             (let [s1 (first is) s2 (second is)]
                 (if (and (seq s1) (seq s2) (or
                         (let [eos (last s1)]
-                            (and (<= 2 (count eos) 3) (Character/isUpperCase (first eos)) (= (last eos) \.)))
+                            (and (<= 2 (count eos) 3) (Character/isUpperCase ^Character (first eos)) (= (last eos) \.)))
                         (let [fos (first s2)]
-                            (or (@hunAbbrev* fos) (@hunAbbrev* (.toLowerCase fos))))))
+                            (or (@hunAbbrev* fos) (@hunAbbrev* (.toLowerCase ^String fos))))))
                     (recur (cons (concat s1 s2) (rest (rest is))) os)
                     (recur (rest is) (conj os s1))))
             os)))
 
 (defn tokenize [sentence]
     (let [sentence (normalize sentence)]
-        (->> (.extractWords @tokenizer* sentence) eosApart #_(mapcat aposApart))))
+        (->> (.extractWords ^DefaultWordTokenizer @tokenizer* sentence) eosApart #_(mapcat aposApart))))
 
 (defn split [text]
     (let [text (normalize text)]
-        (->> (.extractSentences @splitter* text @tokenizer*) joinT (map eosApart))))
+        (->> (.extractSentences ^DefaultSentenceSplitter @splitter* text @tokenizer*) joinT (map eosApart))))
 
 (defn -main []
     (let [t "A 2014-es választások előtt túl jó lehetőséget adna az ellenzék kezébe a dohányboltok profitját nyirbáló kezdeményezés."]

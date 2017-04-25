@@ -4,7 +4,7 @@
   #_(:gen-class))
 
 ; reduce noun
-(defn- reduceN [msd]
+(defn- reduceN [^String msd]
     (let [sb (StringBuilder. "N")]
         ; dative/genitive ; superessive/essive
         (if (< 4 (.length msd)) (let [x (.charAt msd 4)]
@@ -19,7 +19,7 @@
         (.toString sb)))
 
 ; reduce verb
-(defn- reduceV [msd]
+(defn- reduceV [^String msd]
     (let [n (.length msd)] (cond
         (.startsWith msd "Va")               "Va"
 
@@ -48,7 +48,7 @@
         :default "V")))
 
 ; reduce adjective
-(defn- reduceA [msd]
+(defn- reduceA [^String msd]
     (let [sb (StringBuilder. "A")]
         ; igenevek
         (if (not= (.charAt msd 1) \f)
@@ -66,7 +66,7 @@
         (.toString sb)))
 
 ; reduce pronoun
-(defn- reduceP [msd]
+(defn- reduceP [^String msd]
     (let [sb (StringBuilder. "P") n (.length msd)]
         ; Pq Pr Pp
         (if (< 1 n) (let [x (.charAt msd 1)]
@@ -79,7 +79,7 @@
         (.toString sb)))
 
 ; reduce adverb
-(defn- reduceR [msd]
+(defn- reduceR [^String msd]
     (let [sb (StringBuilder. "R")]
         ; Rq Rr Rp
         (if (< 1 (.length msd)) (let [x (.charAt msd 1)]
@@ -88,7 +88,7 @@
         (.toString sb)))
 
 ; reduce numeral
-(defn- reduceM [msd]
+(defn- reduceM [^String msd]
     (let [sb (StringBuilder. "M") n (.length msd)]
         ; fractal
         (if (< 1 n) (let [x (.charAt msd 1)]
@@ -107,7 +107,7 @@
         (.toString sb)))
 
 ; reduce other
-(defn- reduceO [msd]
+(defn- reduceO [^String msd]
     (let [sb (StringBuilder. "O")]
         ; dative/genitive ; superessive/essive
         (if (< 5 (.length msd)) (let [x (.charAt msd 5)]
@@ -137,7 +137,7 @@
 (defn- vec- [msd n]
     (vec (take n (concat msd (repeat \-)))))
 
-(defn- app- [sb conll x]
+(defn- app- [^StringBuilder sb conll x]
     (.. sb (append conll) (append (if (= x \-) "none" x))))
 
 ; extract noun
@@ -259,7 +259,7 @@
         (.toString sb)))
 
 ; extract interjection
-(defn- parseI [msd]
+(defn- parseI [^CharSequence msd]
     (if (== (.length msd) 1) "_" (str "SubPOS=" (.charAt msd 1))))
 
 ; extract other/open
@@ -381,7 +381,7 @@
 
                 nil))))
 
-(defn conllFeaturesToMsd [pos features]
+(defn conllFeaturesToMsd [^CharSequence pos features]
     (if (< 1 (.length pos)) "_" (_conllFeaturesToMsd (.charAt pos 0) features)))
 
 (defn -main [] (println (conllFeaturesToMsd "O" "SubPOS=e|Type=w|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none")))

@@ -1,7 +1,7 @@
 (ns magyarlanc.new
   #_(:gen-class))
 
-(deftype MorAna [lemma msd self]
+(deftype MorAna [lemma msd ^String self]
     Object
         (equals [_ that]    (.equals self (.self that)))
         (hashCode [_]       (.hashCode self))

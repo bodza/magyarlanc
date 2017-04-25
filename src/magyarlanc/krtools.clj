@@ -4,9 +4,9 @@
   #_(:gen-class))
 
 ; melléknévi igenevek
-(defn- participle? [kr] (let [verb (.indexOf kr "/VERB") adj (.indexOf kr "/ADJ")] (< -1 verb adj)))
+(defn- participle? [^String kr] (let [verb (.indexOf kr "/VERB") adj (.indexOf kr "/ADJ")] (< -1 verb adj)))
 
-(defn- getPostPLemma [kr]
+(defn- getPostPLemma [^String kr]
     (if-let [[_ lemma] (re-find #"^\$(én|te|ő|mi|ti|ők)/NOUN<POSTP<" kr)]
         (.toLowerCase (let [n (.length kr)] (case lemma
             ("én" "te") (.substring kr 15 (- n 11))	; ouch!
@@ -14,7 +14,7 @@
             ("mi" "ti") (.substring kr 15 (- n 17))	; ouch!
              "ők"       (.substring kr 15 (- n 14)))))	; ouch!
         (if-let [[_ lemma affix] (re-find #"^\$(ez|az)/NOUN<POSTP<([^>]*)>" kr)]
-            (let [affix (.toLowerCase affix)]
+            (let [affix (.toLowerCase ^String affix)]
                 ; alá, alatt, alól, által, elő, előbb, ellen, elől, előtt, iránt, után (pl.: ezután)
                 (if (.contains kr "(i)")
                     (if (re-find #"^[aáeiu]" affix)
@@ -27,10 +27,10 @@
     (loop [n (.length msd)] (if (zero? n) "" (if (= (.charAt msd (dec n)) \-) (recur (dec n)) (.. msd (subSequence 0 n) toString)))))
 
 (defn- msd-
-    ([kr s msd i ch] (if (.contains kr s) (.setCharAt msd i ch)))
-    ([kr s msd i1 c1 i2 c2] (when (.contains kr s) (.setCharAt msd i1 c1) (.setCharAt msd i2 c2))))
+    ([^String kr s ^StringBuilder msd i ch] (if (.contains kr s) (.setCharAt msd i ch)))
+    ([^String kr s ^StringBuilder msd i1 c1 i2 c2] (when (.contains kr s) (.setCharAt msd i1 c1) (.setCharAt msd i2 c2))))
 
-(defn- convertNoun [lemma kr]
+(defn- convertNoun [lemma ^String kr]
     (cond
         (.contains kr "PERS") ; névmás minden PERS-t tartalmazó NOUN
             (let [msd (StringBuilder. "Pp--sn-----------")]
@@ -160,7 +160,7 @@
         (msd- kr "<ANP<PLUR>>"     msd 12 \p)
         (chopMSD (.toString msd))))
 
-(defn- convertVerb [kr]
+(defn- convertVerb [^String kr]
     (let [msd (StringBuilder. "Vmip3s---n-")]
         (let [modal (.contains kr "<MODAL>") freq (.contains kr "[FREQ]") caus (.contains kr "[CAUS]")]
             (cond
@@ -246,9 +246,9 @@
         (msd- kr "[SUPERSUPERLAT]" msd 2 \e)
         (chopMSD (.toString msd))))
 
-(declare getRoot)
+(declare ^String getRoot)
 
-(defn getMSD [kr]
+(defn getMSD [^String kr]
     (let [ans (transient #{}) ; (sorted-set)
           root (getRoot kr) i (.indexOf root "/") lemma (.substring root 1 i) code (.substring root (inc i))
           ; $forog(-.)/VERB[CAUS](at)/VERB[FREQ](gat)/VERB<PAST><PERS<1>>
@@ -260,7 +260,7 @@
 
         (cond
             (.startsWith code "NOUN")
-                (let [msd (convertNoun lemma code) pro (.startsWith msd "P")
+                (let [^String msd (convertNoun lemma code) pro (.startsWith msd "P")
                     lemma (if pro (getPostPLemma kr) lemma)]	; ouch!
                     ; pronoun
                     (if pro
@@ -274,7 +274,7 @@
                         (conj! ans (new/morAna lemma (.replace msd \d \g)))))
 
             (.startsWith code "ADJ")
-                (let [msd (convertAdjective (if (participle? kr) kr code))]
+                (let [^String msd (convertAdjective (if (participle? kr) kr code))]
                     (conj! ans (new/morAna lemma msd))
                     ; dative
                     (if (= (.charAt msd 5) \d)
@@ -290,7 +290,7 @@
                         (conj! ans (new/morAna lemma (convertVerb code))))
 
             (.startsWith code "NUM")
-                (let [msd (convertNumber code kr)]
+                (let [^String msd (convertNumber code kr)]
                     (conj! ans (new/morAna lemma msd))
                     ; dative
                     (if (= (.charAt msd 4) \d)
@@ -313,9 +313,9 @@
 
         (persistent! ans)))
 
-(defn- preProcess [stems]
-    (let [stems (into-array stems) n (dec (count stems))]
-        (doseq [stem stems]
+(defn- ^"[Ljava.lang.String;" preProcess [stems]
+    (let [^"[Ljava.lang.String;" stems (into-array stems) n (dec (count stems))]
+        (doseq [^String stem stems]
             (if (or ; gyorsan -> gyors ; hallgatólag -> hallgató
                     (.contains stem "ADJ[MANNER]")
                     ; mindenképp, mindenképpen -> minden
@@ -338,7 +338,7 @@
                 (aset stems n stem)))
         stems))
 
-(defn getRoot [morph]
+(defn getRoot [^String morph]
     (cond
         (.startsWith morph "$sok/NUM[COMPAR]/NUM<CAS<")         "$több/NUM<CAS<ACC>>"
         (.startsWith morph "$sok/NUM[SUPERLAT]/NUM<CAS<")       "$legtöbb/NUM<CAS<ACC>>"
@@ -352,7 +352,7 @@
                   stems (preProcess (str/split morph #"/")) n (dec (count stems))
                   végsőtő (atom (re-find #"^[^\(/]*" (first stems))) ikes (atom false)]
 
-                (when (< 1 n) (doseq [stem (take n stems) todo (map #(% 1) (re-seq #"\((.*?)\)" stem))]
+                (when (< 1 n) (doseq [stem (take n stems) ^String todo (map #(% 1) (re-seq #"\((.*?)\)" stem))]
                     (condp re-matches todo
                         ; -1 -2ik
                         #"-(\d+).*"

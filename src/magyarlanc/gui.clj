@@ -1,6 +1,6 @@
 (ns magyarlanc.gui
     (:require [magyarlanc.dependency :as dep])
-    (:import [java.awt BorderLayout Dimension Insets Toolkit]
+    (:import [java.awt BorderLayout Dimension Insets Toolkit Window]
              [java.awt.event ActionListener]
              [java.awt.image BufferedImage]
              [javax.swing BoxLayout ImageIcon JButton JFrame JLabel JPanel JTextArea JTextField]
@@ -12,7 +12,7 @@
 (defn- conll [lines]
     (map #(let [[a b c _ e _ g h] % _ "_"] (list (str a) b c e _ _ _ _ g _ h _ _ _)) lines))
 
-(defn- whats-wrong [lines]
+(defn- ^BufferedImage whats-wrong [lines]
     (let [renderer (SingleSentenceRenderer.)
           instance (.create (CoNLL2009.) (conll lines))]
         (let [image (BufferedImage. 1 1 BufferedImage/TYPE_4BYTE_ABGR)
@@ -25,14 +25,14 @@
 (defn- pretty [lines]
     (apply str (mapcat conj (map #(vec (interpose \tab %)) lines) (repeat \newline))))
 
-(defn- centered [component]
+(defn- ^Window centered [^Window window]
     (let [v (.. Toolkit getDefaultToolkit getScreenSize)
-          w (.getPreferredSize component)
+          w (.getPreferredSize window)
           x (/ (- (.getWidth v) (.getWidth w)) 2)
           y (/ (- (.getHeight v) (.getHeight w)) 2)]
-        (doto component (.setLocation x y))))
+        (doto window (.setLocation x y))))
 
-(defn init [sentence]
+(defn init [^String sentence]
     (let [frame  (JFrame. "magyarlanc 2.0")
           panel  (JPanel.)
           input  (JTextField. sentence)
