@@ -124,12 +124,10 @@ package szte.converter.nooj;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
@@ -229,14 +227,6 @@ public class Dep2Nooj
 
             reader.close();
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -245,19 +235,19 @@ public class Dep2Nooj
         return document.toArray(new String[document.size()][][]);
     }
 
-    public static void convert(String[][][] sentences, String outFile, String encoding)
+    public static void convert(String[][][] sentences, String outFile)
     {
         Writer writer = null;
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), encoding));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outFile), "UTF-8"));
 
             writer.write("<doc>\n");
             for (String[][] sentence : sentences)
             {
                 writer.write(convertSentence(sentence));
-                writer.write("\n");
+                writer.write('\n');
             }
             writer.write("</doc>");
 
@@ -289,7 +279,7 @@ public class Dep2Nooj
             for (String[][] s : read(file))
             {
                 writer.write(convertSentence(s));
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -333,7 +323,7 @@ public class Conll2007To2009
             {
                 if (line.trim().length() == 0)
                 {
-                    writer.write("\n");
+                    writer.write('\n');
                 }
                 else
                 {
@@ -350,27 +340,27 @@ public class Conll2007To2009
 
                     if (msd.equals("VAN") || msd.equals("ELL"))
                     {
-                        sb.append(num).append("\t_\t_\t_\t").append(msd).append("\t").append(msd).append("\t_\t_\t");
+                        sb.append(num).append("\t_\t_\t_\t").append(msd).append('\t').append(msd).append("\t_\t_\t");
                     }
                     else
                     {
                         if (msd.equals("null"))
                             msd = wordform;
 
-                        sb.append(num).append("\t").append(wordform)
-                                      .append("\t").append(lemma)
-                                      .append("\t").append(lemma)
-                                      .append("\t").append(msd.charAt(0))
-                                      .append("\t").append(msd.charAt(0))
-                                      .append("\t").append(msdToConllFeatures.convert(lemma, msd))
-                                      .append("\t").append(msdToConllFeatures.convert(lemma, msd))
-                                      .append("\t");
+                        sb.append(num).append('\t').append(wordform)
+                                      .append('\t').append(lemma)
+                                      .append('\t').append(lemma)
+                                      .append('\t').append(msd.charAt(0))
+                                      .append('\t').append(msd.charAt(0))
+                                      .append('\t').append(msdToConllFeatures.convert(lemma, msd))
+                                      .append('\t').append(msdToConllFeatures.convert(lemma, msd))
+                                      .append('\t');
                     }
 
-                    sb.append(parent).append("\t").append(parent)
-                                     .append("\t").append(deprel)
-                                     .append("\t").append(deprel)
-                                     .append("\n");
+                    sb.append(parent).append('\t').append(parent)
+                                     .append('\t').append(deprel)
+                                     .append('\t').append(deprel)
+                                     .append('\n');
 
                     writer.write(sb.toString());
                 }
@@ -444,12 +434,7 @@ public class Converter
 
     private static final String[] CORPUSES = { "faq1", "faq2", "faq3", "faq4", "face1", "face2", "face3", "face4", };
 
-    private static final String XML_EXTENSION = ".xml";
     private static final double DIVISION = 0.8;
-
-    private static final String LATIN_2_ENCODING = "ISO-8859-2";
-
-    private static final String UTF_ENCODING = "ISO-8859-2";
 
     private static final String WORDFORM_LEMMA_SEPARATOR = "\t";
     private static final String LEMMA_MSD_SEPARATOR = "\t";
@@ -698,7 +683,7 @@ public class Converter
 
         try
         {
-            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new FileInputStream(new File(xml)), LATIN_2_ENCODING);
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new FileInputStream(new File(xml)), "UTF-8");
             divNodes = getNodes(document, "div", "article");
         }
         catch (IOException e)
@@ -722,7 +707,7 @@ public class Converter
             String trainNode = nodeToTrain(node);
 
             if (trainNode != null)
-                sb.append(trainNode).append("\n");
+                sb.append(trainNode).append('\n');
         }
 
         return sb.toString();
@@ -735,9 +720,8 @@ public class Converter
 
         try
         {
-            trainWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(trainFile), UTF_ENCODING));
-
-            testWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(testFile), UTF_ENCODING));
+            trainWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(trainFile), "UTF-8"));
+            testWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(testFile), "UTF-8"));
         }
         catch (IOException e)
         {
@@ -747,7 +731,7 @@ public class Converter
         for (String corpus : CORPUSES)
         {
             StringBuilder xml = new StringBuilder(corpusPath);
-            xml.append(corpus + XML_EXTENSION);
+            xml.append(corpus + ".xml");
             List<Node> divNodes = readXml(xml.toString());
 
             int treshold = (int) (divNodes.size() * DIVISION);
@@ -812,8 +796,8 @@ public class Converter
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), UTF_ENCODING));
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), UTF_ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), "UTF-8"));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             StringBuilder sb = new StringBuilder();
 
@@ -872,16 +856,16 @@ public class Converter
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), UTF_ENCODING));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Map.Entry<String, Set<MorAna>> entry : lexicon.entrySet())
             {
                 writer.write(entry.getKey());
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getMsd());
                 }
                 writer.write('\n');
@@ -917,9 +901,9 @@ public class Converter
                 writer.write(entry.getKey());
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getMsd());
                 }
                 writer.write('\n');
@@ -948,12 +932,12 @@ public class Converter
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), UTF_ENCODING));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Map.Entry<String, Integer> entry : frequencies.entrySet())
             {
                 writer.write(entry.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(entry.getValue());
                 writer.write('\n');
             }
@@ -990,7 +974,7 @@ public class Converter
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -1033,7 +1017,7 @@ public class Converter
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), UTF_ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -1078,7 +1062,7 @@ public class Converter
         writeFreq(getFreq(input), output);
     }
 
-    public static void batch()
+    public static void main(String[] args)
     {
         String corpusPath = "./data/webcorpus/";
         String trainFile = "./data/webcorpus/web.train";
@@ -1095,11 +1079,6 @@ public class Converter
         lex(trainFile, lexFile);
         writeFullLex(FULL_LEX, fullLexFile);
         freq(trainFile, freqFile);
-    }
-
-    public static void main(String[] args)
-    {
-        batch();
     }
 }
 EOF
@@ -1121,8 +1100,6 @@ import szte.dep.parser.MateParserWrapper;
 
 public class DepPrediction
 {
-    private static final String ENCODING = "UTF-8";
-
     private static final List<List<String>> forms = new ArrayList<List<String>>();
     private static final List<List<String>> lemmas = new ArrayList<List<String>>();
     private static final List<List<String>> msds = new ArrayList<List<String>>();
@@ -1138,7 +1115,7 @@ public class DepPrediction
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -1193,46 +1170,46 @@ public class DepPrediction
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), ENCODING));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (int i = 0; i < forms.size(); ++i)
             {
                 for (int j = 0; j < forms.get(i).size(); ++j)
                 {
                     writer.write(j + 1);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(forms.get(i).get(j));
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemmas.get(i).get(j));
-                    writer.write("\t");
+                    writer.write('\t');
 
                     // full msd
                     writer.write(msds.get(i).get(j));
-                    writer.write("\t");
+                    writer.write('\t');
 
                     // reduced msd
                     // writer.write(ResourceHolder.getMSDReducer().reduce(msds.get(i).get(j)));
-                    // writer.write("\t");
+                    // writer.write('\t');
 
                     // full msd
                     writer.write(msds.get(i).get(j));
-                    writer.write("\t");
+                    writer.write('\t');
 
                     writer.write("_");
-                    writer.write("\t");
+                    writer.write('\t');
 
                     writer.write(dep.get(i)[j][6]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(dep.get(i)[j][7]);
-                    writer.write("\t");
+                    writer.write('\t');
 
                     writer.write("-");
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write("_");
 
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
         }
         catch (IOException e)
@@ -1260,27 +1237,13 @@ public class DepPrediction
     }
 }
 EOF
-mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/Eval.java <<'EOF'
-package szte.converter.webcorpus;
-
-import szte.magyarlanc.Magyarlanc;
-
-public class Eval
-{
-    public static void main(String[] args)
-    {
-    }
-}
-EOF
 mkdir -p szte/converter/webcorpus && cat > szte/converter/webcorpus/Test.java <<'EOF'
 package szte.converter.webcorpus;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 public class Test
@@ -1304,10 +1267,6 @@ public class Test
                 // System.out.println(TwitterUtil.cleanTweet(line));
             }
         }
-        catch (UnsupportedEncodingException | FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -1321,12 +1280,10 @@ package szte.converter.webcorpus;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -1347,7 +1304,6 @@ import szte.pos.converter.CoNLLFeaturesToMSD;
 
 public class TrainResources
 {
-    public static final String ENCODING = "UTF-8";
     public static final CoNLLFeaturesToMSD CFTM = new CoNLLFeaturesToMSD();
 
     private static final Random RANDOM = new Random();
@@ -1390,7 +1346,7 @@ public class TrainResources
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             List<String> sentence = new ArrayList<String>();
 
@@ -1485,7 +1441,7 @@ public class TrainResources
                         writer.write(ResourceHolder.getMSDReducer().reduce(msd));
                         writer.write(" ");
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
         }
@@ -1533,7 +1489,7 @@ public class TrainResources
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Entry<String, Set<MorAna>> enrty : corpus.entrySet())
             {
@@ -1541,13 +1497,13 @@ public class TrainResources
 
                 for (MorAna m : enrty.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(m.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(m.getMsd());
                 }
 
-                writer.write("\n");
+                writer.write('\n');
             }
         }
         catch (IOException e)
@@ -1595,26 +1551,18 @@ public class TrainResources
 
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Entry<String, Integer> enrty : freq.entrySet())
             {
                 writer.write(enrty.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(enrty.getValue());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -1643,13 +1591,13 @@ public class TrainResources
                         String msd = CFTM.convert(split[4], split[6]);
 
                         writer.write(wordForm);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(lemma);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(msd);
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
         }
@@ -1697,31 +1645,31 @@ public class TrainResources
                     String label = split[10];
 
                     writer.write(id);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(form);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
                     writer.write("\t_\t_\n");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
             writer.flush();
             writer.close();
@@ -1830,8 +1778,8 @@ public class TrainResources
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -1844,18 +1792,18 @@ public class TrainResources
                         for (int i = 0; i < pred.length; ++i)
                         {
                             writer.write(wordForm.get(i));
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(head.get(i));
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(pred[i][6]);
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(rel.get(i));
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(pred[i][7]);
-                            writer.write("\n");
+                            writer.write('\n');
                         }
 
-                        writer.write("\n");
+                        writer.write('\n');
                     }
 
                     // gold values
@@ -2388,9 +2336,9 @@ public class CoNLL2009Sentence
             sb.append(tokens[i][0]);
             for (int j = 1; j < tokens[i].length; ++j)
             {
-                sb.append("\t").append(tokens[i][j]);
+                sb.append('\t').append(tokens[i][j]);
             }
-            sb.append("\n");
+            sb.append('\n');
         }
 
         return sb.toString();
@@ -2806,6 +2754,7 @@ public class CorrectPUNCT
                 }
             }
         }
+
         Util.writeCoNLL2009(coNLL2009, out);
     }
 }
@@ -2814,11 +2763,9 @@ mkdir -p szte/dep/removevirtual && cat > szte/dep/removevirtual/RemoveVirtualNod
 package szte.dep.removevirtual;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
 public class RemoveVirtualNodes
@@ -2835,19 +2782,11 @@ public class RemoveVirtualNodes
             // CoNLL2009Sentence coNLL2009Sentence = new CoNLL2009Sentence(sentence);
             // coNLL2009Sentence.removeVirtuals();
             // writer.write(coNLL2009Sentence.toString());
-            // writer.write("\n");
+            // writer.write('\n');
             // }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -2864,12 +2803,10 @@ import szte.pos.converter.MSDToCoNLLFeatures;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -2878,24 +2815,23 @@ import java.util.List;
 public class Util
 {
     /**
-     * Reads an CoNLL-2009 format file with the given encoding to a String array
-     * of the sentences. All sentence contains the String array os the tokens. All
-     * token contais the String array of the ConNLL-2009 values.
+     * Reads an CoNLL-2009 format file to a String array of the sentences.
+     * All sentence contains the String array os the tokens.
+     * All token contais the String array of the ConNLL-2009 values.
      *
      * @param file
      *          the CoNLL-2009 file
-     * @param encoding
-     *          the specified charcter encoding
+     *
      * @return the CoNLL-2009 sentences
      * @see http://ufal.mff.cuni.cz/conll2009-st/task-description.html
      */
-    public static String[][][] readCoNLL2009(String file, String encoding)
+    public static String[][][] readCoNLL2009(String file)
     {
         List<String[][]> sentences = new ArrayList<String[][]>();
 
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             List<String[]> sentence = new ArrayList<String[]>();
 
@@ -2912,14 +2848,6 @@ public class Util
                 }
             }
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -2928,11 +2856,11 @@ public class Util
         return sentences.toArray(new String[sentences.size()][][]);
     }
 
-    public static void writeCoNLL2009(String[][][] sentences, String file, String encoding)
+    public static void writeCoNLL2009(String[][][] sentences, String file)
     {
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (String[][] sentence : sentences)
             {
@@ -2941,38 +2869,20 @@ public class Util
                     for (String s : token)
                     {
                         writer.write(s);
-                        writer.write("\t");
+                        writer.write('\t');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
         }
-    }
-
-    public static String[][][] readCoNLL2009(String file)
-    {
-        return readCoNLL2009(file, "UTF-8");
-    }
-
-    public static void writeCoNLL2009(String[][][] sentences, String file)
-    {
-        writeCoNLL2009(sentences, file, "UTF-8");
     }
 
     public static void main(String[] args)
@@ -3246,7 +3156,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -3344,10 +3253,6 @@ public class WhatsWrongWrapper
             fos.flush();
             fos.close();
         }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -3374,10 +3279,6 @@ public class WhatsWrongWrapper
             baos.flush();
             baos.close();
         }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -3399,26 +3300,11 @@ public class WhatsWrongWrapper
     }
 }
 EOF
-mkdir -p szte/eval && cat > szte/eval/Eval.java <<'EOF'
-package szte.eval;
-
-import szte.magyarlanc.Magyarlanc;
-
-public class Eval
-{
-    public static void main(String[] args)
-    {
-    }
-}
-EOF
 mkdir -p szte/gui && cat > szte/gui/GUI.java <<'EOF'
 package szte.gui;
 
-import szte.dep.whatswrong.WhatsWrongWrapper;
-import szte.magyarlanc.Magyarlanc;
-import szte.magyarlanc.resource.ResourceHolder;
-
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Toolkit;
@@ -3439,6 +3325,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import szte.dep.whatswrong.WhatsWrongWrapper;
+import szte.magyarlanc.Magyarlanc;
+import szte.magyarlanc.resource.ResourceHolder;
+
 public class GUI
 {
     private static Dimension dimension = null;
@@ -3452,6 +3342,13 @@ public class GUI
 
     private static String[] sentence = null;
     private static String[][] depParsed = null;
+
+    private static void _moveToCenter(Component component)
+    {
+        component.setLocation(
+            (int) ((Toolkit.getDefaultToolkit().getScreenSize().getWidth() - component.getPreferredSize().getWidth()) / 2),
+            (int) ((Toolkit.getDefaultToolkit().getScreenSize().getHeight() - component.getPreferredSize().getHeight()) / 2));
+    }
 
     public static void init()
     {
@@ -3505,7 +3402,7 @@ public class GUI
                     textarea.setMargin(new Insets(10, 10, 10, 10));
                     frame.getContentPane().add(textarea, "South");
 
-                    GUIUtil.moveToCenter(frame);
+                    _moveToCenter(frame);
                     frame.pack();
                     frame.setVisible(true);
                 }
@@ -3521,7 +3418,7 @@ public class GUI
         frame.setPreferredSize(new Dimension((int) dimension.getWidth() - 150, (int) dimension.getHeight() - 150));
         frame.setResizable(false);
 
-        GUIUtil.moveToCenter(frame);
+        _moveToCenter(frame);
 
         frame.pack();
         frame.setVisible(true);
@@ -3530,22 +3427,6 @@ public class GUI
     public static void main(String[] args)
     {
         init();
-    }
-}
-EOF
-mkdir -p szte/gui && cat > szte/gui/GUIUtil.java <<'EOF'
-package szte.gui;
-
-import java.awt.Component;
-import java.awt.Toolkit;
-
-public class GUIUtil
-{
-    public static void moveToCenter(Component component)
-    {
-        component.setLocation(
-                (int) ((Toolkit.getDefaultToolkit().getScreenSize().getWidth() - component.getPreferredSize().getWidth()) / 2),
-                (int) ((Toolkit.getDefaultToolkit().getScreenSize().getHeight() - component.getPreferredSize().getHeight()) / 2));
     }
 }
 EOF
@@ -3816,12 +3697,10 @@ import szte.magyarlanc.util.SafeReader;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -3968,11 +3847,11 @@ public class Magyarlanc
         }
     }
 
-    public static void write(String[][][] array, String out, String encoding)
+    public static void write(String[][][] array, String out)
     {
         try
         {
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), encoding));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (int i = 0; i < array.length; ++i)
             {
@@ -3981,11 +3860,11 @@ public class Magyarlanc
                     for (int k = 0; k < array[i][j].length; ++k)
                     {
                         writer.write(array[i][j][k]);
-                        writer.write("\t");
+                        writer.write('\t');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
@@ -4017,9 +3896,9 @@ public class Magyarlanc
         {
             for (int j = 0; j < array[i].length; ++j)
             {
-                sb.append(array[i][j]).append("\t");
+                sb.append(array[i][j]).append('\t');
             }
-            sb.append("\n");
+            sb.append('\n');
         }
 
         return sb.toString();
@@ -4104,14 +3983,6 @@ public class Magyarlanc
             }
 
             Eval.getStat();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4201,99 +4072,54 @@ public class Magyarlanc
                 case "morphparse":
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
-                        List<String> lines = null;
+                        List<String> lines = SafeReader.read(params.get("-input"));
 
-                        if (params.containsKey("-encoding"))
-                        {
-                            lines = SafeReader.read(params.get("-input"), params.get("-encoding"));
-                        }
-                        else
-                        {
-                            lines = SafeReader.read(params.get("-input"), "UTF-8");
-                        }
-
-                        if (params.containsKey("-encoding"))
-                        {
-                            write(morphParse(lines), params.get("-output"), params.get("-encoding"));
-                        }
-                        else
-                        {
-                            write(morphParse(lines), params.get("-output"), "UTF-8");
-                        }
+                        write(morphParse(lines), params.get("-output"));
                     }
                     else
                     {
-                        System.out.println("usage: -mode morphparse -input input -output output [-encoding encoding]");
+                        System.out.println("usage: -mode morphparse -input input -output output");
                     }
                     break;
 
                 case "depparse":
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
-                        List<String> lines = null;
+                        List<String> lines = SafeReader.read(params.get("-input"));
 
-                        if (params.containsKey("-encoding"))
-                        {
-                            lines = SafeReader.read(params.get("-input"), params.get("-encoding"));
-                        }
-                        else
-                        {
-                            lines = SafeReader.read(params.get("-input"), "UTF-8");
-                        }
-
-                        if (params.containsKey("-encoding"))
-                        {
-                            write(depParse(lines), params.get("-output"), params.get("-encoding"));
-                        }
-                        else
-                        {
-                            write(depParse(lines), params.get("-output"), "UTF-8");
-                        }
+                        write(depParse(lines), params.get("-output"));
                     }
                     else
                     {
-                        System.out.println("usage: -mode depparse -input input -output output [-encoding encoding]");
+                        System.out.println("usage: -mode depparse -input input -output output");
                     }
                     break;
 
                 case "tokenized":
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
-                        if (params.containsKey("-encoding"))
-                        {
-                            write(morphParse(Util.readTokenizedFile(params.get("-input"), params.get("-encoding"))), params.get("-output"), params.get("-encoding"));
-                        }
-                        else
-                        {
-                            write(morphParse(Util.readTokenizedFile(params.get("-input"), "UTF-8")), params.get("-output"), "UTF-8");
-                        }
+                        write(morphParse(Util.readTokenizedFile(params.get("-input"))), params.get("-output"));
                     }
                     else
                     {
-                        System.out.println("usage: -mode tokenized -input input -output output [-encoding encoding]");
+                        System.out.println("usage: -mode tokenized -input input -output output");
                     }
                     break;
 
                 case "nooj":
                     if (params.containsKey("-input") && params.containsKey("-output"))
                     {
-                        if (params.containsKey("-encoding"))
-                        {
-                            Dep2Nooj.convert(depParse(Util.readFileToString(params.get("-input"), "UTF-8")), params.get("-output"), params.get("-encoding"));
-                        }
-                        else
-                        {
-                            Dep2Nooj.convert(depParse(Util.readFileToString(params.get("-input"), "UTF-8")), params.get("-output"), "UTF-8");
-                        }
+                        Dep2Nooj.convert(depParse(Util.readFileToString(params.get("-input"))), params.get("-output"));
                     }
                     else
                     {
-                        System.out.println("usage: -mode nooj -input input -output output [-encoding encoding]");
+                        System.out.println("usage: -mode nooj -input input -output output");
                     }
                     break;
 
                 default:
                     System.out.println(USAGE_MESSAGE);
+                    break;
             }
         }
     }
@@ -4379,12 +4205,10 @@ import szte.magyarlanc.MorAna;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -4423,14 +4247,6 @@ public class ResourceBuilder
                     sentence.add(line);
                 }
             }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4489,35 +4305,27 @@ public class ResourceBuilder
                     }
 
                     writer.write(id);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(form);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(MSD);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4547,21 +4355,13 @@ public class ResourceBuilder
                 for (String token : sentence)
                 {
                     writer.write(token);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4660,18 +4460,10 @@ public class ResourceBuilder
                     writer.write(ResourceHolder.getMSDReducer().reduce(MSD));
                     writer.write(" ");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4704,43 +4496,35 @@ public class ResourceBuilder
                     String label = splitted[7];
 
                     writer.write(id);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(form);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
                     writer.write("\t_\t_\n");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4781,25 +4565,17 @@ public class ResourceBuilder
 
                 for (MorAna m : enrty.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(m.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(m.getMsd());
                 }
 
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -4833,21 +4609,13 @@ public class ResourceBuilder
             for (Entry<String, Integer> enrty : freq.entrySet())
             {
                 writer.write(enrty.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(enrty.getValue());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -5015,7 +4783,6 @@ EOF
 mkdir -p szte/magyarlanc/resource && cat > szte/magyarlanc/resource/ResourceHolder.java <<'EOF'
 package szte.magyarlanc.resource;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
@@ -5192,11 +4959,7 @@ public class ResourceHolder
         {
             try
             {
-                rfsa = RFSA.read(Data.class.getResourceAsStream(RFS), "UTF-8");
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
+                rfsa = RFSA.read(Data.class.getResourceAsStream(RFS));
             }
             catch (IOException e)
             {
@@ -5419,12 +5182,10 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -5596,30 +5357,22 @@ public class Util
         return morPhonDir;
     }
 
-    public static void writeMapToFile(Map<?, ?> map, File file, String encoging)
+    public static void writeMapToFile(Map<?, ?> map, File file)
     {
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoging));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (Map.Entry<?, ?> entry : map.entrySet())
             {
                 writer.write(entry.getKey().toString());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(entry.getValue().toString());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -5640,14 +5393,6 @@ public class Util
                 String[] splitted = line.split("\t");
                 dictionary.put(splitted[0], splitted[1]);
             }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -5675,17 +5420,12 @@ public class Util
         return lemma.toArray(new String[lemma.size()]);
     }
 
-    public static String readFileToString(String filename)
-    {
-        return readFileToString(filename, "UTF-8");
-    }
-
-    public static String readFileToString(String filePath, String cEncoding)
+    public static String readFileToString(String file)
     {
         StringBuilder sb = new StringBuilder(1 << 10);
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(filePath), cEncoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
             char[] buf = new char[1024];
             int numRead = 0;
             while ((numRead = reader.read(buf)) != -1)
@@ -5698,7 +5438,7 @@ public class Util
         }
         catch (IOException e)
         {
-            System.err.println("Problem with file: " + filePath);
+            System.err.println("Problem with file: " + file);
             return new String();
         }
 
@@ -5710,10 +5450,10 @@ public class Util
      *
      * @param filenName
      *          filename
-     * @param encoding
+     *
      * @return array of token arrays
      */
-    public static String[][] readTokenizedFile(String filenName, String encoding)
+    public static String[][] readTokenizedFile(String filenName)
     {
         List<String[]> sentences = new ArrayList<String[]>();
 
@@ -5721,7 +5461,7 @@ public class Util
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(filenName), encoding));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(filenName), "UTF-8"));
 
             List<String> tokens = new ArrayList<String>();
 
@@ -5816,12 +5556,10 @@ package szte.magyarlanc.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -5858,19 +5596,11 @@ public class Eval
                     writer.write(ResourceHolder.getMSDReducer().reduce(MSD));
                     writer.write(" ");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -5903,43 +5633,35 @@ public class Eval
                     String label = splitted[7];
 
                     writer.write(id);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(form);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(POS);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(feature);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label);
                     writer.write("\t_\t_\n");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6020,21 +5742,13 @@ public class Eval
                 for (String token : sentences.get(id))
                 {
                     writer.write(token);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6109,14 +5823,6 @@ public class Eval
                 }
             }
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -6161,35 +5867,27 @@ public class Eval
                 for (int i = 0; i < form.length; ++i)
                 {
                     writer.write(form[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(MSD[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morph[i][0]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morph[i][1]);
 
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(head[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(label[i]);
 
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6224,14 +5922,6 @@ public class Eval
                 }
                 System.out.println((double) tp / cntr);
             }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6268,31 +5958,23 @@ public class Eval
                     for (int i = 0; i < form.length; ++i)
                     {
                         writer.write(form[i]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(head[i]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(label[i]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(parsed[i][0]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(parsed[i][1]);
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                     System.out.println(++cntr);
                 }
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6428,12 +6110,10 @@ package szte.magyarlanc.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.LinkedList;
 import java.util.List;
@@ -6548,10 +6228,6 @@ public class FxDepParse
                 }
             }
         }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -6573,9 +6249,9 @@ public class FxDepParse
                     for (String token : sentence)
                     {
                         writer.write(token);
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
                 else
                 {
@@ -6588,14 +6264,6 @@ public class FxDepParse
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6689,31 +6357,23 @@ public class FxDepParse
                     for (int i = 0; i < getColumn(sentence, 10).length; ++i)
                     {
                         writer.write(getColumn(sentence, 1)[i]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(getColumn(sentence, 8)[i]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(getColumn(sentence, 10)[i]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(parsed[i][0]);
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(parsed[i][1]);
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                     System.err.println(++cntr + "/" + sentences.size());
                 }
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6734,27 +6394,19 @@ public class FxDepParse
                 for (int i = 0; i < sentence.size(); ++i)
                 {
                     writer.write(getColumn(sentence, 0)[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(getColumn(sentence, 1)[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(getColumn(sentence, 8)[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(getColumn(sentence, 10)[i]);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6917,28 +6569,20 @@ public class FxDepParse
                     writer.write(splittedCorpus[0]);
                     for (int k = 1; k < 10; ++k)
                     {
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(splittedCorpus[k]);
                     }
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(splittedCorrected[3]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(splittedCorrected[3]);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -6965,10 +6609,6 @@ public class FxDepParse
             }
 
             System.out.println(offset);
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -7033,14 +6673,6 @@ public class FxDepParse
                 testWriter.close();
                 trainWriter.close();
             }
-            catch (UnsupportedEncodingException e)
-            {
-                e.printStackTrace();
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
-            }
             catch (IOException e)
             {
                 e.printStackTrace();
@@ -7089,10 +6721,8 @@ package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -7204,14 +6834,6 @@ public class FXIAA
                 }
             }
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -7257,16 +6879,14 @@ package szte.magyarlanc.util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.List;
 
 public class SafeReader
 {
-    public static List<String> read(String file, String encoding)
+    public static List<String> read(String file)
     {
         List<String> lines = new LinkedList<>();
 
@@ -7274,7 +6894,7 @@ public class SafeReader
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -7283,10 +6903,6 @@ public class SafeReader
                     lines.add(line.trim());
                 }
             }
-        }
-        catch (UnsupportedEncodingException | FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -7315,13 +6931,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7394,13 +7008,13 @@ public class SzK25
         return lexicon;
     }
 
-    public static Map<String, Integer> readIntMap(String file, String encoding, String separator, boolean isCaseSensitive)
+    public static Map<String, Integer> readIntMap(String file, String separator, boolean isCaseSensitive)
     {
         Map<String, Integer> map = new HashMap<String, Integer>();
 
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -7431,14 +7045,6 @@ public class SzK25
             }
 
             reader.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -7517,10 +7123,10 @@ public class SzK25
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < WORD_FORM_INDEX; ++j)
             {
-                sb.append(splittedLine[j]).append("\t");
+                sb.append(splittedLine[j]).append('\t');
             }
-            sb.append(splittedWordForm[i]).append("\t");
-            sb.append(splittedLemma[i]).append("\t");
+            sb.append(splittedWordForm[i]).append('\t');
+            sb.append(splittedLemma[i]).append('\t');
             if (i < splittedWordForm.length - 1)
             {
                 // default MSD for the last token
@@ -7558,10 +7164,10 @@ public class SzK25
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < WORD_FORM_INDEX; ++j)
             {
-                sb.append(splittedLine[j]).append("\t");
+                sb.append(splittedLine[j]).append('\t');
             }
-            sb.append(splittedWordForm[i]).append("\t");
-            sb.append(splittedLemma[i]).append("\t");
+            sb.append(splittedWordForm[i]).append('\t');
+            sb.append(splittedLemma[i]).append('\t');
             if (i < splittedWordForm.length - 1)
             {
                 if (splittedLine[WORD_FORM_INDEX].contains(","))
@@ -7607,13 +7213,13 @@ public class SzK25
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < WORD_FORM_INDEX; ++j)
             {
-                sb.append(splittedLine[j]).append("\t");
+                sb.append(splittedLine[j]).append('\t');
             }
-            sb.append(splittedWordForm[i]).append("\t");
-            sb.append(splittedLemma[i]).append("\t");
+            sb.append(splittedWordForm[i]).append('\t');
+            sb.append(splittedLemma[i]).append('\t');
             if (i < splittedWordForm.length - 1)
             {
-                sb.append(DEFAULT_NOUN_MSD).append("\t");
+                sb.append(DEFAULT_NOUN_MSD).append('\t');
             }
             else
             {
@@ -7770,9 +7376,9 @@ public class SzK25
         NodeList nodes = ((Element) node).getElementsByTagName("ana");
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            writer.write("\t");
+            writer.write('\t');
             writer.write(getLemma(nodes.item(i)).replace("+", ""));
-            writer.write("\t");
+            writer.write('\t');
             writer.write(getMsd(nodes.item(i)));
         }
 
@@ -7780,9 +7386,9 @@ public class SzK25
 
         for (int i = 0; i < nodes.getLength(); ++i)
         {
-            writer.write("\t");
+            writer.write('\t');
             writer.write(getLemma(nodes.item(i)));
-            writer.write("\t");
+            writer.write('\t');
             writer.write(getMsd(nodes.item(i)));
         }
     }
@@ -7801,24 +7407,24 @@ public class SzK25
 
         if (!ResourceHolder.getPunctations().contains(c))
         {
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write("K");
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write("K");
         }
         else
         {
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
         }
     }
@@ -7879,7 +7485,7 @@ public class SzK25
         for (Node node : nodes)
         {
             writer.write(node.getAttributes().getNamedItem("id").getTextContent());
-            writer.write("\t");
+            writer.write('\t');
         }
     }
 
@@ -7919,14 +7525,14 @@ public class SzK25
                             {
                                 printPrefix(divNode, pNode, sNode);
                                 printNode(node);
-                                writer.write("\n");
+                                writer.write('\n');
                             }
                             catch (IOException e)
                             {
                                 e.printStackTrace();
                             }
                         }
-                        writer.write("\n");
+                        writer.write('\n');
                     }
                 }
             }
@@ -7949,11 +7555,9 @@ public class SzK25
     {
         List<String[]> sentences = new ArrayList<String[]>();
 
-        String s = Util.readFileToString(file);
-
         List<String> sentence = new ArrayList<String>();
 
-        for (String line : s.split("\n"))
+        for (String line : Util.readFileToString(file).split("\n"))
         {
             if (line.trim().equals(""))
             {
@@ -7989,18 +7593,18 @@ public class SzK25
                         for (String s : split)
                         {
                             writer.write(s);
-                            writer.write("\n");
+                            writer.write('\n');
                         }
                     }
                     else
                     {
                         writer.write(line);
-                        writer.write("\n");
+                        writer.write('\n');
                     }
                 }
                 else
                 {
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
 
@@ -8030,7 +7634,7 @@ public class SzK25
                     writer.write(ResourceHolder.getMSDReducer().reduce(token.split("\t")[MSD_INDEX]));
                     writer.write(" ");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -8054,13 +7658,13 @@ public class SzK25
                     String msd = token.split("\t")[MSD_INDEX].replace("Np", "Nn").replace("Nc", "Nn");
 
                     writer.write(token.split("\t")[WORD_FORM_INDEX].replace(" ", "_"));
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(token.split("\t")[LEMMA_INDEX].replace(" ", "_"));
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(msd);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -8107,12 +7711,12 @@ public class SzK25
 
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getMsd());
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -8151,9 +7755,9 @@ public class SzK25
             for (Map.Entry<String, Integer> entry : freqs.entrySet())
             {
                 writer.write(entry.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(entry.getValue());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -8211,15 +7815,15 @@ public class SzK25
                 for (int i = 0; i < pred.length; ++i)
                 {
                     writer.write(wordform[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(lemma[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(msd[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(pred[i][1]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(pred[i][2]);
-                    writer.write("\n");
+                    writer.write('\n');
 
                     // if (!lemma[i].equals(pred[i][1]) || !msd[i].equals(pred[i][2])) {
                     // System.err.println(lemma[i] + "\t" + pred[i][1] + "\t" + msd[i] + "\t" + (pred[i][2]));
@@ -8235,7 +7839,7 @@ public class SzK25
                     }
                     ++tokenCounter;
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -8268,10 +7872,10 @@ public class SzK25
 
         for (String file : files)
         {
-            sb.append(readFileToString(path + file + extension, "UTF-8"));
+            sb.append(readFileToString(path + file + extension));
         }
 
-        writeStringToFile(sb.toString(), out, "UTF-8");
+        writeStringToFile(sb.toString(), out);
     }
 
     public static void mergeFrequencies(String path, String[] files, String extension, String out)
@@ -8280,7 +7884,7 @@ public class SzK25
 
         for (String file : files)
         {
-            for (Map.Entry<String, Integer> entry : readIntMap(path + file + extension, "UTF-8", "\t", true).entrySet())
+            for (Map.Entry<String, Integer> entry : readIntMap(path + file + extension, "\t", true).entrySet())
             {
                 if (!map.containsKey(entry.getKey()))
                 {
@@ -8290,26 +7894,26 @@ public class SzK25
             }
         }
 
-        writeMapToFile(map, out, "\t", "UTF-8");
+        writeMapToFile(map, out, "\t");
     }
 
-    public static void writeMapToFile(Map<String, Integer> map, String file, String separator, String encoding)
+    public static void writeMapToFile(Map<String, Integer> map, String file, String separator)
     {
-        writeMapToFile(map, new File(file), separator, encoding);
+        writeMapToFile(map, new File(file), separator);
     }
 
-    public static void writeMapToFile(Map<String, Integer> map, File file, String separator, String encoding)
+    public static void writeMapToFile(Map<String, Integer> map, File file, String separator)
     {
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
 
             for (Entry<String, Integer> entry : map.entrySet())
             {
                 writer.write(entry.getKey());
                 writer.write(separator);
                 writer.write(entry.getValue());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.close();
@@ -8320,11 +7924,11 @@ public class SzK25
         }
     }
 
-    public static void writeStringToFile(String s, File file, String encoding)
+    public static void writeStringToFile(String s, File file)
     {
         try
         {
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
             writer.write(s);
             writer.close();
         }
@@ -8334,31 +7938,27 @@ public class SzK25
         }
     }
 
-    public static void writeStringToFile(String s, String file, String encoding)
+    public static void writeStringToFile(String s, String file)
     {
-        writeStringToFile(s, new File(file), encoding);
+        writeStringToFile(s, new File(file));
     }
 
-    /**
-     * Reads the specified file to a String with the specified encoding.
-     *
-     * @param file
-     *          name of the file
-     * @param encoding
-     *          encoding the file
-     * @return content of the file
-     */
-    public static String readFileToString(File file, String encoding)
+    public static String readFileToString(String file)
+    {
+        return readFileToString(new File(file));
+    }
+
+    public static String readFileToString(File file)
     {
         StringBuilder sb = new StringBuilder();
 
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
-                sb.append(line).append("\n");
+                sb.append(line).append('\n');
             }
 
             reader.close();
@@ -8388,21 +7988,6 @@ public class SzK25
         }
 
         writeLexiconToFile(lexicon, out);
-    }
-
-    public static String readFileToString(File file)
-    {
-        return readFileToString(file, "UTF-8");
-    }
-
-    public static String readFileToString(String file, String encoding)
-    {
-        return readFileToString(new File(file), encoding);
-    }
-
-    public static String readFileToString(String file)
-    {
-        return readFileToString(new File(file), "UTF-8");
     }
 
     public static void mergeResources(String path, String[] files)
@@ -8451,12 +8036,10 @@ package szte.magyarlanc.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.LinkedList;
 import java.util.List;
@@ -8478,13 +8061,13 @@ public class Tools
     static int tokens = 0;
     static int sentences = 0;
 
-    public static String readFileToString(String file, String encoding)
+    public static String readFileToString(String file)
     {
-        StringBuilder sb = new StringBuilder(1000);
+        StringBuilder sb = new StringBuilder(1 << 10);
 
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
             char[] buf = new char[1024];
             int numRead = 0;
             while ((numRead = reader.read(buf)) != -1)
@@ -8505,8 +8088,8 @@ public class Tools
 
     public static List<List<String>> readFile(String file)
     {
-        List<String> sentence = new LinkedList<String>();
         List<List<String>> document = new LinkedList<List<String>>();
+        List<String> sentence = new LinkedList<String>();
 
         int tokenCounter = 0;
         try
@@ -8526,14 +8109,6 @@ public class Tools
                     sentence.add(line);
                 }
             }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -8591,25 +8166,17 @@ public class Tools
                         writer.write(splitted[0]);
                         for (int i = 1; i < 12; ++i)
                         {
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(splitted[i]);
                         }
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -8657,8 +8224,7 @@ public class Tools
     // reduced = new TreeSet<String>();
     //
     // try {
-    // writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
-    // file), "UTF-8"));
+    // writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
     // for (List<List<String>> document : documents) {
     // for (List<String> sentence : document) {
     // for (String line : sentence) {
@@ -8668,15 +8234,11 @@ public class Tools
     // reduced.add(splitted[13]);
     // }
     // }
-    // writer.write("\n");
+    // writer.write('\n');
     // }
     // }
     // writer.flush();
     // writer.close();
-    // } catch (UnsupportedEncodingException e) {
-    // e.printStackTrace();
-    // } catch (FileNotFoundException e) {
-    // e.printStackTrace();
     // } catch (IOException e) {
     // e.printStackTrace();
     // }
@@ -8714,19 +8276,11 @@ public class Tools
                         reduced.add(splitted[13]);
                     }
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -8751,11 +8305,7 @@ public class Tools
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./new_features.txt"), "UTF-8"));
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
             e.printStackTrace();
         }
@@ -8877,11 +8427,7 @@ public class Tools
         {
             writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
             e.printStackTrace();
         }
@@ -8937,10 +8483,10 @@ public class Tools
                     writer.write(splitted[0]);
                     for (int i = 1; i < splitted.length; ++i)
                     {
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(splitted[i]);
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
                 catch (IOException e)
                 {
@@ -8949,7 +8495,7 @@ public class Tools
             }
             try
             {
-                writer.write("\n");
+                writer.write('\n');
             }
             catch (IOException e)
             {
@@ -9028,21 +8574,13 @@ public class Tools
             for (Map.Entry<String, Integer> entry : freqs.entrySet())
             {
                 writer.write(entry.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(entry.getValue());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -9078,24 +8616,16 @@ public class Tools
                 writer.write(entry.getKey());
                 for (MorAna m : entry.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(m.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(m.getMsd());
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -9207,12 +8737,10 @@ package szte.magyarlanc.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9339,10 +8867,6 @@ public class TrainTest
                 }
             }
         }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -9381,13 +8905,13 @@ public class TrainTest
                         writer.write(splitted[0]);
                         for (int i = 1; i < 12; ++i)
                         {
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(splitted[i]);
                         }
 
                         for (int i = 13; i < splitted.length; ++i)
                         {
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(splitted[i]);
                         }
                     }
@@ -9395,21 +8919,13 @@ public class TrainTest
                     {
                         writer.write(token);
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -9436,22 +8952,14 @@ public class TrainTest
                     for (String token : sentence)
                     {
                         writer.write(token);
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -9531,21 +9039,13 @@ public class TrainTest
                 for (String token : sentence)
                 {
                     writer.write(token);
-                    writer.write("\n");
+                    writer.write('\n');
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -9624,37 +9124,37 @@ public class TrainTest
             for (int j = 0; j < id.length; ++j)
             {
                 writer.write(id[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(form[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(lemma[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(plemma[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(pos[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(ppos[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(feat[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(pfeat[j]);
                 // HEAD
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(head[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(prediction[j][0]);
                 // REL
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(rel[j]);
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(prediction[j][1]);
                 // FX
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(fx[j]);
 
-                writer.write("\n");
+                writer.write('\n');
             }
-            writer.write("\n");
+            writer.write('\n');
         }
 
         System.out.println();
@@ -9679,14 +9179,6 @@ public class TrainTest
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -9715,32 +9207,24 @@ public class TrainTest
                         writer.write(splitted[0]);
                         for (int i = 1; i < 8; ++i)
                         {
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(splitted[i]);
                         }
 
                         for (int i = 10; i < splitted.length; ++i)
                         {
-                            writer.write("\t");
+                            writer.write('\t');
                             writer.write(splitted[i]);
                         }
 
-                        writer.write("\n");
+                        writer.write('\n');
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -13232,7 +12716,7 @@ public class MSDToCoNLLFeatures
             e.printStackTrace();
         }
 
-        Util.writeMapToFile(sorted, f, "UTF-8");
+        Util.writeMapToFile(sorted, f);
     }
 
     public String[] convertArray(String[] forms, String[] MSDs)
@@ -14356,12 +13840,12 @@ public class MainPartOfSpeech
 {
     static Pattern pattern = Pattern.compile("(.*@)(.*)");
 
-    public static void readTrain(String file, String encoding, String out)
+    public static void readTrain(String file, String out)
     {
         try
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), encoding));
-            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), encoding));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -14385,7 +13869,7 @@ public class MainPartOfSpeech
                     writer.write(s);
                     writer.write(" ");
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             reader.close();
@@ -14399,7 +13883,7 @@ public class MainPartOfSpeech
 
     public static void main(String[] args)
     {
-        readTrain("d:/szeged.pos.train", "UTF-8", "d:/szeged.pos.train.main");
+        readTrain("d:/szeged.pos.train", "d:/szeged.pos.train.main");
     }
 }
 EOF
@@ -14480,11 +13964,9 @@ mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLPredicate.java <<'EOF'
 package szte.pos.util;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14523,29 +14005,21 @@ public class CoNLLPredicate
                 for (int i = 0; i < form.length; ++i)
                 {
                     writer.write(form[i]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morph[i][1]);
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morph[i][2]);
-                    writer.write("\n");
+                    writer.write('\n');
                     // writer.write((form[i]);
-                    // writer.write("\t");
+                    // writer.write('\t');
                     // writer.write(morph[i][2]);
-                    // writer.write("\n"));
+                    // writer.write('\n'));
                 }
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -14582,9 +14056,9 @@ public class CoNLLSentence
             sb.append(tokens[i][0]);
             for (int j = 1; j < tokens[i].length; ++j)
             {
-                sb.append("\t").append(tokens[i][j]);
+                sb.append('\t').append(tokens[i][j]);
             }
-            sb.append("\n");
+            sb.append('\n');
         }
 
         return sb.toString();
@@ -14627,11 +14101,9 @@ mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLToCorpus.java <<'EOF'
 package szte.pos.util;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -14679,25 +14151,17 @@ public class CoNLLToCorpus
                     writer.write(entry.getKey());
                     for (MorAna morAna : entry.getValue())
                     {
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(morAna.getLemma());
-                        writer.write("\t");
+                        writer.write('\t');
                         writer.write(morAna.getMsd());
                     }
-                    writer.write("\n");
+                    writer.write('\n');
                 }
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -14721,11 +14185,9 @@ mkdir -p szte/pos/util && cat > szte/pos/util/CoNLLToFreq.java <<'EOF'
 package szte.pos.util;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
@@ -14768,21 +14230,13 @@ public class CoNLLToFreq
             for (Entry<String, Integer> entry : freq.entrySet())
             {
                 writer.write(entry.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(entry.getValue());
-                writer.write("\n");
+                writer.write('\n');
             }
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -14808,12 +14262,10 @@ package szte.pos.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14829,16 +14281,8 @@ public class CoNLLUtil
 
             for (String line; (line = reader.readLine()) != null; )
             {
-                sb.append(line).append("\n");
+                sb.append(line).append('\n');
             }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -14861,14 +14305,6 @@ public class CoNLLUtil
 
             writer.flush();
             writer.close();
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -14899,14 +14335,6 @@ public class CoNLLUtil
                 }
             }
         }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
         catch (IOException e)
         {
             e.printStackTrace();
@@ -14926,10 +14354,8 @@ package szte.pos.util;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14960,14 +14386,6 @@ public class Objfx
                     sentence.add(line.split("\t"));
                 }
             }
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            e.printStackTrace();
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
         }
         catch (IOException e)
         {
@@ -16295,9 +15713,7 @@ public class Train
       "cwszt", "gazdtar", "hvg", "mh", "newsml", "np", "nv", "pfred", "szerzj",
       "utas", "win2000" };
 
-    private static final String XML_EXTENSION = ".xml";
     private static final double DIVISION = 0.8;
-    private static final String ENCODING = "UTF-8";
 
     private static final String WORDFORM_LEMMA_SEPARATOR = "\t";
     private static final String LEMMA_MSD_SEPARATOR = "\t";
@@ -16463,7 +15879,7 @@ public class Train
             if (trainNode != null)
             {
                 sb.append(trainNode);
-                sb.append("\n");
+                sb.append('\n');
             }
         }
 
@@ -16545,8 +15961,8 @@ public class Train
 
         try
         {
-            trainWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(trainFile), ENCODING));
-            testWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(testFile), ENCODING));
+            trainWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(trainFile), "UTF-8"));
+            testWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(testFile), "UTF-8"));
         }
         catch (IOException e)
         {
@@ -16558,7 +15974,7 @@ public class Train
         for (String corpus : CORPUSES)
         {
             StringBuilder xml = new StringBuilder(corpusPath);
-            xml.append(corpus + XML_EXTENSION);
+            xml.append(corpus + ".xml");
             divNodes = readXml(xml.toString());
             int treshold = (int) (divNodes.size() * DIVISION);
 
@@ -16613,8 +16029,8 @@ public class Train
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), ENCODING));
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(in), "UTF-8"));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             StringBuilder sb = new StringBuilder();
 
@@ -16673,16 +16089,16 @@ public class Train
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Map.Entry<String, Set<MorAna>> entry : lexicon.entrySet())
             {
                 writer.write(entry.getKey());
                 for (MorAna morAna : entry.getValue())
                 {
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getLemma());
-                    writer.write("\t");
+                    writer.write('\t');
                     writer.write(morAna.getMsd());
                 }
                 writer.write('\n');
@@ -16711,12 +16127,12 @@ public class Train
 
         try
         {
-            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), ENCODING));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"));
 
             for (Map.Entry<String, Integer> entry : frequencies.entrySet())
             {
                 writer.write(entry.getKey());
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(entry.getValue());
                 writer.write('\n');
             }
@@ -16746,7 +16162,7 @@ public class Train
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -16789,7 +16205,7 @@ public class Train
 
         try
         {
-            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), ENCODING));
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
 
             for (String line; (line = reader.readLine()) != null; )
             {
@@ -16834,7 +16250,7 @@ public class Train
         writeFreq(getFreq(input), output);
     }
 
-    public static void batch()
+    public static void main(String[] args)
     {
         String corpusPath = "./data/Szeged_Korpusz_2.3/";
         String trainFile = "./data/23.train";
@@ -16847,11 +16263,6 @@ public class Train
         stanfordTrain(trainFile, stanfordTrainFile);
         lex(trainFile, lexFile);
         freq(trainFile, freqFile);
-    }
-
-    public static void main(String[] args)
-    {
-        batch();
     }
 }
 EOF
@@ -16920,28 +16331,28 @@ public class XMLtoTXT
 
                 try
                 {
-                    sb.append("\t").append(splittedNamedEntity[0]);
+                    sb.append('\t').append(splittedNamedEntity[0]);
                 }
                 catch (ArrayIndexOutOfBoundsException e)
                 {
                     // System.out.println(sentence.get(i));
                 }
-                sb.append("\t").append(splittedLemma[0]);
+                sb.append('\t').append(splittedLemma[0]);
 
                 // System.out.println(splittedLemma[0]);
 
                 // utolso elotti tokenek
                 if (splittedLine[3].startsWith("X"))
                 {
-                    sb.append("\t").append("Np-sn");
-                    sb.append("\t").append("N");
+                    sb.append('\t').append("Np-sn");
+                    sb.append('\t').append("N");
                 }
 
                 // N
                 else if (splittedLine[3].startsWith("Np"))
                 {
-                    sb.append("\t").append("Np-sn");
-                    sb.append("\t").append("N");
+                    sb.append('\t').append("Np-sn");
+                    sb.append('\t').append("N");
                 }
 
                 // M
@@ -16951,18 +16362,18 @@ public class XMLtoTXT
                     {
                         if (!splittedNamedEntity[0].contains(","))
                         {
-                            sb.append("\t").append("Mc-snd");
+                            sb.append('\t').append("Mc-snd");
                         }
                         else
                         {
-                            sb.append("\t").append("Mf-snd");
+                            sb.append('\t').append("Mf-snd");
                         }
                     }
                     else
                     {
-                        sb.append("\t").append("Mc-snd");
+                        sb.append('\t').append("Mc-snd");
                     }
-                    sb.append("\t").append("M");
+                    sb.append('\t').append("M");
                 }
 
                 // AFP
@@ -16972,40 +16383,40 @@ public class XMLtoTXT
                     {
                         if (splittedLine[1].contains(","))
                         {
-                            sb.append("\t").append("Mf-snd");
+                            sb.append('\t').append("Mf-snd");
                         }
                         else
                         {
-                            sb.append("\t").append("Mc-snd");
+                            sb.append('\t').append("Mc-snd");
                         }
-                        sb.append("\t").append("NUM");
+                        sb.append('\t').append("NUM");
                     }
                     else
                     {
-                        sb.append("\t").append("Np-sn");
-                        sb.append("\t").append("N");
+                        sb.append('\t').append("Np-sn");
+                        sb.append('\t').append("N");
                     }
                 }
                 else
                 {
-                    sb.append("\t").append("Np-sn");
-                    sb.append("\t").append(splittedLine[4]);
+                    sb.append('\t').append("Np-sn");
+                    sb.append('\t').append(splittedLine[4]);
                 }
 
-                sb.append("\t").append(splittedLine[5]);
-                sb.append("\t").append(Integer.valueOf(splittedLine[0]) + 1);
+                sb.append('\t').append(splittedLine[5]);
+                sb.append('\t').append(Integer.valueOf(splittedLine[0]) + 1);
 
                 if (splittedLine[3].startsWith("M"))
                 {
-                    sb.append("\t").append("NUM");
+                    sb.append('\t').append("NUM");
                 }
                 else
                 {
-                    sb.append("\t").append("NE");
+                    sb.append('\t').append("NE");
                 }
 
-                sb.append("\t").append(splittedLine[8]);
-                sb.append("\t").append(splittedLine[9]);
+                sb.append('\t').append(splittedLine[8]);
+                sb.append('\t').append(splittedLine[9]);
 
                 sentence.set(i, sb.toString());
 
@@ -17018,10 +16429,10 @@ public class XMLtoTXT
                 for (int j = i + 1; j < i + splittedNamedEntity.length; ++j)
                 {
                     sb = new StringBuilder(String.valueOf(j + 1));
-                    sb.append("\t").append(splittedNamedEntity[token]);
+                    sb.append('\t').append(splittedNamedEntity[token]);
                     try
                     {
-                        sb.append("\t").append(splittedLemma[token]);
+                        sb.append('\t').append(splittedLemma[token]);
                     }
                     catch (Exception e)
                     {
@@ -17032,13 +16443,13 @@ public class XMLtoTXT
                     {
                         if (j == (i + splittedNamedEntity.length - 1))
                         {
-                            sb.append("\t").append("X");
-                            sb.append("\t").append("X");
+                            sb.append('\t').append("X");
+                            sb.append('\t').append("X");
                         }
                         else
                         {
-                            sb.append("\t").append("Np-sn");
-                            sb.append("\t").append("N");
+                            sb.append('\t').append("Np-sn");
+                            sb.append('\t').append("N");
                         }
                     }
 
@@ -17049,19 +16460,19 @@ public class XMLtoTXT
                         {
                             if (splittedLine[0].equals("és"))
                             {
-                                sb.append("\t").append("Ccsw");
-                                sb.append("\t").append("Ccsw");
+                                sb.append('\t').append("Ccsw");
+                                sb.append('\t').append("Ccsw");
                             }
                             else
                             {
-                                sb.append("\t").append(splittedLine[3]);
-                                sb.append("\t").append(splittedLine[4]);
+                                sb.append('\t').append(splittedLine[3]);
+                                sb.append('\t').append(splittedLine[4]);
                             }
                         }
                         else
                         {
-                            sb.append("\t").append("Np-sn");
-                            sb.append("\t").append("N");
+                            sb.append('\t').append("Np-sn");
+                            sb.append('\t').append("N");
                         }
                     }
 
@@ -17072,50 +16483,50 @@ public class XMLtoTXT
                         {
                             if (splittedLine[0].equals("és"))
                             {
-                                sb.append("\t").append("Ccsw");
-                                sb.append("\t").append("Ccsw");
+                                sb.append('\t').append("Ccsw");
+                                sb.append('\t').append("Ccsw");
                             }
                             else
                             {
-                                sb.append("\t").append(splittedLine[3]);
-                                sb.append("\t").append(splittedLine[4]);
+                                sb.append('\t').append(splittedLine[3]);
+                                sb.append('\t').append(splittedLine[4]);
                             }
                         }
                         else
                         {
-                            sb.append("\t").append("Np-sn");
-                            sb.append("\t").append("N");
+                            sb.append('\t').append("Np-sn");
+                            sb.append('\t').append("N");
                         }
                     }
                     else
                     {
-                        sb.append("\t").append(splittedLine[3]);
-                        sb.append("\t").append(splittedLine[4]);
+                        sb.append('\t').append(splittedLine[3]);
+                        sb.append('\t').append(splittedLine[4]);
                     }
 
-                    sb.append("\t").append(splittedLine[5]);
+                    sb.append('\t').append(splittedLine[5]);
 
                     // utols token
                     if (j + 1 == i + splittedNamedEntity.length)
                     {
                         if (Integer.parseInt(splittedLine[6]) > j - splittedNamedEntity.length + 1)
                         {
-                            sb.append("\t").append(Integer.valueOf(splittedLine[6]) + splittedNamedEntity.length - 1);
+                            sb.append('\t').append(Integer.valueOf(splittedLine[6]) + splittedNamedEntity.length - 1);
                         }
                         else
                         {
-                            sb.append("\t").append(Integer.valueOf(splittedLine[6]));
+                            sb.append('\t').append(Integer.valueOf(splittedLine[6]));
                         }
 
-                        sb.append("\t").append(splittedLine[7]);
+                        sb.append('\t').append(splittedLine[7]);
                     }
                     else
                     {
-                        sb.append("\t").append(j + 2);
-                        sb.append("\t").append("NE");
+                        sb.append('\t').append(j + 2);
+                        sb.append('\t').append("NE");
                     }
-                    sb.append("\t").append(splittedLine[8]);
-                    sb.append("\t").append(splittedLine[9]);
+                    sb.append('\t').append(splittedLine[8]);
+                    sb.append('\t').append(splittedLine[9]);
                     ++token;
                     sentence.add(j, sb.toString());
                 }
@@ -17225,9 +16636,9 @@ public class XMLtoTXT
 
             else
             {
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(getLemma(nodes.item(i)).replace("+", ""));
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(getMsd(nodes.item(i), reduce));
             }
         }
@@ -17243,9 +16654,9 @@ public class XMLtoTXT
 
             else
             {
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(getLemma(nodes.item(i)));
-                writer.write("\t");
+                writer.write('\t');
                 writer.write(getMsd(nodes.item(i), reduce));
             }
         }
@@ -17259,24 +16670,24 @@ public class XMLtoTXT
 
         if (!ResourceHolder.getPunctations().contains(c))
         {
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write("K");
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write("K");
         }
         else
         {
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
-            writer.write("\t");
+            writer.write('\t');
             writer.write(node.getTextContent());
         }
     }
@@ -17362,7 +16773,7 @@ public class XMLtoTXT
         for (Node node : nodes)
         {
             writer.write(node.getAttributes().getNamedItem("id").getTextContent());
-            writer.write("\t");
+            writer.write('\t');
         }
     }
 
@@ -17406,7 +16817,7 @@ public class XMLtoTXT
                                 printNode(node, reduce, train);
                                 if (!train)
                                 {
-                                    writer.write("\n");
+                                    writer.write('\n');
                                 }
                                 else
                                 {
@@ -17418,7 +16829,7 @@ public class XMLtoTXT
                                 e.printStackTrace();
                             }
                         }
-                        writer.write("\n");
+                        writer.write('\n');
                     }
                 }
             }
@@ -17454,13 +16865,11 @@ public class XMLtoTXT
 
     public static String[][] read(String file)
     {
-        List<String> sentence = new ArrayList<String>();
-
-        String s = Util.readFileToString(file);
-
         List<String[]> sentences = new ArrayList<String[]>();
 
-        for (String line : s.split("\n"))
+        List<String> sentence = new ArrayList<String>();
+
+        for (String line : Util.readFileToString(file).split("\n"))
         {
             if (line.trim().equals(""))
             {
@@ -17486,12 +16895,10 @@ public class XMLtoTXT
 
         write("./data/Szeged_Korpusz_2.3/newsml.xml", "./data/Szeged_Korpusz_2.3/newsml.txt", false, false);
 
-        // String c = null;
-        // c = Util.readFileToString("./data/szk2.5/txt/newsml_1.txt");
+        // String c = Util.readFileToString("./data/szk2.5/txt/newsml_1.txt");
         // Writer writer = null;
         // try {
-        // writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
-        // "./data/szk2.5/txt/newsml-split.txt"), "UTF-8"));
+        // writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/szk2.5/txt/newsml-split.txt"), "UTF-8"));
         // } catch (IOException e) {
         // e.printStackTrace();
         // }
@@ -17517,7 +16924,7 @@ public class XMLtoTXT
         // }
         // } else {
         // try {
-        // writer.write("\n");
+        // writer.write('\n');
         // } catch (IOException e) {
         // e.printStackTrace();
         // }
@@ -17545,9 +16952,7 @@ public class XMLtoTXT
         // Writer writer2 = null;
         // if (writer2 == null)
         // try {
-        // writer2 = new BufferedWriter(new OutputStreamWriter(
-        // new FileOutputStream("./data/szk2.5/txt/newsml-train-80.txt"),
-        // "UTF-8"));
+        // writer2 = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./data/szk2.5/txt/newsml-train-80.txt"), "UTF-8"));
         // } catch (IOException e) {
         // e.printStackTrace();
         // }
@@ -17679,7 +17084,7 @@ public class Dumper extends Thread
             System.out.println(thread);
             for (StackTraceElement trace : dump)
             {
-                sb.append(" ").append(trace).append("\n");
+                sb.append(" ").append(trace).append('\n');
             }
         }
 
@@ -18208,7 +17613,7 @@ public class RFSA
 
         for (int i = 0; i < stateCount; i++)
         {
-            sb.append("    ").append(i).append(", ").append(ab[i]).append(", ").append(indices[i + 1] - indices[i]).append("\n");
+            sb.append("    ").append(i).append(", ").append(ab[i]).append(", ").append(indices[i + 1] - indices[i]).append('\n');
             for (int j = indices[i]; j < indices[i + 1]; j++)
             {
                 sb.append("      ").append(targets[j]).append(": >").append(charsymbols[j]).append("|").append(symbols[j]).append("<\n");
@@ -18451,70 +17856,18 @@ public class RFSA
         return targets;
     }
 
-    public static RFSA read(String file, String encoding)
+    public static RFSA read(String file)
         throws IOException
     {
-        Map<String, String> labelMap = new HashMap<String, String>();
-
-        LineNumberReader reader = new LineNumberReader(new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8")));
-
-        String line = reader.readLine();
-        StringTokenizer st = new StringTokenizer(line);
-
-        int startIndex = Integer.parseInt(st.nextToken());
-        int stateCount = Integer.parseInt(st.nextToken());
-        int edgeCount = Integer.parseInt(st.nextToken());
-
-        RFSA rfsa = new RFSA(startIndex, stateCount, edgeCount);
-        for (int i = 0; i < stateCount; i++)
-        {
-            // state line with state number and accepting
-            line = reader.readLine();
-            st = new StringTokenizer(line, "\t");
-            int state = Integer.parseInt(st.nextToken());
-            boolean accepting = new Boolean(st.nextToken());
-
-            rfsa.addState(state, accepting);
-
-            // line with edgecount
-            line = reader.readLine();
-            st = new StringTokenizer(line);
-            int edges = Integer.parseInt(st.nextToken());
-            if (edges == 0)
-            {
-                rfsa.noedge(state);
-            }
-
-            // lines with edges
-            for (int j = 0; j < edges; j++)
-            {
-                line = reader.readLine();
-                int index = line.indexOf('\t');
-                String s = line.substring(0, index);
-                if (s.length() == 0)
-                {
-                    throw new IllegalStateException();
-                }
-                int target = Integer.parseInt(line.substring(index + 1));
-                String label = labelMap.get(s);
-                if (label == null)
-                {
-                    labelMap.put(s, label = s);
-                }
-                rfsa.addEdge(state, label, target);
-            }
-        }
-        reader.close();
-        rfsa.sort();
-        return rfsa;
+        return read(new FileInputStream(file));
     }
 
-    public static RFSA read(InputStream rfsaStream, String encoding)
+    public static RFSA read(InputStream rfsaStream)
         throws IOException
     {
         Map<String, String> labelMap = new HashMap<String, String>();
 
-        LineNumberReader reader = new LineNumberReader(new InputStreamReader(rfsaStream, encoding));
+        LineNumberReader reader = new LineNumberReader(new InputStreamReader(rfsaStream, "UTF-8"));
 
         String line = reader.readLine();
         StringTokenizer st = new StringTokenizer(line);
