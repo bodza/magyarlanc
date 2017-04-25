@@ -3,7 +3,7 @@
               [magyarlanc.hunsplitter :as hspl] [magyarlanc.krtools :as kr] [magyarlanc.msdtools :as msd] [magyarlanc.rfsa :as rfsa]
               [magyarlanc.new :as new])
     (:import [edu.stanford.nlp.ling TaggedWord]
-             [edu.stanford.nlp.tagger.maxent MaxentTagger #_SzteTagger SzteTestSentence TaggerConfig])
+             [edu.stanford.nlp.tagger.maxent MaxentTagger SzteSentence TaggerConfig])
   #_(:gen-class))
 
 (defn- readCorpus [file]
@@ -23,9 +23,7 @@
 (defn- maxentTagger [model]
     (proxy [MaxentTagger] [model (TaggerConfig. (into-array ["-model" model "-verbose" "false"])) false]
         (apply [in]
-            (.tagSentence (SzteTestSentence. this getPossibleTags) in false))))
-
-#_(defn- maxentTagger [model] (SzteTagger. model (TaggerConfig. (into-array ["-model" model "-verbose" "false"])) false))
+            (.tagSentence (SzteSentence. this getPossibleTags) in false))))
 
 (def ^:private tagger* (delay (maxentTagger "./data/25.model")))
 
@@ -208,7 +206,7 @@
 (def ^:private morPhonDir #{"talány" "némber" "sün" "fal" "holló" "felhő" "kalap" "hely" "köd"})
 
 (defn morPhonGuess [root suffix]
-    (let [ans (transient #{})]
+    (let [ans (transient #{})] ; (sorted-set)
         (doseq [guess morPhonDir kr (rfsa/analyse (str guess suffix)) stem (kr/getMSD kr)]
             (let [msd (.msd stem)]
                 (if (.startsWith msd "N") ; csak főnevi elemzesek
@@ -304,7 +302,7 @@
 
 ; számmal kezdődő token elemzése
 (defn numberGuess [number]
-    (let [stems (transient #{})]
+    (let [stems (transient #{})] ; (sorted-set)
         (if (re-matches (rxN 0) number)
             (or
                 ; 386-osok (386-(os))(ok)

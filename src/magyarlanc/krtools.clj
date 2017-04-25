@@ -249,7 +249,7 @@
 (declare getRoot)
 
 (defn getMSD [kr]
-    (let [ans (transient #{})
+    (let [ans (transient #{}) ; (sorted-set)
           root (getRoot kr) i (.indexOf root "/") lemma (.substring root 1 i) code (.substring root (inc i))
           ; $forog(-.)/VERB[CAUS](at)/VERB[FREQ](gat)/VERB<PAST><PERS<1>>
           stem (let [a (.indexOf kr "(") b (.indexOf kr "/")]
