@@ -30,7 +30,7 @@
             (let [argm (apply array-map args) in (argm "-input") out (argm "-output")]
                 (case (argm "-mode")
                     "gui"        (gui/-main)
-                    "morana"     (doseq [line (lines-in in)] (println (str (mor/getMorphologicalAnalyses line))))
+                    "morana"     (doseq [line (lines-in in)] (println (apply str (interpose " " (mor/getMorphologicalAnalyses line)))))
                     "morphparse" (text-out (mapcat mor/morphParse (lines-in in)) out)
                     "tokenized"  (text-out (map mor/morphParseTokens (tokens-in in)) out)
                     "depparse"   (text-out (mapcat dep/depParse (lines-in in)) out)

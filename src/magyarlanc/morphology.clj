@@ -25,7 +25,7 @@
         (apply [in]
             (.tagSentence (SzteSentence. this getPossibleTags) in false))))
 
-(def ^:private tagger* (delay (maxentTagger "./data/25.model")))
+(def ^:private tagger* (delay (maxentTagger "data/25.model")))
 
 (declare recoverTags)
 
