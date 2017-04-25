@@ -1,11 +1,11 @@
 (ns magyarlanc.morphology
-    (:require [clojure.java.io :as io] [clojure.string :as str])
-    (:import [java.io BufferedReader InputStreamReader IOException]
-             [java.util ArrayList HashSet LinkedHashSet List Map Set TreeMap TreeSet]
+    (:require [clojure.java.io :as io] #_[clojure.set :as set] [clojure.string :as str]
+              [magyarlanc.rfsa :as rfsa])
+    (:import [java.util HashSet LinkedHashSet List Map Set TreeSet]
              [java.util.regex Matcher Pattern])
     (:import [edu.stanford.nlp.ling TaggedWord]
              [edu.stanford.nlp.tagger.maxent SzteMaxentTagger])
-    (:import [magyarlanc HunSplitter KRTools$KRPOS Morphology$MorAna])
+    (:import [magyarlanc HunSplitter KRTools KRTools$KRPOS Morphology$MorAna])
     (:gen-class))
 
 (defn- morAna
@@ -77,188 +77,54 @@
 ;           }
 ;       }
 
-;       /**
-;        * adott szó csak írásjeleket tartalmaz-e
-;        */
-;       private static boolean isPunctation(String spelling)
-;       {
-;           for (int i = 0; i < spelling.length(); ++i)
-;           {
-;               if (Character.isLetterOrDigit(spelling.charAt(i)))
-;               {
-;                   return false;
-;               }
-;           }
+; adott szó csak írásjeleket tartalmaz-e
+(defn- punctation? [spelling]
+    (not-any? #(Character/isLetterOrDigit %) spelling))
 
-;           return true;
-;       }
+(def punctations* (delay (into #{} (map str "!,-.:;?–"))))
 
-;       private static Set<String> punctations = new HashSet<String>()
-;       {{
-;           String[] puncts = { "!", ",", "-", ".", ":", ";", "?", "–" };
+(defn- puncs [word]
+    (if (punctation? word) #{(morAna word (cond (@punctations* word) word (= word "§") "Nn-sn" :default "K"))}))
 
-;           for (String punct : puncts)
-;           {
-;               add(punct);
-;           }
-;       }};
+(defn- readErrata [file]
+    (with-open [reader (io/reader (io/resource file))]
+        (into {} (map #(let [[k v] (str/split % #"\t")] (if-not (= k v) [k v])) (line-seq reader)))))
 
-;       public static Set<String> getPunctations()
-;       {
-;           return punctations;
-;       }
+(def ^:private errata* (delay (readErrata "data/errata.txt")))
 
-;       private static Map<String, String> corrDic;
+; adott szó lehetséges morfológiai elemzéseinek meghatározása
+(defn getMorphologicalAnalyses [word]
+    ; írásjel
+    (or (puncs word)
+        ; szerepel a corpus.lex-ben (kisbetűvel)
+        (@corpus* word) (@corpus* (.toLowerCase word))
+        ; szám
+        (let [ans (numberGuess word)] (if (seq ans) ans
+            ; római szám
+            (let [ans (transient (guessRomanNumber word))]
 
-;       private static Map<String, String> getCorrDic()
-;       {
-;           if (corrDic == null)
-;               corrDic = readMap("corrdic.txt");
+                ; rfsa
+                (reduce conj! ans (mapcat #(KRTools/getMSD %) (rfsa/analyse word)))
 
-;           return corrDic;
-;       }
+                (if (empty? ans)
+                    ; (kötőjeles) összetett szó
+                    (let [i (.indexOf word "-")
+                          cs (if (< 1 i) (analyseHyphenicCompoundWord word) (analyseCompoundWord (.toLowerCase word)))]
+                        (reduce conj! ans (mapcat #(KRTools/getMSD %) cs))))
 
-;       public static Map<String, String> readMap(String file)
-;       {
-;           Map<String, String> map = new TreeMap<String, String>();
+                (if (empty? ans)
+                    ; guess (Bush-nak, Bush-kormányhoz)
+                    (let [i (.lastIndexOf word "-")]
+                        (if (< 1 i)
+                            (reduce conj! ans (hyphenicGuess (.substring word 0 i) (.substring word (inc i)))))))
 
-;           try
-;           {
-;               BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+                (if (empty? ans)
+                    ; téves szavak
+                    (when-let [corr (or (@errata* word) (@errata* (.toLowerCase word)) nil)]
+                        (if-not (= corr word)
+                            (reduce conj! ans (getMorphologicalAnalyses corr)))))
 
-;               for (String line; (line = reader.readLine()) != null; )
-;               {
-;                   String[] splitted = line.split("\t");
-;                   map.put(splitted[0], splitted[1]);
-;               }
-;           }
-;           catch (Exception e)
-;           {
-;               e.printStackTrace();
-;           }
-
-;           return map;
-;       }
-
-;       /**
-;        * adott szó lehetséges morfológiai elemzéseinek meghatározása
-;        */
-;       public static Set<MorAna> getMorphologicalAnalyses(String word)
-;       {
-;           Set<MorAna> morAnas = new TreeSet<MorAna>();
-
-;           // írásjelek
-;           if (isPunctation(word))
-;           {
-;               // a legfontosabb írásjelek lemmája maga az írásjel,
-;               // POS kódja szintén maga az írásjel lesz
-;               // . , ; : ! ? - -
-;               if (getPunctations().contains(word))
-;               {
-;                   morAnas.add(new MorAna(word, word));
-;               }
-
-;               // § lemmája maga az írásjel, POS kódja 'Nn-sn' lesz
-;               else if (word.equals("§"))
-;               {
-;                   morAnas.add(new MorAna(word, "Nn-sn"));
-;               }
-
-;               // egyéb írásjelek lemmája maga az írásjel, POS kódja 'K' lesz
-;               else
-;               {
-;                   morAnas.add(new MorAna(word, "K"));
-;               }
-
-;               return morAnas;
-;           }
-
-;           // ha benne van a corpus.lex-ben
-;           if (@corpus*.containsKey(word))
-;           {
-;               return @corpus*.get(word);
-;           }
-
-;           // ha benne van a corpus.lex-ben kisbetűvel
-;           if (@corpus*.containsKey(word.toLowerCase()))
-;           {
-;               return @corpus*.get(word.toLowerCase());
-;           }
-
-;           // szám
-;           morAnas = numberGuess(word);
-
-;           if (morAnas.size() > 0)
-;           {
-;               return morAnas;
-;           }
-
-;           // római szám
-;           morAnas.addAll(guessRomanNumber(word));
-
-;           // rfsa
-;           for (String kr : RFSA.analyse(word))
-;           {
-;               morAnas.addAll(KRTools.getMSD(kr));
-;           }
-
-;           // (kötőjeles) összetett szó
-;           if (morAnas.size() == 0)
-;           {
-;               // kötőjeles
-;               if (word.contains("-") && word.indexOf("-") > 1)
-;               {
-;                   for (String morphCode : analyseHyphenicCompoundWord(word))
-;                   {
-;                       morAnas.addAll(KRTools.getMSD(morphCode));
-;                   }
-;               }
-;               else
-;               {
-;                   // összetett szó
-;                   for (String morphCode : analyseCompoundWord(word.toLowerCase()))
-;                   {
-;                       morAnas.addAll(KRTools.getMSD(morphCode));
-;                   }
-;               }
-;           }
-
-;           // guess (Bush-nak, Bush-kormányhoz)
-;           if (morAnas.size() == 0)
-;           {
-;               int index = word.lastIndexOf("-") > 1 ? word.lastIndexOf("-") : 0;
-
-;               if (index > 0)
-;               {
-;                   String root = word.substring(0, index);
-;                   String suffix = word.substring(index + 1);
-
-;                   morAnas.addAll(hyphenicGuess(root, suffix));
-;               }
-;           }
-
-;           // téves szavak
-;           if (morAnas.size() == 0)
-;           {
-;               Map<String, String> corrDic = getCorrDic();
-
-;               if (corrDic.containsKey(word) && !word.equals(corrDic.get(word)))
-;               {
-;                   morAnas.addAll(getMorphologicalAnalyses(corrDic.get(word)));
-;               }
-;               else
-;               {
-;                   String low = word.toLowerCase();
-
-;                   if (corrDic.containsKey(low) && !word.equals(corrDic.get(low)))
-;                   {
-;                       morAnas.addAll(getMorphologicalAnalyses(corrDic.get(low)));
-;                   }
-;               }
-;           }
-
-;           return morAnas;
-;       }
+                (persistent! ans))))))
 
 ;       public static String[] getPossibleTags(String word, Set<String> possibleTags)
 ;       {
@@ -317,168 +183,64 @@
 ;           return sentence;
 ;       }
 
-;       public static boolean isCompatibleAnalyises(String kr1, String kr2)
-;       {
-;           KRPOS pos1 = KRTools.getPOS(kr1), pos2 = KRTools.getPOS(kr2);
+(map #(intern *ns* % (KRTools$KRPOS/valueOf (name %))) '(UTT_INT ART NUM PREV NOUN VERB ADJ ADV))	; ^:private
 
-;           // UTT-INT nem lehet a második rész
-;           if (pos2.equals(KRPOS.UTT_INT))
-;               return false;
+(defn- isCompatibleAnalyises [kr1 kr2]
+    (let [pos1 (KRTools/getPOS kr1) pos2 (KRTools/getPOS kr2)]
+        (not (or
+            (= pos2 UTT_INT)                    ; UTT-INT nem lehet a második rész
+            (= pos2 ART)                        ; ART nem lehet a második rész
+            (and (= pos2 NUM) (not= pos1 NUM))  ; NUM előtt csak NUM állhat
+            (= pos2 PREV)                       ; PREV nem lehet a második rész
+            (and (= pos1 NOUN) (= pos2 ADV))    ; NOUN + ADV letiltva
+            (and (= pos1 VERB) (= pos2 ADV))    ; VERB + ADV letiltva
+            (and (= pos1 PREV) (= pos2 NOUN))   ; PREV + NOUN letiltva
+            (and (= pos1 ADJ) (= pos2 VERB))    ; ADJ + VERB letiltva
+            (and (= pos1 VERB) (= pos2 NOUN))   ; VERB + NOUN letiltva
 
-;           // ART nem lehet a második rész
-;           if (pos2.equals(KRPOS.ART))
-;               return false;
+            ; NOUN + VERB csak akkor lehet, ha van a NOUN-nak <CAS>
+            (and (= pos1 NOUN) (= pos2 VERB) (not (.contains kr1 "CAS")))
 
-;           // NUM előtt csak NUM állhat
-;           if (pos2.equals(KRPOS.NUM) && !pos1.equals(KRPOS.NUM))
-;               return false;
+            ; NOUN + VERB<PAST><DEF> és nincs a NOUN-nak <CAS> akkor /ADJ
+          #_(and (= pos1 NOUN) (= pos2 VERB) (not (.contains kr1 "CAS")) (.contains kr2 "<PAST><DEF>") #_(.contains kr2 "<DEF>"))
+        ))))
 
-;           // PREV nem lehet a második rész
-;           if (pos2.equals(KRPOS.PREV))
-;               return false;
+(defn- bisectIndex [word]
+    (let [n (dec (count word))]
+        (loop [i 2]
+            (if-not (< i n)
+                0
+                (if (and (seq (rfsa/analyse (.substring word 0 i))) (seq (rfsa/analyse (.substring word i))))
+                    i
+                    (recur (inc i)))))))
 
-;           // NOUN + ADV letiltva
-;           if (pos1.equals(KRPOS.NOUN) && pos2.equals(KRPOS.ADV))
-;               return false;
+(defn- getCompatibleAnalises
+    ([part1 part2]
+        (getCompatibleAnalises part1 part2 false))
+    ([part1 part2 hyphenic]
+        (into #{} (remove nil?
+            (for [a1 (rfsa/analyse part1) a2 (rfsa/analyse part2)]
+                (let [kr1 (KRTools/getRoot a1) kr2 (KRTools/getRoot a2)]
+                    (if (isCompatibleAnalyises kr1 kr2)
+                        (.replace kr2 "$" (str "$" part1 (if hyphenic "-"))))))))))
 
-;           // VERB + ADV letiltva
-;           if (pos1.equals(KRPOS.VERB) && pos2.equals(KRPOS.ADV))
-;               return false;
-
-;           // PREV + NOUN letiltva
-;           if (pos1.equals(KRPOS.PREV) && pos2.equals(KRPOS.NOUN))
-;               return false;
-
-;           // ADJ + VERB letiltva
-;           if (pos1.equals(KRPOS.ADJ) && pos2.equals(KRPOS.VERB))
-;               return false;
-
-;           // VERB + NOUN letiltva
-;           if (pos1.equals(KRPOS.VERB) && pos2.equals(KRPOS.NOUN))
-;               return false;
-
-;           // NOUN + VERB csak akkor lehet, ha van a NOUN-nak <CAS>
-;           if (pos1.equals(KRPOS.NOUN) && pos2.equals(KRPOS.VERB) && !kr1.contains("CAS"))
-;               return false;
-
-;           // NOUN + VERB<PAST><DEF> és nincs a NOUN-nak <CAS> akkor /ADJ
-;           if (pos1.equals(KRPOS.NOUN) && pos2.equals(KRPOS.VERB) && !kr1.contains("CAS") && kr2.contains("<PAST><DEF>") && kr2.contains("<DEF>"))
-;               return false;
-
-;           return true;
-;       }
-
-;       public static boolean isBisectable(String word)
-;       {
-;           for (int i = 2; i < word.length() - 1; ++i)
-;           {
-;               if (RFSA.analyse(word.substring(0, i)).size() > 0 && RFSA.analyse(word.substring(i)).size() > 0)
-;               {
-;                   return true;
-;               }
-;           }
-
-;           return false;
-;       }
-
-;       public static int bisectIndex(String word)
-;       {
-;           for (int i = 2; i < word.length() - 1; ++i)
-;           {
-;               if (RFSA.analyse(word.substring(0, i)).size() > 0 && RFSA.analyse(word.substring(i)).size() > 0)
-;               {
-;                   return i;
-;               }
-;           }
-
-;           return 0;
-;       }
-
-;       public static Set<String> getCompatibleAnalises(String part1, String part2)
-;       {
-;           return getCompatibleAnalises(part1, part2, false);
-;       }
-
-;       public static Set<String> getCompatibleAnalises(String part1, String part2, boolean hyphenic)
-;       {
-;           Set<String> analises = new LinkedHashSet<String>();
-
-;           List<String> ans1 = RFSA.analyse(part1), ans2 = RFSA.analyse(part2);
-
-;           if (ans1.size() > 0 && ans2.size() > 0)
-;           {
-;               for (String f : ans1)
-;               {
-;                   for (String s : ans2)
-;                   {
-;                       String kr1 = KRTools.getRoot(f), kr2 = KRTools.getRoot(s);
-
-;                       if (isCompatibleAnalyises(kr1, kr2))
-;                       {
-;                           if (hyphenic)
-;                           {
-;                               analises.add(kr2.replace("$", "$" + part1 + "-"));
-;                           }
-;                           else
-;                           {
-;                               analises.add(kr2.replace("$", "$" + part1));
-;                           }
-;                       }
-;                   }
-;               }
-;           }
-
-;           return analises;
-;       }
-
-;       public static Set<String> analyseCompoundWord(String word)
-;       {
-;           // 2 részre vágható van elemzés
-;           if (isBisectable(word))
-;           {
-;               int bi = bisectIndex(word);
-;               String part1 = word.substring(0, bi);
-;               String part2 = word.substring(bi);
-
-;               return getCompatibleAnalises(part1, part2);
-;           }
-
-;           Set<String> analises = new LinkedHashSet<String>();
-
-;           // ha nem bontható 2 részre
-;           for (int i = 2; i < word.length() - 1; ++i)
-;           {
-;               String part1 = word.substring(0, i);
-;               String part2 = word.substring(i);
-
-;               List<String> ans1 = RFSA.analyse(part1);
-;               if (ans1.size() > 0)
-;               {
-;                   // ha a második rész két részre bontható
-;                   if (isBisectable(part2))
-;                   {
-;                       int bi = bisectIndex(part2);
-;                       String part21 = part2.substring(0, bi);
-;                       String part22 = part2.substring(bi);
-
-;                       Set<String> ans2 = getCompatibleAnalises(part21, part22);
-
-;                       for (String a1 : ans1)
-;                       {
-;                           for (String a2 : ans2)
-;                           {
-;                               if (isCompatibleAnalyises(KRTools.getRoot(a1), KRTools.getRoot(a2)))
-;                               {
-;                                   analises.add(KRTools.getRoot(a2).replace("$", "$" + part1));
-;                               }
-;                           }
-;                       }
-;                   }
-;               }
-;           }
-
-;           return analises;
-;       }
+(defn analyseCompoundWord [word]
+    (let [bi (bisectIndex word)]
+        (if (< 0 bi)
+            (getCompatibleAnalises (.substring word 0 bi) (.substring word bi))
+            (let [ans (transient #{}) n (dec (count word))]
+                (loop [i 2]
+                    (if-not (< i n)
+                        (persistent! ans)
+                        (let [part1 (.substring word 0 i) ans1 (rfsa/analyse part1)]
+                            (if (seq ans1)
+                                (let [part2 (.substring word i) bi (bisectIndex part2)]
+                                    (if (< 0 bi)
+                                        (doseq [a1 ans1 a2 (getCompatibleAnalises (.substring part2 0 bi) (.substring part2 bi))]
+                                            (let [kr1 (KRTools/getRoot a1) kr2 (KRTools/getRoot a2)]
+                                                (if (isCompatibleAnalyises kr1 kr2)
+                                                    (conj! ans (.replace kr2 "$" (str "$" part1)))))))))
+                            (recur (inc i)))))))))
 
 ;       public static Set<String> analyseHyphenicCompoundWord(String word)
 ;       {
