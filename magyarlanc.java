@@ -11,10 +11,10 @@ EOF
 mkdir -p edu/stanford/nlp/tagger/maxent && cat > edu/stanford/nlp/tagger/maxent/SzteMaxentTagger.java <<'EOF'
 package edu.stanford.nlp.tagger.maxent;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.stanford.nlp.io.RuntimeIOException;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.ling.TaggedWord;
 
@@ -23,13 +23,13 @@ import magyarlanc.Morphology;
 public class SzteMaxentTagger extends MaxentTagger
 {
     public SzteMaxentTagger(String model)
-        throws IOException, ClassNotFoundException
+        throws RuntimeIOException
     {
         this(model, new TaggerConfig("-model", model, "-verbose", "false"));
     }
 
     public SzteMaxentTagger(String model, TaggerConfig config)
-        throws IOException, ClassNotFoundException
+        throws RuntimeIOException
     {
         super(model, config, false);
     }
@@ -99,15 +99,30 @@ public class SzteMaxentTagger extends MaxentTagger
     }
 }
 EOF
-mkdir -p magyarlanc && cat > magyarlanc/MateParser.java <<'EOF'
+mkdir -p magyarlanc && cat > magyarlanc/Dependency.java <<'EOF'
 package magyarlanc;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import is2.data.SentenceData09;
+import is2.parser.Options;
+import is2.parser.Parser;
 
-public class MateParser
+public class Dependency
 {
+    private static Parser parser;
+
+    private static Parser getParser()
+    {
+        if (parser == null)
+        {
+            parser = new Parser(new Options(new String[] { "-model", "./data/" + "szeged.dep.model", "-cores", "1" }));
+        }
+
+        return parser;
+    }
+
     /**
      * Dependency parsing of a sentence, using the forms and morphological analysis.
      *
@@ -192,30 +207,10 @@ public class MateParser
         String[] p = new String[pos.length + 1];
         String[] f = new String[feature.length + 1];
 
-        s[0] = "<root>";
-        l[0] = "<root-LEMMA>";
-        p[0] = "<root-POS>";
-        f[0] = "<no-type>";
-
-        for (int i = 0; i < form.length; ++i)
-        {
-            s[i + 1] = form[i];
-        }
-
-        for (int i = 0; i < lemma.length; ++i)
-        {
-            l[i + 1] = lemma[i];
-        }
-
-        for (int i = 0; i < pos.length; ++i)
-        {
-            p[i + 1] = pos[i];
-        }
-
-        for (int i = 0; i < feature.length; ++i)
-        {
-            f[i + 1] = feature[i];
-        }
+        s[0] = "<root>";       for (int i = 0; i < form.length; i++)    s[1 + i] = form[i];
+        l[0] = "<root-LEMMA>"; for (int i = 0; i < lemma.length; i++)   l[1 + i] = lemma[i];
+        p[0] = "<root-POS>";   for (int i = 0; i < pos.length; i++)     p[1 + i] = pos[i];
+        f[0] = "<no-type>";    for (int i = 0; i < feature.length; i++) f[1 + i] = feature[i];
 
         data.init(s);
         data.setLemmas(l);
@@ -227,7 +222,7 @@ public class MateParser
             return null;
         }
 
-        data = Magyarlanc.getParser().apply(data);
+        data = getParser().apply(data);
 
         String[][] result = new String[data.length()][8];
 
@@ -245,157 +240,45 @@ public class MateParser
 
         return result;
     }
-}
-EOF
-mkdir -p magyarlanc && cat > magyarlanc/WhatsWrong.java <<'EOF'
-package magyarlanc;
 
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.imageio.ImageIO;
-
-import com.googlecode.whatswrong.NLPInstance;
-import com.googlecode.whatswrong.SingleSentenceRenderer;
-import com.googlecode.whatswrong.io.CoNLL2009;
-
-public class WhatsWrong
-{
-    private static SingleSentenceRenderer renderer;
-    private static CoNLL2009 coNLL2009;
-
-    /**
-     * converts the magyarlanc output to CoNLL2009 format
-     *
-     * @param array
-     *          magyarlanc output; two dimensional array,
-     *          which contains the tokens of the a parsed sentence
-     * @return
-     */
-    private static List<List<String>> arrayToList(String[][] array)
+    public static String[][][] depParse(String text)
     {
-        List<List<String>> list = new ArrayList<List<String>>();
+        List<String[][]> dep = new ArrayList<String[][]>();
 
-        for (String[] a : array)
+        for (String[] sentence : HunSplitter.splitToArray(text))
         {
-            String[] s = new String[14];
-
-            s[0] = a[0]; // id
-            s[1] = a[1]; // form
-            s[2] = a[2]; // lemma
-            s[4] = "_"; // plemma
-            s[3] = a[4]; // POS
-            s[5] = "_"; // pPOS
-         // s[6] = a[5]; // feat
-            s[6] = "_"; // feat
-            s[7] = "_"; // pfeat
-            s[8] = a[6]; // head
-            s[9] = "_"; // phead
-            s[10] = a[7]; // rel
-            s[11] = "_"; // prel
-            s[12] = "_";
-            s[13] = "_";
-
-            list.add(Arrays.asList(s));
+            dep.add(depParseSentence(sentence));
         }
 
-        return list;
+        return dep.toArray(new String[dep.size()][][]);
     }
 
     /**
-     * Builds a buffered image from the given NLPInstance via the SentenceRenderer.
-     *
-     * @param instance
-     * @return
+     * Line by line.
      */
-    private static BufferedImage createImage(NLPInstance instance)
+    public static String[][][] depParse(List<String> lines)
     {
-        if (renderer == null)
-            renderer = new SingleSentenceRenderer();
+        List<String[][]> dep = new ArrayList<String[][]>();
 
-        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
-        Graphics2D g = image.createGraphics();
-        Dimension dim = renderer.render(instance, g);
+        for (String line : lines)
+        {
+            for (String[] sentence : HunSplitter.splitToArray(line))
+            {
+                dep.add(depParseSentence(sentence));
+            }
+        }
 
-        image = new BufferedImage((int) dim.getWidth() + 5, (int) dim.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-        g = image.createGraphics();
-        renderer.render(instance, g);
-
-        return image;
+        return dep.toArray(new String[dep.size()][][]);
     }
 
-    /**
-     * Exports the given sentence to the specified PNG imgage.
-     *
-     * @param sentence
-     *          dep. parsed sentence (magyarlanc output)
-     * @param file
-     *          the PNG
-     */
-    public static void exportToPNG(String[][] sentence, String file)
+    public static String[][] depParseSentence(String sentence)
     {
-        if (coNLL2009 == null)
-            coNLL2009 = new CoNLL2009();
-
-        try
-        {
-            FileOutputStream fos = new FileOutputStream(file);
-            ImageIO.write(createImage(coNLL2009.create(arrayToList(sentence))), "PNG", fos);
-            fos.flush();
-            fos.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+        return depParseSentence(HunSplitter.tokenizeToArray(sentence));
     }
 
-    /**
-     * Exports the given sentence to a ByteArray.
-     *
-     * @param sentence
-     *          dep. parsed sentence (magyarlanc output)
-     */
-    public static byte[] exportToByteArray(String[][] sentence)
+    public static String[][] depParseSentence(String[] form)
     {
-        if (coNLL2009 == null)
-            coNLL2009 = new CoNLL2009();
-
-        ByteArrayOutputStream baos = null;
-
-        try
-        {
-            baos = new ByteArrayOutputStream();
-            ImageIO.write(createImage(coNLL2009.create(arrayToList(sentence))), "PNG", baos);
-            baos.flush();
-            baos.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return baos.toByteArray();
-    }
-
-    public static void main(String[] args)
-    {
-        String[][] depParsedSentence =
-        {
-            { "1", "A", "a", "Rx", "R", "SubPOS=x|Deg=none", "2", "DET" },
-            { "2", "ház", "ház", "Rx", "R", "SubPOS=x|Deg=none", "3", "ROOT-VAN-SUBJ" },
-            { "3", "nagy", "nagy", "Afp-sn", "A", "SubPOS=f|Deg=p|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none", "0", "ROOT-VAN-PRED" },
-            { "4", ".", ".", ".", ".", "_", "0", "PUNCT" }
-        };
-
-        WhatsWrong.exportToPNG(depParsedSentence, "whatswrong.png");
+        return parseSentence(Morphology.morphParseSentence(form));
     }
 }
 EOF
@@ -426,17 +309,24 @@ import javax.swing.border.EmptyBorder;
 
 public class GUI
 {
-    private static Dimension dimension;
-    private static JFrame frame;
-    private static JTextField inputField;
-    private static JButton sendButton;
     private static JTextArea textarea;
     private static JLabel imageLabel;
 
-    private final static String BUTTON_TEXT = "OK";
+    private static String _sentenceAsString(String[][] array)
+    {
+        StringBuilder sb = new StringBuilder();
 
-    private static String[] sentence;
-    private static String[][] depParsed;
+        for (int i = 0; i < array.length; i++)
+        {
+            for (int j = 0; j < array[i].length; j++)
+            {
+                sb.append(array[i][j]).append('\t');
+            }
+            sb.append('\n');
+        }
+
+        return sb.toString();
+    }
 
     private static void _moveToCenter(Component component)
     {
@@ -447,7 +337,7 @@ public class GUI
 
     public static void init()
     {
-        frame = new JFrame("magyarlanc 2.0");
+        JFrame frame = new JFrame("magyarlanc 2.0");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(new BorderLayout());
 
@@ -455,21 +345,20 @@ public class GUI
         inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.X_AXIS));
         inputPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        inputField = new JTextField(
-                "Nehéz lesz megszokni a sok üres épületet, de a kínai áruházak hamar pezsgővé változtathatják a szellemházakat.");
+        JTextField inputField = new JTextField(
+            "Nehéz lesz megszokni a sok üres épületet, de a kínai áruházak hamar pezsgővé változtathatják a szellemházakat.");
 
-        sendButton = new JButton(BUTTON_TEXT);
+        JButton sendButton = new JButton("OK");
         sendButton.addActionListener(new ActionListener()
         {
             public void actionPerformed(ActionEvent actionEvent)
             {
                 if (inputField.getText() != null && !inputField.getText().equals(""))
                 {
-                    sentence = HunSplitter.splitToArray(inputField.getText())[0];
+                    String[] sentence = HunSplitter.splitToArray(inputField.getText())[0];
 
-                    depParsed = Magyarlanc.depParseSentence(sentence);
+                    String[][] depParsed = Dependency.depParseSentence(sentence);
 
-                    // image
                     BufferedImage bufferedImage = null;
                     try
                     {
@@ -486,12 +375,11 @@ public class GUI
                     imageLabel = new JLabel(new ImageIcon(bufferedImage));
                     frame.getContentPane().add(imageLabel, "Center");
 
-                    // textarea
                     if (textarea != null)
                         textarea.setVisible(false);
 
                     textarea = new JTextArea();
-                    textarea.setText(Magyarlanc.sentenceAsString(depParsed));
+                    textarea.setText(_sentenceAsString(depParsed));
                     textarea.setMargin(new Insets(10, 10, 10, 10));
                     frame.getContentPane().add(textarea, "South");
 
@@ -506,9 +394,9 @@ public class GUI
         inputPanel.add(sendButton);
 
         frame.getContentPane().add(inputPanel, "North");
-        dimension = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 
-        frame.setPreferredSize(new Dimension((int) dimension.getWidth() - 150, (int) dimension.getHeight() - 150));
+        frame.setPreferredSize(new Dimension((int) dim.getWidth() - 150, (int) dim.getHeight() - 150));
         frame.setResizable(false);
 
         _moveToCenter(frame);
@@ -523,24 +411,1758 @@ public class GUI
     }
 }
 EOF
-mkdir -p magyarlanc && cat > magyarlanc/Morphology.java <<'EOF'
+mkdir -p magyarlanc && cat > magyarlanc/HunSplitter.java <<'EOF'
 package magyarlanc;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.DefaultSentenceSplitter;
+import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.SentenceSplitter;
+import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.DefaultWordTokenizer;
+import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.WordTokenizer;
+
+import data.Data;
+
+public class HunSplitter
+{
+    public static final char[] HYPHENS = new char[] { '-', '­', '–', '—', '―', '−', '─' };
+    public static final char DEFAULT_HYPHEN = '-';
+
+    public static final char[] QUOTES = new char[] { '"', '\'', '`', '´', '‘', '’', '“', '”', '„' };
+    public static final char DEFAULT_QUOTE = '"';
+
+    public static final char[] FORCE_TOKEN_SEPARATORS = new char[] { ',', '.', ':' };
+
+    private static SentenceSplitter splitter = new DefaultSentenceSplitter();
+    private static WordTokenizer tokenizer = new DefaultWordTokenizer();
+
+    public static List<String> tokenize(String sentence)
+    {
+        sentence = cleanString(sentence);
+
+        List<String> splitted = tokenizer.extractWords(sentence);
+
+        splitted = reSplit2Sentence(splitted);
+        splitted = reTokenizeSentence(splitted);
+
+        return splitted;
+    }
+
+    public static String[] tokenizeToArray(String sentence)
+    {
+        List<String> tokenized = tokenize(sentence);
+
+        return tokenized.toArray(new String[tokenized.size()]);
+    }
+
+    public static List<List<String>> split(String text)
+    {
+        text = cleanString(text);
+
+        // text = normalizeQuotes(text);
+        // text = normalizeHyphans(text);
+
+        // text = addSpaces(text);
+
+        List<List<String>> splitted = splitter.extractSentences(text, tokenizer);
+
+        splitted = reSplit1(splitted, text);
+        splitted = reSplit2(splitted);
+        splitted = reTokenize(splitted);
+
+        return splitted;
+    }
+
+    public static final int[] getSentenceOffsets(String text)
+    {
+        return getSentenceOffsets(text, null);
+    }
+
+    public static int[] getSentenceOffsets(String text, List<List<String>> splitted)
+    {
+        if (splitted == null)
+            splitted = split(text);
+
+        return splitter.findSentenceOffsets(text, splitted);
+    }
+
+    public static final int[] getTokenOffsets(String text)
+    {
+        return getTokenOffsets(text, null);
+    }
+
+    public static int[] getTokenOffsets(String text, List<List<String>> splitted)
+    {
+        if (splitted == null)
+            splitted = split(text);
+
+        int[] sentenceOffsets = getSentenceOffsets(text, splitted);
+
+        int counter = 0;
+
+        for (int i = 0; i < splitted.size(); ++i)
+        {
+            for (int j = 0; j < splitted.get(i).size(); ++j)
+            {
+                ++counter;
+            }
+        }
+
+        int[] ret = new int[counter + 1];
+
+        counter = 0;
+
+        for (int i = 0; i < splitted.size(); ++i)
+        {
+            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
+            int[] tokenOffsets = tokenizer.findWordOffsets(sentence, splitted.get(i));
+
+            for (int j = 0; j < splitted.get(i).size(); ++j)
+            {
+                ret[counter] = sentenceOffsets[i] + tokenOffsets[j];
+                ++counter;
+            }
+        }
+
+        ret[counter] = text.length();
+
+        return ret;
+    }
+
+    /*
+     * Separate ' 'm 's 'd 're 've 'll n't endings into apart tokens.
+     */
+    private static List<String> reTokenizeSentence(List<String> sentence)
+    {
+        for (int i = 0; i < sentence.size(); ++i)
+        {
+            String token = sentence.get(i);
+            String tlc = token.toLowerCase();
+
+            if (tlc.endsWith("'") && tlc.length() > 1)
+            {
+                sentence.set(i, token.substring(0, token.length() - 1));
+                sentence.add(i + 1, token.substring(token.length() - 1));
+                ++i;
+            }
+            if ((tlc.endsWith("'m") || tlc.endsWith("'s") || tlc.endsWith("'d")) && tlc.length() > 2)
+            {
+                sentence.set(i, token.substring(0, token.length() - 2));
+                sentence.add(i + 1, token.substring(token.length() - 2));
+                ++i;
+            }
+            if ((tlc.endsWith("'re") || tlc.endsWith("'ve") || tlc.endsWith("'ll") || tlc.endsWith("n't")) && tlc.length() > 3)
+            {
+                sentence.set(i, token.substring(0, token.length() - 3));
+                sentence.add(i + 1, token.substring(token.length() - 3));
+                ++i;
+            }
+        }
+
+        return sentence;
+    }
+
+    private static List<List<String>> reTokenize(List<List<String>> sentences)
+    {
+        for (List<String> sentence : sentences)
+        {
+            reSplit2Sentence(sentence);
+        }
+
+        return sentences;
+    }
+
+    private static List<List<String>> reSplit1(List<List<String>> sentences, String text)
+    {
+        int tokenNumber = 0;
+
+        int[] tokenOffsets = getTokenOffsets(text, sentences);
+
+        for (int i = 0; i < sentences.size(); i++)
+        {
+            List<String> sentence = sentences.get(i);
+
+            // nem lehet üres mondat
+            if (sentence.size() > 0)
+            {
+                /*
+                 * 1 betűs rövidítés pl.: George W. Bush
+                 */
+
+                // utolsó token pl. (W.)
+                String lastToken = sentence.get(sentence.size() - 1);
+                // nem lehet üres token
+                if (lastToken.length() > 0)
+                {
+                    // ha az utolsó karkter '.'
+                    if (lastToken.charAt(lastToken.length() - 1) == '.')
+                    {
+                        // ha a token hossza 2 (W.)
+                        if (lastToken.length() == 2)
+                        {
+                            // ha betű nagybetű ('W.', de 'i.' nem)
+                            if (Character.isUpperCase(lastToken.charAt(lastToken.length() - 2)))
+                            {
+                                // ha nem az utolsó mondat
+                                if (sentences.size() > i + 1)
+                                {
+                                    sentences.get(i).addAll(sentences.get(i + 1));
+                                    sentences.remove(i + 1);
+                                    // ha nem az első mondat
+                                    if (i > -1)
+                                    {
+                                        --i;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    /*
+                     * 2 betűs pl.: Sz.
+                     */
+
+                    if (lastToken.length() == 3)
+                    {
+                        // az első betű nagybetű (Sz. de 'az.' nem jó)
+                        if (Character.isUpperCase(lastToken.charAt(lastToken.length() - 3)))
+                        {
+                            // ha nem az utolsó mondat
+                            if (sentences.size() > i + 1)
+                            {
+                                sentences.get(i).addAll(sentences.get(i + 1));
+                                sentences.remove(i + 1);
+                                // ha nem az első mondat
+                                if (i > -1)
+                                {
+                                    i--;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            tokenNumber += sentence.size();
+            if (tokenNumber + 1 < tokenOffsets.length)
+            {
+                if (tokenOffsets[tokenNumber] + 1 == tokenOffsets[tokenNumber + 1])
+                {
+                    if ((sentences.size() > i + 1 && (i > -1)))
+                    {
+                        sentences.get(i).addAll(sentences.get(i + 1));
+                        sentences.remove(i + 1);
+                        // ha nem az első mondat
+                        if (i > 0)
+                        {
+                            i--;
+                        }
+                    }
+                }
+            }
+
+            if ((i < sentences.size() - 1) && (i > 0))
+            {
+                String firstToken = sentences.get(i + 1).get(0);
+
+                if (getHunAbbrev().contains(firstToken.toLowerCase()))
+                {
+                    if (sentences.size() > i + 1)
+                    {
+                        sentences.get(i).addAll(sentences.get(i + 1));
+                        sentences.remove(i + 1);
+                        if (i > 0)
+                        {
+                            i--;
+                        }
+                    }
+                }
+            }
+        }
+
+        return sentences;
+    }
+
+    private static List<List<String>> reSplit2(List<List<String>> sentences)
+    {
+        for (List<String> sentence : sentences)
+        {
+            reSplit2Sentence(sentence);
+        }
+
+        return sentences;
+    }
+
+    private static List<String> reSplit2Sentence(List<String> sentence)
+    {
+        // nem lehet üres mondat
+        if (sentence.size() > 0)
+        {
+            /*
+             * mondatvégi írásjelek külön tokenek legyenek (.?!:;)
+             */
+
+            // utolsó token pl.: '1999.'
+            String lastToken = sentence.get(sentence.size() - 1);
+
+            // ha hosszabb, mint egy karakter '9.'
+            if (lastToken.length() > 1)
+            {
+                // utolsó karakter
+                char lastChar = lastToken.charAt(lastToken.length() - 1);
+                // írásjelre végződik
+                if (!Character.isLetterOrDigit(lastChar))
+                {
+                    // írásjel levágása
+                    lastToken = lastToken.substring(0, lastToken.length() - 1);
+                    // utolsó token törlése
+                    sentence.remove(sentence.size() - 1);
+                    // új utolsó előtti token hozzáadása '1999'
+                    sentence.add(sentence.size(), lastToken);
+                    // új utolsó karaktertoken hozzáadása
+                    sentence.add(String.valueOf(lastChar));
+                }
+            }
+        }
+
+        return sentence;
+    }
+
+    public static String[][] splitToArray(String text)
+    {
+        List<List<String>> splitted = split(text);
+        String[][] sentences = new String[splitted.size()][];
+
+        for (int i = 0; i < sentences.length; ++i)
+        {
+            sentences[i] = splitted.get(i).toArray(new String[splitted.get(i).size()]);
+        }
+
+        return sentences;
+    }
+
+    /**
+     * Normalizes the quote sings. Replace them to the regular " sign.
+     *
+     * @param text
+     *          raw text
+     * @return text wiht only regular " quote sings
+     */
+    private static String normalizeQuotes(String text)
+    {
+        for (char c : QUOTES)
+        {
+            text = text.replaceAll(String.valueOf(c), String.valueOf(DEFAULT_QUOTE));
+        }
+
+        return text;
+    }
+
+    /**
+     * Normalizes the hyphen sings. Replace them to the regular - sign.
+     *
+     * @param text
+     *          raw text
+     * @return text wiht only regular - hyphen sings
+     */
+    private static String normalizeHyphans(String text)
+    {
+        for (char c : HYPHENS)
+        {
+            text = text.replaceAll(String.valueOf(c), String.valueOf(DEFAULT_HYPHEN));
+        }
+
+        return text;
+    }
+
+    /**
+     * Add the missing space characters via the defined FORCE_TOKEN_SEPARATORS
+     *
+     * @param text
+     *          raw text
+     * @return text with added missing space cahracters
+     */
+    private static String addSpaces(String text)
+    {
+        StringBuilder sb = new StringBuilder(String.valueOf(text));
+
+        for (char c : FORCE_TOKEN_SEPARATORS)
+        {
+            int index = sb.indexOf(String.valueOf(c));
+
+            while (index > 1 && index < sb.length() - 1)
+            {
+                if (sb.charAt(index - 1) != ' ')
+                {
+                    sb.insert(index + 1, ' ');
+                }
+                index = sb.indexOf(String.valueOf(c), index + 1);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    public static String cleanString(String text)
+    {
+        StringBuilder sb = new StringBuilder(text);
+
+        for (int i = 0; i < sb.length(); ++i)
+        {
+            switch ((int) sb.charAt(i))
+            {
+                case 11: case 12:
+                case 28: case 29: case 30: case 31:
+                case 5760:
+                case 6158:
+                case 8192: case 8193: case 8194: case 8195: case 8196: case 8197: case 8198:
+                case 8200: case 8201: case 8202: case 8203: case 8232: case 8233: case 8287:
+                case 12288:
+                case 65547: case 65564: case 65565: case 65566: case 65567:
+                    sb.setCharAt(i, ' '); break;
+
+                case 733: sb.setCharAt(i, '"'); break;
+                case 768:
+                case 769: sb.setCharAt(i, '\''); break;
+                case 771: sb.setCharAt(i, '"'); break;
+                case 803: sb.setCharAt(i, '.'); break;
+                case 900: sb.setCharAt(i, '\''); break;
+                case 1475: sb.setCharAt(i, ':'); break;
+                case 1523: sb.setCharAt(i, '\''); break;
+                case 1524: sb.setCharAt(i, '"'); break;
+                case 1614: sb.setCharAt(i, '\''); break;
+                case 1643: sb.setCharAt(i, ','); break;
+                case 1648: sb.setCharAt(i, '\''); break;
+                case 1764: sb.setCharAt(i, '"'); break;
+                case 8211:
+                case 8212: sb.setCharAt(i, '-'); break;
+                case 8216:
+                case 8217:
+                case 8218:
+                case 8219: sb.setCharAt(i, '\''); break;
+                case 8220:
+                case 8221:
+                case 8243: sb.setCharAt(i, '"'); break;
+                case 8722: sb.setCharAt(i, '-'); break;
+                case 61448:
+                case 61449: sb.setCharAt(i, '\''); break;
+                case 61472:
+                case 61474:
+                case 61475:
+                case 61476:
+                case 61477:
+                case 61480:
+                case 61481:
+                case 61482:
+                case 61483:
+                case 61484: sb.setCharAt(i, '.'); break;
+                case 61485:
+                case 61486:
+                case 61487:
+                case 61488: sb.setCharAt(i, '"'); break;
+                case 65533: sb.setCharAt(i, '-'); break;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private static Set<String> stopwords;
+
+    public static Set<String> getStopwords()
+    {
+        if (stopwords == null)
+            stopwords = readSet("stopwords.txt");
+
+        return stopwords;
+    }
+
+    private static Set<String> hunAbbrev;
+
+    public static Set<String> getHunAbbrev()
+    {
+        if (hunAbbrev == null)
+            hunAbbrev = readSet("hun_abbrev.txt");
+
+        return hunAbbrev;
+    }
+
+    public static Set<String> readSet(String file)
+    {
+        Set<String> set = new TreeSet<String>();
+
+        try
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                set.add(line);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return set;
+    }
+
+    public static void main(String[] args)
+    {
+        String text = "A 2014-es választások előtt túl jó lehetőséget adna az ellenzék kezébe a dohányboltok profitját nyirbáló kezdeményezés.";
+
+        for (List<String> sentence : split(text))
+        {
+            for (String token : sentence)
+            {
+                System.out.println(token);
+            }
+            System.out.println();
+        }
+
+        int[] sentenceOffsets = getSentenceOffsets(text);
+
+        for (int i = 0; i < sentenceOffsets.length - 1; ++i)
+        {
+            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
+
+            System.out.println(sentence);
+
+            int[] tokenOffsets = getTokenOffsets(sentence);
+            for (int j = 0; j < tokenOffsets.length - 1; ++j)
+            {
+                String token = sentence.substring(tokenOffsets[j], tokenOffsets[j + 1]);
+                System.out.println(token);
+            }
+        }
+    }
+}
+EOF
+mkdir -p magyarlanc && cat > magyarlanc/KRTools.java <<'EOF'
+package magyarlanc;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import magyarlanc.Morphology.MorAna;
+
+public class KRTools
+{
+    /**
+     * melléknévi igenevek
+     */
+    public static boolean isParticiple(String krAns)
+    {
+        int verbIndex = krAns.indexOf("/VERB"), adjIndex = krAns.indexOf("/ADJ");
+
+        return (verbIndex > -1 && adjIndex > -1 && adjIndex > verbIndex);
+    }
+
+    public static String getPostPLemma(String ans)
+    {
+        if (ans.startsWith("$én/NOUN<POSTP<")
+         || ans.startsWith("$te/NOUN<POSTP<")
+         || ans.startsWith("$ő/NOUN<POSTP<")
+         || ans.startsWith("$mi/NOUN<POSTP<")
+         || ans.startsWith("$ti/NOUN<POSTP<")
+         || ans.startsWith("$ők/NOUN<POSTP<"))
+        {
+            String post = null;
+
+            if (ans.startsWith("$én") || ans.startsWith("$te"))
+            {
+                post = ans.substring(15, ans.length() - 11).toLowerCase();
+            }
+            else if (ans.startsWith("$ők"))
+            {
+                post = ans.substring(15, ans.length() - 14).toLowerCase();
+            }
+            else if (ans.startsWith("$ő"))
+            {
+                post = ans.substring(14, ans.length() - 8).toLowerCase();
+            }
+            else if (ans.startsWith("$mi") || ans.startsWith("$ti"))
+            {
+                post = ans.substring(15, ans.length() - 17).toLowerCase();
+            }
+
+            if (ans.startsWith("$ő") && !ans.startsWith("$ők"))
+            {
+                ans = ans.substring(2);
+            }
+            else
+            {
+                ans = ans.substring(3);
+            }
+
+            return post;
+        }
+
+        if (ans.startsWith("$ez/NOUN<POSTP<") || ans.startsWith("$az/NOUN<POSTP<"))
+        {
+            String affix = ans.substring(15);
+            affix = affix.substring(0, affix.indexOf(">")).toLowerCase();
+
+            // alá, alatt, alól, által, elő, előbb, ellen, elől, előtt, iránt, után (pl.: ezután)
+            if (ans.contains("(i)"))
+            {
+                if (affix.startsWith("a")
+                 || affix.startsWith("á")
+                 || affix.startsWith("e")
+                 || affix.startsWith("i")
+                 || affix.startsWith("u"))
+                    return ans.substring(1, 3) + affix + "i";
+
+                return ans.substring(1, 2) + affix + "i";
+            }
+
+            return ans.substring(1, 3) + affix;
+        }
+
+        return ans.substring(1, ans.indexOf("/"));
+    }
+
+    public static String convertNoun(String lemma, String kr)
+    {
+        /* névmás minden PERS-t tartalmazó NOUN */
+
+        if (kr.contains("PERS"))
+        {
+            StringBuilder msd = new StringBuilder("Pp--sn-----------");
+
+            /* személy */
+
+            if (kr.contains("<PERS<1>>"))   msd.setCharAt(2, '1');  // 1
+            if (kr.contains("<PERS<2>>"))   msd.setCharAt(2, '2');  // 2
+            if (kr.contains("<PERS>"))      msd.setCharAt(2, '3');  // 3
+
+            /* szám */
+
+            if (kr.contains("<PLUR>"))      msd.setCharAt(4, 'p');
+
+            /* eset */
+
+            // n nincs jelölve alapeset
+
+            if (kr.contains("<CAS<ACC>>"))  msd.setCharAt(5, 'a');  // a
+            if (kr.contains("<CAS<GEN>>"))  msd.setCharAt(5, 'g');  // g nincs jelölve
+            if (kr.contains("<CAS<DAT>>"))  msd.setCharAt(5, 'd');  // d
+            if (kr.contains("<CAS<INS>>"))  msd.setCharAt(5, 'i');  // i
+            if (kr.contains("<CAS<ILL>>"))  msd.setCharAt(5, 'x');  // x
+            if (kr.contains("<CAS<INE>>"))  msd.setCharAt(5, '2');  // 2
+            if (kr.contains("<CAS<ELA>>"))  msd.setCharAt(5, 'e');  // e
+            if (kr.contains("<CAS<ALL>>"))  msd.setCharAt(5, 't');  // t
+            if (kr.contains("<CAS<ADE>>"))  msd.setCharAt(5, '3');  // 3
+            if (kr.contains("<CAS<ABL>>"))  msd.setCharAt(5, 'b');  // b
+            if (kr.contains("<CAS<SBL>>"))  msd.setCharAt(5, 's');  // s
+            if (kr.contains("<CAS<SUE>>"))  msd.setCharAt(5, 'p');  // p
+            if (kr.contains("<CAS<DEL>>"))  msd.setCharAt(5, 'h');  // h
+            if (kr.contains("<CAS<TER>>"))  msd.setCharAt(5, '9');  // 9
+            if (kr.contains("[MANNER]"))    msd.setCharAt(5, 'w');  // w
+            if (kr.contains("<CAS<FOR>>"))  msd.setCharAt(5, 'f');  // f
+            if (kr.contains("<CAS<TEM>>"))  msd.setCharAt(5, 'm');  // m
+            if (kr.contains("<CAS<CAU>>"))  msd.setCharAt(5, 'c');  // c
+            if (kr.contains("[COM]"))       msd.setCharAt(5, 'q');  // q
+            if (kr.contains("<CAS<TRA>>"))  msd.setCharAt(5, 'y');  // y
+            if (kr.contains("[PERIOD1]"))   msd.setCharAt(5, 'u');  // u
+
+            return cleanMsd(msd.toString());
+        }
+
+        /* névmás minden POSTP-t tartalmazó NOUN */
+
+        if (kr.contains("POSTP"))
+        {
+            StringBuilder msd = new StringBuilder("Pp3-sn");
+
+            switch (lemma)
+            {
+                case "én": msd.setCharAt(2, '1'); break;
+                case "te": msd.setCharAt(2, '2'); break;
+                case "ő":  msd.setCharAt(2, '3'); break;
+                case "mi": msd.setCharAt(2, '1'); msd.setCharAt(4, 'p'); break;
+                case "ti": msd.setCharAt(2, '2'); msd.setCharAt(4, 'p'); break;
+                case "ők": msd.setCharAt(2, '3'); msd.setCharAt(4, 'p'); break;
+            }
+
+            return cleanMsd(msd.toString());
+        }
+
+        StringBuilder msd = new StringBuilder("Nn-sn" + "------");
+
+        /* egyes szám/többes szám NOUN<PLUR> NUON<PLUR<FAM>> */
+
+        if (kr.contains("NOUN<PLUR"))   msd.setCharAt(3, 'p');
+
+        /* eset */
+
+        // n nincs jelölve alapeset
+
+        if (kr.contains("<CAS<ACC>>"))  msd.setCharAt(4, 'a');  // a
+        if (kr.contains("<CAS<GEN>>"))  msd.setCharAt(4, 'g');  // g nincs jelolve
+        if (kr.contains("<CAS<DAT>>"))  msd.setCharAt(4, 'd');  // d
+        if (kr.contains("<CAS<INS>>"))  msd.setCharAt(4, 'i');  // i
+        if (kr.contains("<CAS<ILL>>"))  msd.setCharAt(4, 'x');  // x
+        if (kr.contains("<CAS<INE>>"))  msd.setCharAt(4, '2');  // 2
+        if (kr.contains("<CAS<ELA>>"))  msd.setCharAt(4, 'e');  // e
+        if (kr.contains("<CAS<ALL>>"))  msd.setCharAt(4, 't');  // t
+        if (kr.contains("<CAS<ADE>>"))  msd.setCharAt(4, '3');  // 3
+        if (kr.contains("<CAS<ABL>>"))  msd.setCharAt(4, 'b');  // b
+        if (kr.contains("<CAS<SBL>>"))  msd.setCharAt(4, 's');  // s
+        if (kr.contains("<CAS<SUE>>"))  msd.setCharAt(4, 'p');  // p
+        if (kr.contains("<CAS<DEL>>"))  msd.setCharAt(4, 'h');  // h
+        if (kr.contains("<CAS<TER>>"))  msd.setCharAt(4, '9');  // 9
+        if (kr.contains("<CAS<ESS>>"))  msd.setCharAt(4, 'w');  // w
+        if (kr.contains("<CAS<FOR>>"))  msd.setCharAt(4, 'f');  // f
+        if (kr.contains("<CAS<TEM>>"))  msd.setCharAt(4, 'm');  // m
+        if (kr.contains("<CAS<CAU>>"))  msd.setCharAt(4, 'c');  // c
+        if (kr.contains("[COM]"))       msd.setCharAt(4, 'q');  // q
+        if (kr.contains("<CAS<TRA>>"))  msd.setCharAt(4, 'y');  // y
+        if (kr.contains("[PERIOD1]"))   msd.setCharAt(4, 'u');  // u
+
+        /* birtokos száma/személye */
+
+        if (kr.contains("<POSS>"))          { msd.setCharAt(8, 's'); msd.setCharAt(9, '3'); }
+        if (kr.contains("<POSS<1>>"))       { msd.setCharAt(8, 's'); msd.setCharAt(9, '1'); }
+        if (kr.contains("<POSS<2>>"))       { msd.setCharAt(8, 's'); msd.setCharAt(9, '2'); }
+        if (kr.contains("<POSS<1><PLUR>>")) { msd.setCharAt(8, 'p'); msd.setCharAt(9, '1'); }
+        if (kr.contains("<POSS<2><PLUR>>")) { msd.setCharAt(8, 'p'); msd.setCharAt(9, '2'); }
+        if (kr.contains("<POSS<PLUR>>"))    { msd.setCharAt(8, 'p'); msd.setCharAt(9, '3'); }
+
+        /* birtok(olt) száma */
+
+        if (kr.contains("<ANP>"))       msd.setCharAt(10, 's');
+        if (kr.contains("<ANP<PLUR>>")) msd.setCharAt(10, 'p');
+
+        return cleanMsd(msd.toString());
+    }
+
+    public static String convertAdjective(String kr)
+    {
+        StringBuilder msd = new StringBuilder("Afp-sn-------");
+
+        /* típus (melléknév vagy melléknévi igenév) */
+
+        // f (melléknév) nincs jelölve, alapeset
+
+        if (kr.contains("[IMPERF_PART"))    msd.setCharAt(1, 'p');  // p (folyamatos melléknévi igenév)
+        if (kr.contains("[PERF_PART"))      msd.setCharAt(1, 's');  // s (befejezett melleknevi igenev)
+        if (kr.contains("[FUT_PART"))       msd.setCharAt(1, 'u');  // u (beallo melleknevi igenev)
+
+        /* fok */
+
+        // p nincs jelölve alapeset
+
+        if (kr.contains("[COMPAR"))         msd.setCharAt(2, 'c');  // c
+        if (kr.contains("[SUPERLAT"))       msd.setCharAt(2, 's');  // s
+        if (kr.contains("[SUPERSUPERLAT"))  msd.setCharAt(2, 'e');  // e
+
+        /* szám */
+
+        // s nincs jelölve alapeset
+
+        if (kr.contains("ADJ<PLUR>"))       msd.setCharAt(4, 'p');  // p
+
+        /* eset */
+
+        // n nincs jelölve alapeset
+
+        if (kr.contains("<CAS<ACC>>"))  msd.setCharAt(5, 'a');  // a
+        if (kr.contains("<CAS<GEN>>"))  msd.setCharAt(5, 'g');  // g nincs jelölve
+        if (kr.contains("<CAS<DAT>>"))  msd.setCharAt(5, 'd');  // d
+        if (kr.contains("<CAS<INS>>"))  msd.setCharAt(5, 'i');  // i
+        if (kr.contains("<CAS<ILL>>"))  msd.setCharAt(5, 'x');  // x
+        if (kr.contains("<CAS<INE>>"))  msd.setCharAt(5, '2');  // 2
+        if (kr.contains("<CAS<ELA>>"))  msd.setCharAt(5, 'e');  // e
+        if (kr.contains("<CAS<ALL>>"))  msd.setCharAt(5, 't');  // t
+        if (kr.contains("<CAS<ADE>>"))  msd.setCharAt(5, '3');  // 3
+        if (kr.contains("<CAS<ABL>>"))  msd.setCharAt(5, 'b');  // b
+        if (kr.contains("<CAS<SBL>>"))  msd.setCharAt(5, 's');  // s
+        if (kr.contains("<CAS<SUE>>"))  msd.setCharAt(5, 'p');  // p
+        if (kr.contains("<CAS<DEL>>"))  msd.setCharAt(5, 'h');  // h
+        if (kr.contains("<CAS<TER>>"))  msd.setCharAt(5, '9');  // 9
+        if (kr.contains("[MANNER]"))    msd.setCharAt(5, 'w');  // w
+        if (kr.contains("<CAS<FOR>>"))  msd.setCharAt(5, 'f');  // f
+        if (kr.contains("<CAS<TEM>>"))  msd.setCharAt(5, 'm');  // m
+        if (kr.contains("<CAS<CAU>>"))  msd.setCharAt(5, 'c');  // c
+        if (kr.contains("[COM]"))       msd.setCharAt(5, 'q');  // q
+        if (kr.contains("<CAS<TRA>>"))  msd.setCharAt(5, 'y');  // y
+        if (kr.contains("[PERIOD1]"))   msd.setCharAt(5, 'u');  // u
+
+        /* birtokos száma/személye */
+
+        if (kr.contains("<POSS>"))          { msd.setCharAt(10, 's'); msd.setCharAt(11, '3'); }
+        if (kr.contains("<POSS<1>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '1'); }
+        if (kr.contains("<POSS<2>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '2'); }
+        if (kr.contains("<POSS<1><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '1'); }
+        if (kr.contains("<POSS<2><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '2'); }
+        if (kr.contains("<POSS<PLUR>>"))    { msd.setCharAt(10, 'p'); msd.setCharAt(11, '3'); }
+
+        /* birtok(olt) száma */
+
+        if (kr.contains("<ANP>"))       msd.setCharAt(12, 's');
+        if (kr.contains("<ANP<PLUR>>")) msd.setCharAt(12, 'p');
+
+        return cleanMsd(msd.toString());
+    }
+
+    public static String convertVerb(String kr)
+    {
+        StringBuilder msd = new StringBuilder("Vmip3s---n-");
+
+        boolean modal = kr.contains("<MODAL>"), freq = kr.contains("[FREQ]"), caus = kr.contains("[CAUS]");
+
+        if ( modal && !freq && !caus)   msd.setCharAt(1, 'o');  // ható
+        if (!modal &&  freq && !caus)   msd.setCharAt(1, 'f');  // gyakorító
+        if (!modal && !freq &&  caus)   msd.setCharAt(1, 's');  // műveltető
+        if ( modal &&  freq && !caus)   msd.setCharAt(1, '1');  // gyakorító + ható
+        if ( modal && !freq &&  caus)   msd.setCharAt(1, '2');  // műveltető + ható
+        if (!modal &&  freq &&  caus)   msd.setCharAt(1, '3');  // műveltető + ható
+        if ( modal &&  freq &&  caus)   msd.setCharAt(1, '4');  // műveltető + gyakorító + ható
+
+        if (kr.contains("<COND>"))      msd.setCharAt(2, 'c');
+
+        if (kr.contains("<INF>"))
+        {
+            msd.setCharAt(2, 'n');
+            msd.setCharAt(9, '-');
+
+            if (!kr.contains("<PERS"))
+            {
+                msd.setCharAt(3, '-');
+                msd.setCharAt(4, '-');
+                msd.setCharAt(5, '-');
+            }
+        }
+
+        if (kr.contains("<SUBJUNC-IMP>"))   msd.setCharAt(2, 'm');
+        if (kr.contains("<PAST>"))          msd.setCharAt(3, 's');
+        if (kr.contains("<PERS<1>>"))       msd.setCharAt(4, '1');
+        if (kr.contains("<PERS<2>>"))       msd.setCharAt(4, '2');
+        if (kr.contains("<PLUR>"))          msd.setCharAt(5, 'p');
+        if (kr.contains("<DEF>"))           msd.setCharAt(9, 'y');
+
+        if (kr.contains("<PERS<1<OBJ<2>>>>"))
+        {
+            msd.setCharAt(4, '1');
+            msd.setCharAt(9, '2');
+        }
+
+        return cleanMsd(msd.toString());
+    }
+
+    public static String convertNumber(String kr, String ans)
+    {
+        StringBuilder msd = new StringBuilder("Mc-snl-------");
+
+        // c alapeset, nincs jelölve
+
+        if (kr.contains("[ORD"))        msd.setCharAt(1, 'o');  // o
+        if (kr.contains("[FRACT"))      msd.setCharAt(1, 'f');  // f
+
+        // l nincs a magyarban
+        // d nincs KRben
+        // s alapeset, nincs jelölve
+
+        if (kr.contains("NUM<PLUR>"))   msd.setCharAt(3, 'p');  // p
+
+        /* eset */
+
+        // n nincs jelölve alapeset
+
+        if (kr.contains("<CAS<ACC>>"))      msd.setCharAt(4, 'a');  // a
+        if (kr.contains("<CAS<GEN>>"))      msd.setCharAt(4, 'g');  // g nincs jelölve
+        if (kr.contains("<CAS<DAT>>"))      msd.setCharAt(4, 'd');  // d
+        if (kr.contains("<CAS<INS>>"))      msd.setCharAt(4, 'i');  // i
+        if (kr.contains("<CAS<ILL>>"))      msd.setCharAt(4, 'x');  // x
+        if (kr.contains("<CAS<INE>>"))      msd.setCharAt(4, '2');  // 2
+        if (kr.contains("<CAS<ELA>>"))      msd.setCharAt(4, 'e');  // e
+        if (kr.contains("<CAS<ALL>>"))      msd.setCharAt(4, 't');  // t
+        if (kr.contains("<CAS<ADE>>"))      msd.setCharAt(4, '3');  // 3
+        if (kr.contains("<CAS<ABL>>"))      msd.setCharAt(4, 'b');  // b
+        if (kr.contains("<CAS<SBL>>"))      msd.setCharAt(4, 's');  // s
+        if (kr.contains("<CAS<SUE>>"))      msd.setCharAt(4, 'p');  // p
+        if (kr.contains("<CAS<DEL>>"))      msd.setCharAt(4, 'h');  // h
+        if (kr.contains("<CAS<TER>>"))      msd.setCharAt(4, '9');  // 9
+        if (kr.contains("[MANNER]"))        msd.setCharAt(4, 'w');  // w
+        if (kr.contains("<CAS<FOR>>"))      msd.setCharAt(4, 'f');  // f
+        if (kr.contains("<CAS<TEM>>"))      msd.setCharAt(4, 'm');  // m
+        if (kr.contains("<CAS<CAU>>"))      msd.setCharAt(4, 'c');  // c
+        if (kr.contains("[COM]"))           msd.setCharAt(4, 'q');  // q
+        if (kr.contains("<CAS<TRA>>"))      msd.setCharAt(4, 'y');  // y
+        if (kr.contains("[PERIOD1]"))       msd.setCharAt(4, 'u');  // u
+        if (kr.contains("[MULTIPL-ITER]"))  msd.setCharAt(4, '6');  // 6
+
+        /* birtokos száma/személye */
+
+        if (ans.contains("<POSS>"))          { msd.setCharAt(10, 's'); msd.setCharAt(11, '3'); }
+        if (ans.contains("<POSS<1>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '1'); }
+        if (ans.contains("<POSS<2>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '2'); }
+        if (ans.contains("<POSS<1><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '1'); }
+        if (ans.contains("<POSS<2><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '2'); }
+        if (ans.contains("<POSS<PLUR>>"))    { msd.setCharAt(10, 'p'); msd.setCharAt(11, '3'); }
+
+        /* birtok(olt) száma */
+
+        if (ans.contains("<ANP>"))          msd.setCharAt(12, 's');
+        if (ans.contains("<ANP<PLUR>>"))    msd.setCharAt(12, 'p');
+
+        return cleanMsd(msd.toString());
+    }
+
+    public static String convertAdverb(String kr)
+    {
+        StringBuilder msd = new StringBuilder("Rx----");
+
+        if (kr.contains("[COMPAR]"))        msd.setCharAt(2, 'c');  // c
+        if (kr.contains("[SUPERLAT]"))      msd.setCharAt(2, 's');  // s
+        if (kr.contains("[SUPERSUPERLAT]")) msd.setCharAt(2, 'e');  // e
+
+        return cleanMsd(msd.toString());
+    }
+
+    public static Set<MorAna> getMSD(String krAns)
+    {
+        Set<MorAna> ans = new TreeSet<MorAna>();
+
+        String krRoot = getRoot(krAns);
+        String lemma = krRoot.substring(1, krRoot.indexOf("/"));
+
+        // $forog(-.)/VERB[CAUS](at)/VERB[FREQ](gat)/VERB<PAST><PERS<1>>
+
+        String stem;
+
+        if (krAns.contains("(") && krAns.indexOf("(") < krAns.indexOf("/"))
+        {
+            stem = krAns.substring(1, krAns.indexOf("("));
+        }
+        else if (krAns.contains("+"))
+        {
+            stem = lemma;
+        }
+        else
+        {
+            stem = krAns.substring(1, krAns.indexOf("/"));
+        }
+
+        String krCode = krRoot.substring(krRoot.indexOf("/") + 1);
+
+        if (krCode.startsWith("NOUN"))
+        {
+            String msd = convertNoun(lemma, krCode);
+
+            // pronoun
+            if (msd.startsWith("P"))
+            {
+                lemma = getPostPLemma(krAns);
+
+                // dative
+                if (msd.charAt(5) == 'd')
+                {
+                    ans.add(new MorAna(lemma, msd.replace('d', 'g')));
+                }
+            }
+
+            ans.add(new MorAna(lemma, msd));
+
+            // dative
+            if (msd.charAt(4) == 'd')
+            {
+                ans.add(new MorAna(lemma, msd.replace('d', 'g')));
+            }
+        }
+
+        if (krCode.startsWith("ADJ"))
+        {
+            String msd;
+
+            // melléknévi igenév
+            if (isParticiple(krAns))
+            {
+                msd = convertAdjective(krAns);
+                ans.add(new MorAna(lemma, msd));
+            }
+            else
+            {
+                msd = convertAdjective(krCode);
+                ans.add(new MorAna(lemma, msd));
+            }
+
+            // dative
+            if (msd.charAt(5) == 'd')
+            {
+                ans.add(new MorAna(lemma, msd.replace('d', 'g')));
+            }
+        }
+
+        if (krCode.startsWith("VERB"))
+        {
+            // határozói igenév
+            if (krCode.contains("VERB[PERF_PART]") || krCode.contains("VERB[PART]"))
+            {
+                ans.add(new MorAna(lemma, "Rv"));
+            }
+            else if (krAns.contains("[FREQ]") || krAns.contains("[CAUS]") || krAns.contains("<MODAL>"))
+            {
+                ans.add(new MorAna(stem, convertVerb(krAns)));
+            }
+            else
+            {
+                ans.add(new MorAna(lemma, convertVerb(krCode)));
+            }
+        }
+
+        if (krCode.startsWith("NUM"))
+        {
+            String msd = convertNumber(krCode, krAns);
+            ans.add(new MorAna(lemma, msd));
+
+            // dative
+            if (msd.charAt(4) == 'd')
+                ans.add(new MorAna(lemma, msd.replace('d', 'g')));
+        }
+
+        if (krCode.startsWith("ART"))     ans.add(new MorAna(lemma, "T"));  // definite/indefinte
+        if (krCode.startsWith("ADV"))     ans.add(new MorAna(lemma, convertAdverb(krCode)));
+        if (krCode.startsWith("POSTP"))   ans.add(new MorAna(lemma, "St"));
+        if (krCode.startsWith("CONJ"))    ans.add(new MorAna(lemma, "Ccsp"));
+        if (krCode.startsWith("UTT-INT")) ans.add(new MorAna(lemma, "I"));
+        if (krCode.startsWith("PREV"))    ans.add(new MorAna(lemma, "Rp"));
+        if (krCode.startsWith("DET"))     ans.add(new MorAna(lemma, "Pd3-sn"));
+        if (krCode.startsWith("ONO"))     ans.add(new MorAna(lemma, "X"));
+        if (krCode.startsWith("E"))       ans.add(new MorAna(lemma, "Rq-y"));
+        if (krCode.startsWith("ABBR"))    ans.add(new MorAna(lemma, "Y"));
+        if (krCode.startsWith("TYPO"))    ans.add(new MorAna(lemma, "Z"));
+
+        if (ans.isEmpty())
+            ans.add(new MorAna(lemma, "X"));
+
+        return ans;
+    }
+
+    public static String cleanMsd(String msd)
+    {
+        StringBuilder sb = new StringBuilder(msd.trim());
+
+        for (int i = sb.length() - 1; sb.charAt(i) == '-'; --i)
+        {
+            sb.deleteCharAt(i);
+        }
+
+        return sb.toString();
+    }
+
+    public static enum KRPOS
+    {
+        VERB, NOUN, ADJ, NUM, ADV, PREV, ART, POSTP, UTT_INT, DET, CONJ, ONO, PREP, X;
+    }
+
+    private static String findPattern(String text, String pattern, int group)
+    {
+        Matcher m = Pattern.compile(pattern).matcher(text);
+        m.find();
+
+        return m.group(group);
+    }
+
+    private static String findPattern(String text, String pattern)
+    {
+        return findPattern(text, pattern, 1);
+    }
+
+    private static List<String> findPatterns(String text, String pattern)
+    {
+        List<String> found = new LinkedList<String>();
+
+        for (Matcher m = Pattern.compile(pattern).matcher(text); m.find(); )
+        {
+            found.add(m.group(1));
+        }
+
+        return found;
+    }
+
+    public static String getRoot(String morph)
+    {
+        // több
+        if (morph.startsWith("$sok/NUM[COMPAR]/NUM<CAS<"))
+            return "$több/NUM<CAS<ACC>>";
+
+        // legtöbb
+        if (morph.startsWith("$sok/NUM[SUPERLAT]/NUM<CAS<"))
+            return "$legtöbb/NUM<CAS<ACC>>";
+
+        // legeslegtöbb
+        if (morph.startsWith("$sok/NUM[SUPER-SUPERLAT]/NUM<CAS<"))
+            return "$legeslegtöbb/NUM<CAS<ACC>>";
+
+        String root = null;
+
+        if (!morph.contains("/"))
+        {
+            return morph;
+        }
+        else
+        {
+            String igekoto = "";
+
+            // igekötő
+            if (morph.contains("/PREV+"))
+            {
+                igekoto = morph.split("/PREV\\+")[0];
+                morph = morph.split("/PREV\\+")[1];
+            }
+
+            String[] tovek = preProcess(morph.split("/"));
+
+            String vegsoto = findPatterns(tovek[0], "^([^\\(\\/]*)").get(0);
+            boolean ikes = false;
+
+            if (tovek.length > 2)
+            {
+                for (int i = 0; i < tovek.length - 1; i++)
+                {
+                    if (tovek[i].matches(".*\\(.*\\).*"))
+                    {
+                        int backValue = 0;
+
+                        for (String feladat : findPatterns(tovek[i], "\\((.*?)\\)"))
+                        {
+                            if (feladat.matches("^\\-\\d.*"))
+                            {
+                                // -1 -2ik
+                                backValue = Integer.parseInt(findPattern(feladat, "^\\-(\\d)"));
+                                vegsoto = vegsoto.substring(0, vegsoto.length() - backValue);
+                                ikes = false;
+                                if (feladat.matches(".*ik$"))
+                                {
+                                    ikes = true;
+                                }
+                                // feladat.matches("^\\-\\.[\\d]"
+                            }
+                            else if (feladat.matches("^\\-\\."))
+                            {
+                                // -.
+
+                                String firsPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 1);
+                                String secondPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 2);
+                                vegsoto = firsPart + "!" + secondPart;
+                            }
+                            else if (feladat.matches("^\\.(.*)"))
+                            {
+                                // .a .e .i .o .� .u .�
+                                String csere = findPattern(feladat, "^\\.(.*)", 1);
+                                if (vegsoto.contains("!"))
+                                {
+                                    vegsoto = vegsoto.replace("!", csere);
+                                }
+                                else
+                                {
+                                    // TODO ez mikor van?
+                                }
+                                ikes = false;
+                            }
+                            else if (feladat.matches("^\\%.*"))
+                            {
+                                // TODO nem találtam ilyet
+                            }
+                            else if (feladat.matches("^[^\\.\\-\\%].*"))
+                            {
+                                // a, abb, ad, al, an, ank�nt, anta, askodik, astul, ast�l, at,
+                                // az, azik, bb, beli, b�li, e, ebb, ed, eget, el, en, enk�nt,
+                                // ente, eskedik, est�l, est�l, et, ett, ez, ezik, gat, get,
+                                // hetn�k, i, kedik, k�pp, k�ppen, lag, leg, n, nk�nt, nta, nte,
+                                // nyi, od, odik, ogat, ol, on, onk�nt, onta, oskodik, ostul,
+                                // ost�l, ott, ov, oz, ozik, sodik, st�l, st�l, st�l, sul, szer,
+                                // szerez, szeri, szerte, szor, szori, szoroz, szorta, sz�r,
+                                // sz�ri, sz�rte, sz�r�z, s�t, s�dik, tat, tet, tt, ul, v, va,
+                                // ve, v�n, v�n, z, zik, �, �, �t, �, �dik, �dik, �get, �l,
+                                // �nk�nt, �sk�dik, �st�l, �st�l, �tt, �v, �z, �zik, �l, �dik
+                                vegsoto = vegsoto + findPattern(feladat, "^([^\\.\\-\\%].*)", 1);
+                                ikes = false;
+                            }
+                            else
+                            {
+                                // System.err.println("HIBA: " + feladat);
+                            }
+                        }
+                    }
+                }
+            }
+
+            String ikveg = ikes ? "ik" : "";
+            root = igekoto + vegsoto + ikveg + "/" + tovek[tovek.length - 1];
+
+            for (String rep : findPatterns(root, "(\\([^\\)]*\\))"))
+            {
+                root = root.replace(rep, "");
+            }
+        }
+
+        root = root.replace("!", "");
+        root = root.replace("@", "");
+        root = root.replace("$", "");
+
+        return "$" + root;
+    }
+
+    private static String[] preProcess(String[] tovek)
+    {
+        for (int i = 0; i < tovek.length; i++)
+        {
+            // gyorsan -> gyors
+            // hallgatólag -> hallgató
+            if (tovek[i].contains("ADJ[MANNER]"))
+            {
+                tovek[tovek.length - 1] = tovek[i];
+            }
+
+            // mindenképp -> minden
+            // mindenképpen -> minden
+            if (tovek[i].contains("NOUN[ESS_FOR]"))
+            {
+                tovek[tovek.length - 1] = tovek[i];
+            }
+
+            // apástul -> apa
+            if (tovek[i].contains("NOUN") && tovek[i].contains("[COM]"))
+            {
+                tovek[tovek.length - 1] = tovek[i];
+            }
+
+            // fejenként -> fej
+            if (tovek[i].contains("NOUN[PERIOD1]"))
+            {
+                tovek[tovek.length - 1] = tovek[i];
+            }
+
+            /*
+             * számnevek, amik KRben /ADV
+             */
+            if (tovek[i].contains("NUM") && tovek[i].contains("["))
+            {
+                tovek[tovek.length - 1] = tovek[i];
+            }
+
+            // rosszabb -> rossz
+            // legrosszabb -> rossz
+            // legeslegrosszabb -> rossz
+            // rosszabbik -> rossz
+            // legrosszabbik -> rossz
+            // legeslegrosszabbik -> rossz
+
+            if (tovek[i].contains("ADJ"))
+            {
+                if (tovek[i].contains("[COMPAR") || tovek[i].contains("[SUPERLAT") || tovek[i].contains("[SUPERSUPERLAT"))
+                {
+                    tovek[tovek.length - 1] = tovek[i];
+                }
+            }
+
+            // futva, futván -> fut
+            if (tovek[i].contains("VERB[PART](va)")
+             || tovek[i].contains("VERB[PART](ve)")
+             || tovek[i].contains("VERB[PERF_PART](ván)")
+             || tovek[i].contains("VERB[PERF_PART](vén)"))
+            {
+                tovek[tovek.length - 1] = tovek[i];
+            }
+        }
+
+        return tovek;
+    }
+
+    /*
+     * "$fut/VERB[GERUND](�s)/NOUN<PLUR><POSS<1>><CAS<INS>>"
+     */
+    public static KRPOS getPOS(String code)
+    {
+        int end1 = Integer.MAX_VALUE;
+        int end2 = Integer.MAX_VALUE;
+
+        int end = 0;
+
+        if (code.contains("@"))
+        {
+            end = code.lastIndexOf("@");
+        }
+
+        int start = code.lastIndexOf("/");
+
+        if (code.indexOf("<", start) > 0)
+        {
+            end1 = (code.indexOf("<", start));
+        }
+
+        if (code.indexOf("[", start) > 0)
+        {
+            end2 = (code.indexOf("[", start));
+        }
+
+        end = (end1 < end2) ? end1 : end2;
+
+        if (end > code.length())
+        {
+            end = code.length();
+        }
+
+        switch (code.substring(start, end))
+        {
+            case "VERB":    return KRPOS.VERB;
+            case "NOUN":    return KRPOS.NOUN;
+        }
+
+        switch (code.substring(start + 1, end))
+        {
+            case "ADJ":     return KRPOS.ADJ;
+            case "NUM":     return KRPOS.NUM;
+            case "ADV":     return KRPOS.ADV;
+            case "PREV":    return KRPOS.PREV;
+            case "ART":     return KRPOS.ART;
+            case "POSTP":   return KRPOS.POSTP;
+            case "UTT-INT": return KRPOS.UTT_INT;
+            case "DET":     return KRPOS.DET;
+            case "CONJ":    return KRPOS.CONJ;
+            case "ONO":     return KRPOS.ONO;
+            case "PREP":    return KRPOS.PREP;
+        }
+
+        return KRPOS.X;
+    }
+
+    public static String[] getAbsoluteLemma(String form)
+    {
+        List<String> lemma = new ArrayList<String>();
+
+        for (String s : RFSA.analyse(form))
+        {
+            // igekötők leválasztása
+            s = s.substring(s.indexOf("$") + 1);
+
+            if (s.contains("(") && s.indexOf("(") < s.indexOf("/"))
+                lemma.add(s.substring(0, s.indexOf("(")));
+            else
+                lemma.add(s.substring(0, s.indexOf("/")));
+        }
+
+        return lemma.toArray(new String[lemma.size()]);
+    }
+
+    public static void main(String args[])
+    {
+        System.out.println(RFSA.analyse("utánam"));
+
+        System.out.println(getMSD("$én/NOUN<POSTP<UTÁN>><PERS<1>>"));
+
+        // System.out.println(getRoot("$fut/VERB[GERUND](�s)/NOUN<PLUR><POSS<1>><CAS<INS>>"));
+
+        System.out.println(getPOS("$árapály/NOUN"));
+    }
+}
+EOF
+mkdir -p magyarlanc && cat > magyarlanc/Magyarlanc.java <<'EOF'
+package magyarlanc;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+public class Magyarlanc
+{
+    public static List<String> readList(String file)
+    {
+        List<String> lines = new LinkedList<>();
+
+        BufferedReader reader = null;
+
+        try
+        {
+            reader = new BufferedReader(new InputStreamReader((file != null) ? new FileInputStream(file) : System.in, "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                line = line.trim();
+
+                if (0 < line.length())
+                {
+                    lines.add(line);
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                reader.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return lines;
+    }
+
+    /**
+     * Reads tokenized file. Each line contains exactly one token.
+     */
+    public static String[][] readTokenized(String file)
+    {
+        List<String[]> sentences = new ArrayList<String[]>(1 << 5);
+
+        BufferedReader reader = null;
+
+        try
+        {
+            reader = new BufferedReader(new InputStreamReader((file != null) ? new FileInputStream(file) : System.in, "UTF-8"));
+
+            List<String> tokens = new ArrayList<String>(1 << 5);
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                line = line.trim();
+
+                if (0 < line.length())
+                {
+                    tokens.add(line);
+                }
+                else
+                {
+                    sentences.add(tokens.toArray(new String[tokens.size()]));
+                    tokens.clear();
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            try
+            {
+                reader.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return sentences.toArray(new String[sentences.size()][]);
+    }
+
+    public static void write(String[][][] array, String file)
+    {
+        try
+        {
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter((file != null) ? new FileOutputStream(file) : System.out, "UTF-8"));
+
+            for (int i = 0; i < array.length; i++)
+            {
+                for (int j = 0; j < array[i].length; j++)
+                {
+                    for (int k = 0; k < array[i][j].length; k++)
+                    {
+                        writer.write(array[i][j][k]);
+                        writer.write('\t');
+                    }
+                    writer.write('\n');
+                }
+                writer.write('\n');
+            }
+
+            writer.flush();
+            writer.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        final String usage = "usage: -mode gui|morana|morphparse|tokenized|depparse";
+
+        if (args.length < 2)
+        {
+            System.err.println(usage);
+            System.exit(1);
+        }
+
+        Map<String, String> params = new HashMap<String, String>();
+
+        for (int i = 0; i < args.length; i++)
+        {
+            try
+            {
+                params.put(args[i], args[i + 1]);
+                i++;
+            }
+            catch (Exception e)
+            {
+                System.err.println(usage);
+                System.exit(2);
+            }
+        }
+
+        if (params.containsKey("-mode"))
+        {
+            switch (params.get("-mode"))
+            {
+                case "gui":
+                    GUI.init();
+                    break;
+
+                case "morana":
+                {
+                    List<String> lines = readList(params.get("-input"));
+
+                    for (String line : lines)
+                        System.out.println(Morphology.getMorphologicalAnalyses(line));
+                    break;
+                }
+
+                case "morphparse":
+                {
+                    List<String> lines = readList(params.get("-input"));
+
+                    write(Morphology.morphParse(lines), params.get("-output"));
+                    break;
+                }
+
+                case "tokenized":
+                {
+                    String[][] lines = readTokenized(params.get("-input"));
+
+                    write(Morphology.morphParse(lines), params.get("-output"));
+                    break;
+                }
+
+                case "depparse":
+                {
+                    List<String> lines = readList(params.get("-input"));
+
+                    write(Dependency.depParse(lines), params.get("-output"));
+                    break;
+                }
+
+                default:
+                    System.err.println(usage);
+                    System.exit(3);
+            }
+        }
+
+        // System.exit(0);
+    }
+}
+EOF
+mkdir -p magyarlanc && cat > magyarlanc/Morphology.java <<'EOF'
+package magyarlanc;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import edu.stanford.nlp.ling.TaggedWord;
+import edu.stanford.nlp.tagger.maxent.SzteMaxentTagger;
 
 import magyarlanc.KRTools.KRPOS;
 
+import data.Data;
+
 public class Morphology
 {
+    private static final String POS_MODEL = "25.model";
+    private static final String CORPUS = "25.lex";
+    private static final String FREQUENCIES = "25.freq";
+
+    private static SzteMaxentTagger maxentTagger;
+
+    public static SzteMaxentTagger getMaxentTagger()
+    {
+        if (maxentTagger == null)
+        {
+            try
+            {
+                maxentTagger = new SzteMaxentTagger("./data/" + POS_MODEL);
+                maxentTagger.setVerbose(false);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return maxentTagger;
+    }
+
+    private static Map<String, Set<MorAna>> corpus;
+
+    public static Map<String, Set<MorAna>> getCorpus()
+    {
+        if (corpus == null)
+            corpus = readCorpus(CORPUS);
+
+        return corpus;
+    }
+
+    public static Map<String, Set<MorAna>> readCorpus(String file)
+    {
+        Map<String, Set<MorAna>> corpus = new TreeMap<String, Set<MorAna>>();
+
+        try
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                Set<MorAna> morAnas = new TreeSet<MorAna>();
+
+                String[] splitted = line.split("\t");
+                for (int i = 1; i < splitted.length - 1; i++)
+                {
+                    morAnas.add(new MorAna(splitted[i], splitted[i + 1]));
+                    i++;
+                }
+
+                corpus.put(splitted[0], morAnas);
+            }
+
+            reader.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return corpus;
+    }
+
+    private static Map<String, Integer> frequencies;
+
+    public static Map<String, Integer> getFrequencies()
+    {
+        if (frequencies == null)
+            frequencies = readFrequencies(FREQUENCIES);
+
+        return frequencies;
+    }
+
+    public static Map<String, Integer> readFrequencies(String file)
+    {
+        Map<String, Integer> frequencies = new TreeMap<String, Integer>();
+
+        try
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                String[] splitted = line.split("\t");
+                frequencies.put(splitted[0], Integer.parseInt(splitted[1]));
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return frequencies;
+    }
+
+    public static String[][] morphParseSentence(String[] form)
+    {
+        return getMaxentTagger().morphSentence(form);
+    }
+
+    public static String[][] morphParseSentence(List<String> form)
+    {
+        return getMaxentTagger().morphSentence(form.toArray(new String[form.size()]));
+    }
+
+    public static String[][] morphParseSentence(String sentence)
+    {
+        return morphParseSentence(HunSplitter.tokenize(sentence));
+    }
+
+    public static String[][][] morphParse(String text)
+    {
+        List<String[][]> morph = new ArrayList<String[][]>();
+
+        for (String[] sentence : HunSplitter.splitToArray(text))
+        {
+            morph.add(morphParseSentence(sentence));
+        }
+
+        return morph.toArray(new String[morph.size()][][]);
+    }
+
+    /**
+     * Line by line.
+     */
+    public static String[][][] morphParse(List<String> lines)
+    {
+        List<String[][]> morph = new ArrayList<String[][]>();
+
+        for (String line : lines)
+        {
+            for (String[] sentence : HunSplitter.splitToArray(line))
+            {
+                morph.add(morphParseSentence(sentence));
+            }
+        }
+
+        return morph.toArray(new String[morph.size()][][]);
+    }
+
+    public static String[][][] morphParse(String[][] text)
+    {
+        List<String[][]> morph = new ArrayList<String[][]>();
+
+        for (String[] sentence : text)
+        {
+            morph.add(morphParseSentence(sentence));
+        }
+
+        return morph.toArray(new String[morph.size()][][]);
+    }
+
     public static class MorAna implements Comparable<MorAna>
     {
         private String lemma;
@@ -599,6 +2221,53 @@ public class Morphology
         return true;
     }
 
+    private static Set<String> punctations = new HashSet<String>()
+    {{
+        String[] puncts = { "!", ",", "-", ".", ":", ";", "?", "–" };
+
+        for (String punct : puncts)
+        {
+            add(punct);
+        }
+    }};
+
+    public static Set<String> getPunctations()
+    {
+        return punctations;
+    }
+
+    private static Map<String, String> corrDic;
+
+    private static Map<String, String> getCorrDic()
+    {
+        if (corrDic == null)
+            corrDic = readMap("corrdic.txt");
+
+        return corrDic;
+    }
+
+    public static Map<String, String> readMap(String file)
+    {
+        Map<String, String> map = new TreeMap<String, String>();
+
+        try
+        {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
+
+            for (String line; (line = reader.readLine()) != null; )
+            {
+                String[] splitted = line.split("\t");
+                map.put(splitted[0], splitted[1]);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        return map;
+    }
+
     /**
      * adott szó lehetséges morfológiai elemzéseinek meghatározása
      */
@@ -612,7 +2281,7 @@ public class Morphology
             // a legfontosabb írásjelek lemmája maga az írásjel,
             // POS kódja szintén maga az írásjel lesz
             // . , ; : ! ? - -
-            if (Magyarlanc.getPunctations().contains(word))
+            if (getPunctations().contains(word))
             {
                 morAnas.add(new MorAna(word, word));
             }
@@ -633,15 +2302,15 @@ public class Morphology
         }
 
         // ha benne van a corpus.lex-ben
-        if (Magyarlanc.getCorpus().containsKey(word))
+        if (getCorpus().containsKey(word))
         {
-            return Magyarlanc.getCorpus().get(word);
+            return getCorpus().get(word);
         }
 
         // ha benne van a corpus.lex-ben kisbetűvel
-        if (Magyarlanc.getCorpus().containsKey(word.toLowerCase()))
+        if (getCorpus().containsKey(word.toLowerCase()))
         {
-            return Magyarlanc.getCorpus().get(word.toLowerCase());
+            return getCorpus().get(word.toLowerCase());
         }
 
         // szám
@@ -656,7 +2325,7 @@ public class Morphology
         morAnas.addAll(guessRomanNumber(word));
 
         // rfsa
-        for (String kr : Magyarlanc.getRFSA().analyse(word))
+        for (String kr : RFSA.analyse(word))
         {
             morAnas.addAll(KRTools.getMSD(kr));
         }
@@ -699,7 +2368,7 @@ public class Morphology
         // téves szavak
         if (morAnas.size() == 0)
         {
-            Map<String, String> corrDic = Magyarlanc.getCorrDic();
+            Map<String, String> corrDic = getCorrDic();
 
             if (corrDic.containsKey(word) && !word.equals(corrDic.get(word)))
             {
@@ -750,7 +2419,7 @@ public class Morphology
 
             for (MorAna morAna : getMorphologicalAnalyses(tw.word()))
             {
-                int freq = Magyarlanc.getFrequencies().containsKey(morAna.getMsd()) ? Magyarlanc.getFrequencies().get(morAna.getMsd()) : 0;
+                int freq = getFrequencies().containsKey(morAna.getMsd()) ? getFrequencies().get(morAna.getMsd()) : 0;
 
                 if (!morAna.getMsd().equals(null))
                 {
@@ -829,11 +2498,9 @@ public class Morphology
 
     public static boolean isBisectable(String word)
     {
-        RFSA rfsa = Magyarlanc.getRFSA();
-
         for (int i = 2; i < word.length() - 1; ++i)
         {
-            if (rfsa.analyse(word.substring(0, i)).size() > 0 && rfsa.analyse(word.substring(i)).size() > 0)
+            if (RFSA.analyse(word.substring(0, i)).size() > 0 && RFSA.analyse(word.substring(i)).size() > 0)
             {
                 return true;
             }
@@ -844,11 +2511,9 @@ public class Morphology
 
     public static int bisectIndex(String word)
     {
-        RFSA rfsa = Magyarlanc.getRFSA();
-
         for (int i = 2; i < word.length() - 1; ++i)
         {
-            if (rfsa.analyse(word.substring(0, i)).size() > 0 && rfsa.analyse(word.substring(i)).size() > 0)
+            if (RFSA.analyse(word.substring(0, i)).size() > 0 && RFSA.analyse(word.substring(i)).size() > 0)
             {
                 return i;
             }
@@ -866,9 +2531,7 @@ public class Morphology
     {
         Set<String> analises = new LinkedHashSet<String>();
 
-        RFSA rfsa = Magyarlanc.getRFSA();
-
-        List<String> ans1 = rfsa.analyse(part1), ans2 = rfsa.analyse(part2);
+        List<String> ans1 = RFSA.analyse(part1), ans2 = RFSA.analyse(part2);
 
         if (ans1.size() > 0 && ans2.size() > 0)
         {
@@ -916,7 +2579,7 @@ public class Morphology
             String part1 = word.substring(0, i);
             String part2 = word.substring(i);
 
-            List<String> ans1 = Magyarlanc.getRFSA().analyse(part1);
+            List<String> ans1 = RFSA.analyse(part1);
             if (ans1.size() > 0)
             {
                 // ha a második rész két részre bontható
@@ -954,8 +2617,6 @@ public class Morphology
             return analises;
         }
 
-        RFSA rfsa = Magyarlanc.getRFSA();
-
         int hp = word.indexOf('-');
         String part1 = word.substring(0, hp), part2 = word.substring(hp + 1);
 
@@ -966,9 +2627,9 @@ public class Morphology
         }
 
         // a kötőjel előtti résznek is van elemzése, a kötőjel utáni rész két részre bontható
-        else if (rfsa.analyse(part1).size() > 0 && isBisectable(part2))
+        else if (RFSA.analyse(part1).size() > 0 && isBisectable(part2))
         {
-            List<String> ans1 = rfsa.analyse(part1);
+            List<String> ans1 = RFSA.analyse(part1);
 
             int bi = bisectIndex(part2);
             String part21 = part2.substring(0, bi), part22 = part2.substring(bi);
@@ -991,9 +2652,9 @@ public class Morphology
             }
         }
 
-        else if (isBisectable(part1) && rfsa.analyse(part2).size() > 0)
+        else if (isBisectable(part1) && RFSA.analyse(part2).size() > 0)
         {
-            List<String> ans2 = rfsa.analyse(part2);
+            List<String> ans2 = RFSA.analyse(part2);
 
             int bi = bisectIndex(part1);
             String part11 = part1.substring(0, bi), part12 = part1.substring(bi);
@@ -1019,6 +2680,21 @@ public class Morphology
         return analises;
     }
 
+    private static Set<String> morPhonDir = new HashSet<String>()
+    {{
+        String[] morPhons = { "talány", "némber", "sün", "fal", "holló", "felhő", "kalap", "hely", "köd" };
+
+        for (String morPhon : morPhons)
+        {
+            add(morPhon);
+        }
+    }};
+
+    private static Set<String> getMorPhonDir()
+    {
+        return morPhonDir;
+    }
+
     /**
      * A morPhonGuess függvény egy ismeretlen (nem elemezhető) főnévi szótő és
      * tetszőleges suffix guesselésére szolgál. A guesselés során az adott suffixet
@@ -1035,11 +2711,9 @@ public class Morphology
     {
         Set<MorAna> stems = new TreeSet<MorAna>();
 
-        RFSA rfsa = Magyarlanc.getRFSA();
-
-        for (String guess : Magyarlanc.getMorPhonDir())
+        for (String guess : getMorPhonDir())
         {
-            for (String kr : rfsa.analyse(guess + suffix))
+            for (String kr : RFSA.analyse(guess + suffix))
             {
                 for (MorAna stem : KRTools.getMSD(kr))
                 {
@@ -1062,7 +2736,7 @@ public class Morphology
         morAnas.addAll(morPhonGuess(root, suffix));
 
         // suffix főnév (pl.: Bush-kormannyal)
-        for (String kr : Magyarlanc.getRFSA().analyse(suffix))
+        for (String kr : RFSA.analyse(suffix))
         {
             for (MorAna morAna : KRTools.getMSD(kr))
             {
@@ -1712,1455 +3386,6 @@ public class Morphology
         System.out.println(numberGuess("16-ai"));
         System.out.println(numberGuess("5."));
         System.out.println(numberGuess("20%"));
-    }
-}
-EOF
-mkdir -p magyarlanc && cat > magyarlanc/Magyarlanc.java <<'EOF'
-package magyarlanc;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
-import edu.stanford.nlp.tagger.maxent.SzteMaxentTagger;
-
-import is2.parser.Options;
-import is2.parser.Parser;
-
-import data.Data;
-
-import magyarlanc.Morphology.MorAna;
-
-public class Magyarlanc
-{
-    private static final String POS_MODEL = "25.model";
-    private static final String CORPUS = "25.lex";
-    private static final String FREQUENCIES = "25.freq";
-
-    private static final String PARSER_MODEL = "szeged.dep.model";
-
-    private static final String STOPWORDS = "stopwords.txt";
-    private static final String CORRDIC = "corrdic.txt";
-    private static final String HUN_ABBREV = "hun_abbrev.txt";
-
-    private static final String RFS = "rfsa.txt";
-
-    private static Set<String> punctations = loadPunctations();
-    private static Set<String> morPhonDir = loadMorPhonDir();
-
-    private static Map<String, Set<MorAna>> corpus;
-    private static Map<String, Integer> frequencies;
-
-    private static Set<String> stopwords;
-    private static Map<String, String> corrDic;
-    private static Set<String> hunAbbrev;
-
-    private static RFSA rfsa;
-
-    private static SzteMaxentTagger maxentTagger;
-
-    private static Parser parser;
-
-    public static Set<String> loadPunctations()
-    {
-        Set<String> punctations = new HashSet<String>();
-
-        String[] puncts = { "!", ",", "-", ".", ":", ";", "?", "–" };
-
-        for (String punct : puncts)
-        {
-            punctations.add(punct);
-        }
-
-        return punctations;
-    }
-
-    public static Set<String> loadMorPhonDir()
-    {
-        Set<String> morPhonDir = new HashSet<String>();
-
-        String[] morPhons = new String[] { "talány", "némber", "sün", "fal", "holló", "felhő", "kalap", "hely", "köd" };
-
-        for (String morPhon : morPhons)
-        {
-            morPhonDir.add(morPhon);
-        }
-
-        return morPhonDir;
-    }
-
-    public static Set<String> getPunctations()
-    {
-        return punctations;
-    }
-
-    public static Set<String> getMorPhonDir()
-    {
-        return morPhonDir;
-    }
-
-    public static Map<String, Set<MorAna>> getCorpus()
-    {
-        if (corpus == null)
-            corpus = readCorpus(CORPUS);
-
-        return corpus;
-    }
-
-    public static Map<String, Integer> getFrequencies()
-    {
-        if (frequencies == null)
-            frequencies = readFrequencies(FREQUENCIES);
-
-        return frequencies;
-    }
-
-    public static Set<String> getStopwords()
-    {
-        if (stopwords == null)
-            stopwords = readSet(STOPWORDS);
-
-        return stopwords;
-    }
-
-    public static Map<String, String> getCorrDic()
-    {
-        if (corrDic == null)
-            corrDic = readMap(CORRDIC);
-
-        return corrDic;
-    }
-
-    public static Set<String> getHunAbbrev()
-    {
-        if (hunAbbrev == null)
-            hunAbbrev = readSet(HUN_ABBREV);
-
-        return hunAbbrev;
-    }
-
-    public static RFSA getRFSA()
-    {
-        if (rfsa == null)
-        {
-            try
-            {
-                rfsa = RFSA.read(Data.class.getResourceAsStream(RFS));
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        return rfsa;
-    }
-
-    public static SzteMaxentTagger getMaxentTagger()
-    {
-        if (maxentTagger == null)
-        {
-            try
-            {
-                maxentTagger = new SzteMaxentTagger("./data/" + POS_MODEL);
-                maxentTagger.setVerbose(false);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        return maxentTagger;
-    }
-
-    public static Parser getParser()
-    {
-        if (parser == null)
-        {
-            parser = new Parser(new Options(new String[] { "-model", "./data/" + PARSER_MODEL, "-cores", "1" }));
-        }
-
-        return parser;
-    }
-
-    public static String[][] morphParseSentence(String[] form)
-    {
-        return getMaxentTagger().morphSentence(form);
-    }
-
-    public static String[][] morphParseSentence(List<String> form)
-    {
-        return getMaxentTagger().morphSentence(form.toArray(new String[form.size()]));
-    }
-
-    public static String[][] morphParseSentence(String sentence)
-    {
-        return morphParseSentence(HunSplitter.tokenize(sentence));
-    }
-
-    public static String[][][] morphParse(String text)
-    {
-        List<String[][]> morph = new ArrayList<String[][]>();
-
-        for (String[] sentence : HunSplitter.splitToArray(text))
-        {
-            morph.add(morphParseSentence(sentence));
-        }
-
-        return morph.toArray(new String[morph.size()][][]);
-    }
-
-    /**
-     * Line by line.
-     */
-    public static String[][][] morphParse(List<String> lines)
-    {
-        List<String[][]> morph = new ArrayList<String[][]>();
-
-        for (String line : lines)
-        {
-            for (String[] sentence : HunSplitter.splitToArray(line))
-            {
-                morph.add(morphParseSentence(sentence));
-            }
-        }
-
-        return morph.toArray(new String[morph.size()][][]);
-    }
-
-    public static String[][][] morphParse(String[][] text)
-    {
-        List<String[][]> morph = new ArrayList<String[][]>();
-
-        for (String[] sentence : text)
-        {
-            morph.add(morphParseSentence(sentence));
-        }
-
-        return morph.toArray(new String[morph.size()][][]);
-    }
-
-    public static String[][][] depParse(String text)
-    {
-        List<String[][]> dep = new ArrayList<String[][]>();
-
-        for (String[] sentence : HunSplitter.splitToArray(text))
-        {
-            dep.add(depParseSentence(sentence));
-        }
-
-        return dep.toArray(new String[dep.size()][][]);
-    }
-
-    /**
-     * Line by line.
-     */
-    public static String[][][] depParse(List<String> lines)
-    {
-        List<String[][]> dep = new ArrayList<String[][]>();
-
-        for (String line : lines)
-        {
-            for (String[] sentence : HunSplitter.splitToArray(line))
-            {
-                dep.add(depParseSentence(sentence));
-            }
-        }
-
-        return dep.toArray(new String[dep.size()][][]);
-    }
-
-    public static String[][] depParseSentence(String sentence)
-    {
-        return depParseSentence(HunSplitter.tokenizeToArray(sentence));
-    }
-
-    public static String[][] depParseSentence(String[] form)
-    {
-        return MateParser.parseSentence(morphParseSentence(form));
-    }
-
-    public static Map<String, Set<MorAna>> readCorpus(String file)
-    {
-        Map<String, Set<MorAna>> corpus = new TreeMap<String, Set<MorAna>>();
-
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                Set<MorAna> morAnas = new TreeSet<MorAna>();
-
-                String[] splitted = line.split("\t");
-                for (int i = 1; i < splitted.length - 1; i++)
-                {
-                    morAnas.add(new MorAna(splitted[i], splitted[i + 1]));
-                    i++;
-                }
-
-                corpus.put(splitted[0], morAnas);
-            }
-
-            reader.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return corpus;
-    }
-
-    public static Map<String, Integer> readFrequencies(String file)
-    {
-        Map<String, Integer> frequencies = new TreeMap<String, Integer>();
-
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                String[] splitted = line.split("\t");
-                frequencies.put(splitted[0], Integer.parseInt(splitted[1]));
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return frequencies;
-    }
-
-    public static Map<String, String> readMap(String file)
-    {
-        Map<String, String> map = new TreeMap<String, String>();
-
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                String[] splitted = line.split("\t");
-                map.put(splitted[0], splitted[1]);
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return map;
-    }
-
-    public static Set<String> readSet(String file)
-    {
-        Set<String> set = new TreeSet<String>();
-
-        try
-        {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(Data.class.getResourceAsStream(file), "UTF-8"));
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                set.add(line);
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        return set;
-    }
-
-    public static List<String> readList(String file)
-    {
-        List<String> lines = new LinkedList<>();
-
-        BufferedReader reader = null;
-
-        try
-        {
-            reader = new BufferedReader(new InputStreamReader((file != null) ? new FileInputStream(file) : System.in, "UTF-8"));
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                line = line.trim();
-
-                if (0 < line.length())
-                {
-                    lines.add(line);
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        finally
-        {
-            try
-            {
-                reader.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        return lines;
-    }
-
-    /**
-     * Reads tokenized file. Each line contains exactly one token.
-     */
-    public static String[][] readTokenized(String file)
-    {
-        List<String[]> sentences = new ArrayList<String[]>(1 << 5);
-
-        BufferedReader reader = null;
-
-        try
-        {
-            reader = new BufferedReader(new InputStreamReader((file != null) ? new FileInputStream(file) : System.in, "UTF-8"));
-
-            List<String> tokens = new ArrayList<String>(1 << 5);
-
-            for (String line; (line = reader.readLine()) != null; )
-            {
-                line = line.trim();
-
-                if (0 < line.length())
-                {
-                    tokens.add(line);
-                }
-                else
-                {
-                    sentences.add(tokens.toArray(new String[tokens.size()]));
-                    tokens.clear();
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        finally
-        {
-            try
-            {
-                reader.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        return sentences.toArray(new String[sentences.size()][]);
-    }
-
-    public static String sentenceAsString(String[][] array)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < array.length; i++)
-        {
-            for (int j = 0; j < array[i].length; j++)
-            {
-                sb.append(array[i][j]).append('\t');
-            }
-            sb.append('\n');
-        }
-
-        return sb.toString();
-    }
-
-    public static void printSentence(String[][] array)
-    {
-        for (int i = 0; i < array.length; i++)
-        {
-            for (int j = 0; j < array[i].length; j++)
-            {
-                System.out.print(array[i][j]);
-                System.out.print('\t');
-            }
-            System.out.println();
-        }
-    }
-
-    public static void print(String[][][] array)
-    {
-        for (int i = 0; i < array.length; i++)
-        {
-            for (int j = 0; j < array[i].length; j++)
-            {
-                for (int k = 0; k < array[i][j].length; k++)
-                {
-                    System.out.print(array[i][j][k]);
-                    System.out.print('\t');
-                }
-                System.out.println();
-            }
-            System.out.println();
-        }
-    }
-
-    public static void write(String[][][] array, String file)
-    {
-        if (file == null)
-        {
-            print(array);
-            return;
-        }
-
-        try
-        {
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
-
-            for (int i = 0; i < array.length; i++)
-            {
-                for (int j = 0; j < array[i].length; j++)
-                {
-                    for (int k = 0; k < array[i][j].length; k++)
-                    {
-                        writer.write(array[i][j][k]);
-                        writer.write('\t');
-                    }
-                    writer.write('\n');
-                }
-                writer.write('\n');
-            }
-
-            writer.flush();
-            writer.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args)
-    {
-        final String usage = "usage: -mode gui|morana|morphparse|tokenized|depparse";
-
-        if (args.length < 2)
-        {
-            System.err.println(usage);
-            System.exit(1);
-        }
-
-        Map<String, String> params = new HashMap<String, String>();
-
-        for (int i = 0; i < args.length; i++)
-        {
-            try
-            {
-                params.put(args[i], args[i + 1]);
-                i++;
-            }
-            catch (Exception e)
-            {
-                System.err.println(usage);
-                System.exit(2);
-            }
-        }
-
-        if (params.containsKey("-mode"))
-        {
-            switch (params.get("-mode"))
-            {
-                case "gui":
-                    GUI.init();
-                    break;
-
-                case "morana":
-                {
-                    List<String> lines = readList(params.get("-input"));
-
-                    for (String line : lines)
-                        System.out.println(Morphology.getMorphologicalAnalyses(line));
-                    break;
-                }
-
-                case "morphparse":
-                {
-                    List<String> lines = readList(params.get("-input"));
-
-                    write(morphParse(lines), params.get("-output"));
-                    break;
-                }
-
-                case "tokenized":
-                {
-                    String[][] lines = readTokenized(params.get("-input"));
-
-                    write(morphParse(lines), params.get("-output"));
-                    break;
-                }
-
-                case "depparse":
-                {
-                    List<String> lines = readList(params.get("-input"));
-
-                    write(depParse(lines), params.get("-output"));
-                    break;
-                }
-
-                default:
-                    System.err.println(usage);
-                    System.exit(3);
-            }
-        }
-
-        // System.exit(0);
-    }
-}
-EOF
-mkdir -p magyarlanc && cat > magyarlanc/KRTools.java <<'EOF'
-package magyarlanc;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import magyarlanc.Morphology.MorAna;
-
-public class KRTools
-{
-    /**
-     * melléknévi igenevek
-     */
-    public static boolean isParticiple(String krAns)
-    {
-        int verbIndex = krAns.indexOf("/VERB"), adjIndex = krAns.indexOf("/ADJ");
-
-        return (verbIndex > -1 && adjIndex > -1 && adjIndex > verbIndex);
-    }
-
-    public static String getPostPLemma(String ans)
-    {
-        if (ans.startsWith("$én/NOUN<POSTP<")
-         || ans.startsWith("$te/NOUN<POSTP<")
-         || ans.startsWith("$ő/NOUN<POSTP<")
-         || ans.startsWith("$mi/NOUN<POSTP<")
-         || ans.startsWith("$ti/NOUN<POSTP<")
-         || ans.startsWith("$ők/NOUN<POSTP<"))
-        {
-            String post = null;
-
-            if (ans.startsWith("$én") || ans.startsWith("$te"))
-            {
-                post = ans.substring(15, ans.length() - 11).toLowerCase();
-            }
-            else if (ans.startsWith("$ők"))
-            {
-                post = ans.substring(15, ans.length() - 14).toLowerCase();
-            }
-            else if (ans.startsWith("$ő"))
-            {
-                post = ans.substring(14, ans.length() - 8).toLowerCase();
-            }
-            else if (ans.startsWith("$mi") || ans.startsWith("$ti"))
-            {
-                post = ans.substring(15, ans.length() - 17).toLowerCase();
-            }
-
-            if (ans.startsWith("$ő") && !ans.startsWith("$ők"))
-            {
-                ans = ans.substring(2);
-            }
-            else
-            {
-                ans = ans.substring(3);
-            }
-
-            return post;
-        }
-
-        if (ans.startsWith("$ez/NOUN<POSTP<") || ans.startsWith("$az/NOUN<POSTP<"))
-        {
-            String affix = ans.substring(15);
-            affix = affix.substring(0, affix.indexOf(">")).toLowerCase();
-
-            // alá, alatt, alól, által, elő, előb, ellen, elől, előtt, iránt, után (pl.: ezután)
-            if (ans.contains("(i)"))
-            {
-                if (affix.startsWith("a")
-                 || affix.startsWith("á")
-                 || affix.startsWith("e")
-                 || affix.startsWith("i")
-                 || affix.startsWith("u"))
-                    return ans.substring(1, 3) + affix + "i";
-
-                return ans.substring(1, 2) + affix + "i";
-            }
-
-            return ans.substring(1, 3) + affix;
-        }
-
-        return ans.substring(1, ans.indexOf("/"));
-    }
-
-    public static String convertNoun(String lemma, String kr)
-    {
-        /* névmás minden PERS-t tartalmazó NOUN */
-
-        if (kr.contains("PERS"))
-        {
-            StringBuilder msd = new StringBuilder("Pp--sn-----------");
-
-            /* személy */
-
-            if (kr.contains("<PERS<1>>"))   msd.setCharAt(2, '1');  // 1
-            if (kr.contains("<PERS<2>>"))   msd.setCharAt(2, '2');  // 2
-            if (kr.contains("<PERS>"))      msd.setCharAt(2, '3');  // 3
-
-            /* szám */
-
-            if (kr.contains("<PLUR>"))      msd.setCharAt(4, 'p');
-
-            /* eset */
-
-            // n nincs jelölve alapeset
-
-            if (kr.contains("<CAS<ACC>>"))  msd.setCharAt(5, 'a');  // a
-            if (kr.contains("<CAS<GEN>>"))  msd.setCharAt(5, 'g');  // g nincs jelölve
-            if (kr.contains("<CAS<DAT>>"))  msd.setCharAt(5, 'd');  // d
-            if (kr.contains("<CAS<INS>>"))  msd.setCharAt(5, 'i');  // i
-            if (kr.contains("<CAS<ILL>>"))  msd.setCharAt(5, 'x');  // x
-            if (kr.contains("<CAS<INE>>"))  msd.setCharAt(5, '2');  // 2
-            if (kr.contains("<CAS<ELA>>"))  msd.setCharAt(5, 'e');  // e
-            if (kr.contains("<CAS<ALL>>"))  msd.setCharAt(5, 't');  // t
-            if (kr.contains("<CAS<ADE>>"))  msd.setCharAt(5, '3');  // 3
-            if (kr.contains("<CAS<ABL>>"))  msd.setCharAt(5, 'b');  // b
-            if (kr.contains("<CAS<SBL>>"))  msd.setCharAt(5, 's');  // s
-            if (kr.contains("<CAS<SUE>>"))  msd.setCharAt(5, 'p');  // p
-            if (kr.contains("<CAS<DEL>>"))  msd.setCharAt(5, 'h');  // h
-            if (kr.contains("<CAS<TER>>"))  msd.setCharAt(5, '9');  // 9
-            if (kr.contains("[MANNER]"))    msd.setCharAt(5, 'w');  // w
-            if (kr.contains("<CAS<FOR>>"))  msd.setCharAt(5, 'f');  // f
-            if (kr.contains("<CAS<TEM>>"))  msd.setCharAt(5, 'm');  // m
-            if (kr.contains("<CAS<CAU>>"))  msd.setCharAt(5, 'c');  // c
-            if (kr.contains("[COM]"))       msd.setCharAt(5, 'q');  // q
-            if (kr.contains("<CAS<TRA>>"))  msd.setCharAt(5, 'y');  // y
-            if (kr.contains("[PERIOD1]"))   msd.setCharAt(5, 'u');  // u
-
-            return cleanMsd(msd.toString());
-        }
-
-        /* névmás minden POSTP-t tartalmazó NOUN */
-
-        if (kr.contains("POSTP"))
-        {
-            StringBuilder msd = new StringBuilder("Pp3-sn");
-
-            switch (lemma)
-            {
-                case "én": msd.setCharAt(2, '1'); break;
-                case "te": msd.setCharAt(2, '2'); break;
-                case "ő":  msd.setCharAt(2, '3'); break;
-                case "mi": msd.setCharAt(2, '1'); msd.setCharAt(4, 'p'); break;
-                case "ti": msd.setCharAt(2, '2'); msd.setCharAt(4, 'p'); break;
-                case "ők": msd.setCharAt(2, '3'); msd.setCharAt(4, 'p'); break;
-            }
-
-            return cleanMsd(msd.toString());
-        }
-
-        StringBuilder msd = new StringBuilder("Nn-sn" + "------");
-
-        /* egyes szám/többes szám NOUN<PLUR> NUON<PLUR<FAM>> */
-
-        if (kr.contains("NOUN<PLUR"))   msd.setCharAt(3, 'p');
-
-        /* eset */
-
-        // n nincs jelölve alapeset
-
-        if (kr.contains("<CAS<ACC>>"))  msd.setCharAt(4, 'a');  // a
-        if (kr.contains("<CAS<GEN>>"))  msd.setCharAt(4, 'g');  // g nincs jelolve
-        if (kr.contains("<CAS<DAT>>"))  msd.setCharAt(4, 'd');  // d
-        if (kr.contains("<CAS<INS>>"))  msd.setCharAt(4, 'i');  // i
-        if (kr.contains("<CAS<ILL>>"))  msd.setCharAt(4, 'x');  // x
-        if (kr.contains("<CAS<INE>>"))  msd.setCharAt(4, '2');  // 2
-        if (kr.contains("<CAS<ELA>>"))  msd.setCharAt(4, 'e');  // e
-        if (kr.contains("<CAS<ALL>>"))  msd.setCharAt(4, 't');  // t
-        if (kr.contains("<CAS<ADE>>"))  msd.setCharAt(4, '3');  // 3
-        if (kr.contains("<CAS<ABL>>"))  msd.setCharAt(4, 'b');  // b
-        if (kr.contains("<CAS<SBL>>"))  msd.setCharAt(4, 's');  // s
-        if (kr.contains("<CAS<SUE>>"))  msd.setCharAt(4, 'p');  // p
-        if (kr.contains("<CAS<DEL>>"))  msd.setCharAt(4, 'h');  // h
-        if (kr.contains("<CAS<TER>>"))  msd.setCharAt(4, '9');  // 9
-        if (kr.contains("<CAS<ESS>>"))  msd.setCharAt(4, 'w');  // w
-        if (kr.contains("<CAS<FOR>>"))  msd.setCharAt(4, 'f');  // f
-        if (kr.contains("<CAS<TEM>>"))  msd.setCharAt(4, 'm');  // m
-        if (kr.contains("<CAS<CAU>>"))  msd.setCharAt(4, 'c');  // c
-        if (kr.contains("[COM]"))       msd.setCharAt(4, 'q');  // q
-        if (kr.contains("<CAS<TRA>>"))  msd.setCharAt(4, 'y');  // y
-        if (kr.contains("[PERIOD1]"))   msd.setCharAt(4, 'u');  // u
-
-        /* birtokos száma/személye */
-
-        if (kr.contains("<POSS>"))          { msd.setCharAt(8, 's'); msd.setCharAt(9, '3'); }
-        if (kr.contains("<POSS<1>>"))       { msd.setCharAt(8, 's'); msd.setCharAt(9, '1'); }
-        if (kr.contains("<POSS<2>>"))       { msd.setCharAt(8, 's'); msd.setCharAt(9, '2'); }
-        if (kr.contains("<POSS<1><PLUR>>")) { msd.setCharAt(8, 'p'); msd.setCharAt(9, '1'); }
-        if (kr.contains("<POSS<2><PLUR>>")) { msd.setCharAt(8, 'p'); msd.setCharAt(9, '2'); }
-        if (kr.contains("<POSS<PLUR>>"))    { msd.setCharAt(8, 'p'); msd.setCharAt(9, '3'); }
-
-        /* birtok(olt) száma */
-
-        if (kr.contains("<ANP>"))       msd.setCharAt(10, 's');
-        if (kr.contains("<ANP<PLUR>>")) msd.setCharAt(10, 'p');
-
-        return cleanMsd(msd.toString());
-    }
-
-    public static String convertAdjective(String kr)
-    {
-        StringBuilder msd = new StringBuilder("Afp-sn-------");
-
-        /* típus (melléknév vagy melléknévi igenév) */
-
-        // f (melléknév) nincs jelölve, alapeset
-
-        if (kr.contains("[IMPERF_PART"))    msd.setCharAt(1, 'p');  // p (folyamatos melléknévi igenév)
-        if (kr.contains("[PERF_PART"))      msd.setCharAt(1, 's');  // s (befejezett melleknevi igenev)
-        if (kr.contains("[FUT_PART"))       msd.setCharAt(1, 'u');  // u (beallo melleknevi igenev)
-
-        /* fok */
-
-        // p nincs jelölve alapeset
-
-        if (kr.contains("[COMPAR"))         msd.setCharAt(2, 'c');  // c
-        if (kr.contains("[SUPERLAT"))       msd.setCharAt(2, 's');  // s
-        if (kr.contains("[SUPERSUPERLAT"))  msd.setCharAt(2, 'e');  // e
-
-        /* szám */
-
-        // s nincs jelölve alapeset
-
-        if (kr.contains("ADJ<PLUR>"))       msd.setCharAt(4, 'p');  // p
-
-        /* eset */
-
-        // n nincs jelölve alapeset
-
-        if (kr.contains("<CAS<ACC>>"))  msd.setCharAt(5, 'a');  // a
-        if (kr.contains("<CAS<GEN>>"))  msd.setCharAt(5, 'g');  // g nincs jelölve
-        if (kr.contains("<CAS<DAT>>"))  msd.setCharAt(5, 'd');  // d
-        if (kr.contains("<CAS<INS>>"))  msd.setCharAt(5, 'i');  // i
-        if (kr.contains("<CAS<ILL>>"))  msd.setCharAt(5, 'x');  // x
-        if (kr.contains("<CAS<INE>>"))  msd.setCharAt(5, '2');  // 2
-        if (kr.contains("<CAS<ELA>>"))  msd.setCharAt(5, 'e');  // e
-        if (kr.contains("<CAS<ALL>>"))  msd.setCharAt(5, 't');  // t
-        if (kr.contains("<CAS<ADE>>"))  msd.setCharAt(5, '3');  // 3
-        if (kr.contains("<CAS<ABL>>"))  msd.setCharAt(5, 'b');  // b
-        if (kr.contains("<CAS<SBL>>"))  msd.setCharAt(5, 's');  // s
-        if (kr.contains("<CAS<SUE>>"))  msd.setCharAt(5, 'p');  // p
-        if (kr.contains("<CAS<DEL>>"))  msd.setCharAt(5, 'h');  // h
-        if (kr.contains("<CAS<TER>>"))  msd.setCharAt(5, '9');  // 9
-        if (kr.contains("[MANNER]"))    msd.setCharAt(5, 'w');  // w
-        if (kr.contains("<CAS<FOR>>"))  msd.setCharAt(5, 'f');  // f
-        if (kr.contains("<CAS<TEM>>"))  msd.setCharAt(5, 'm');  // m
-        if (kr.contains("<CAS<CAU>>"))  msd.setCharAt(5, 'c');  // c
-        if (kr.contains("[COM]"))       msd.setCharAt(5, 'q');  // q
-        if (kr.contains("<CAS<TRA>>"))  msd.setCharAt(5, 'y');  // y
-        if (kr.contains("[PERIOD1]"))   msd.setCharAt(5, 'u');  // u
-
-        /* birtokos száma/személye */
-
-        if (kr.contains("<POSS>"))          { msd.setCharAt(10, 's'); msd.setCharAt(11, '3'); }
-        if (kr.contains("<POSS<1>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '1'); }
-        if (kr.contains("<POSS<2>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '2'); }
-        if (kr.contains("<POSS<1><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '1'); }
-        if (kr.contains("<POSS<2><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '2'); }
-        if (kr.contains("<POSS<PLUR>>"))    { msd.setCharAt(10, 'p'); msd.setCharAt(11, '3'); }
-
-        /* birtok(olt) száma */
-
-        if (kr.contains("<ANP>"))       msd.setCharAt(12, 's');
-        if (kr.contains("<ANP<PLUR>>")) msd.setCharAt(12, 'p');
-
-        return cleanMsd(msd.toString());
-    }
-
-    public static String convertVerb(String kr)
-    {
-        StringBuilder msd = new StringBuilder("Vmip3s---n-");
-
-        boolean modal = kr.contains("<MODAL>"), freq = kr.contains("[FREQ]"), caus = kr.contains("[CAUS]");
-
-        if ( modal && !freq && !caus)   msd.setCharAt(1, 'o');  // ható
-        if (!modal &&  freq && !caus)   msd.setCharAt(1, 'f');  // gyakorító
-        if (!modal && !freq &&  caus)   msd.setCharAt(1, 's');  // műveltető
-        if ( modal &&  freq && !caus)   msd.setCharAt(1, '1');  // gyakorító + ható
-        if ( modal && !freq &&  caus)   msd.setCharAt(1, '2');  // műveltető + ható
-        if (!modal &&  freq &&  caus)   msd.setCharAt(1, '3');  // műveltető + ható
-        if ( modal &&  freq &&  caus)   msd.setCharAt(1, '4');  // műveltető + gyakorító + ható
-
-        if (kr.contains("<COND>"))      msd.setCharAt(2, 'c');
-
-        if (kr.contains("<INF>"))
-        {
-            msd.setCharAt(2, 'n');
-            msd.setCharAt(9, '-');
-
-            if (!kr.contains("<PERS"))
-            {
-                msd.setCharAt(3, '-');
-                msd.setCharAt(4, '-');
-                msd.setCharAt(5, '-');
-            }
-        }
-
-        if (kr.contains("<SUBJUNC-IMP>"))   msd.setCharAt(2, 'm');
-        if (kr.contains("<PAST>"))          msd.setCharAt(3, 's');
-        if (kr.contains("<PERS<1>>"))       msd.setCharAt(4, '1');
-        if (kr.contains("<PERS<2>>"))       msd.setCharAt(4, '2');
-        if (kr.contains("<PLUR>"))          msd.setCharAt(5, 'p');
-        if (kr.contains("<DEF>"))           msd.setCharAt(9, 'y');
-
-        if (kr.contains("<PERS<1<OBJ<2>>>>"))
-        {
-            msd.setCharAt(4, '1');
-            msd.setCharAt(9, '2');
-        }
-
-        return cleanMsd(msd.toString());
-    }
-
-    public static String convertNumber(String kr, String ans)
-    {
-        StringBuilder msd = new StringBuilder("Mc-snl-------");
-
-        // c alapeset, nincs jelölve
-
-        if (kr.contains("[ORD"))        msd.setCharAt(1, 'o');  // o
-        if (kr.contains("[FRACT"))      msd.setCharAt(1, 'f');  // f
-
-        // l nincs a magyarban
-        // d nincs KRben
-        // s alapeset, nincs jelölve
-
-        if (kr.contains("NUM<PLUR>"))   msd.setCharAt(3, 'p');  // p
-
-        /* eset */
-
-        // n nincs jelölve alapeset
-
-        if (kr.contains("<CAS<ACC>>"))      msd.setCharAt(4, 'a');  // a
-        if (kr.contains("<CAS<GEN>>"))      msd.setCharAt(4, 'g');  // g nincs jelölve
-        if (kr.contains("<CAS<DAT>>"))      msd.setCharAt(4, 'd');  // d
-        if (kr.contains("<CAS<INS>>"))      msd.setCharAt(4, 'i');  // i
-        if (kr.contains("<CAS<ILL>>"))      msd.setCharAt(4, 'x');  // x
-        if (kr.contains("<CAS<INE>>"))      msd.setCharAt(4, '2');  // 2
-        if (kr.contains("<CAS<ELA>>"))      msd.setCharAt(4, 'e');  // e
-        if (kr.contains("<CAS<ALL>>"))      msd.setCharAt(4, 't');  // t
-        if (kr.contains("<CAS<ADE>>"))      msd.setCharAt(4, '3');  // 3
-        if (kr.contains("<CAS<ABL>>"))      msd.setCharAt(4, 'b');  // b
-        if (kr.contains("<CAS<SBL>>"))      msd.setCharAt(4, 's');  // s
-        if (kr.contains("<CAS<SUE>>"))      msd.setCharAt(4, 'p');  // p
-        if (kr.contains("<CAS<DEL>>"))      msd.setCharAt(4, 'h');  // h
-        if (kr.contains("<CAS<TER>>"))      msd.setCharAt(4, '9');  // 9
-        if (kr.contains("[MANNER]"))        msd.setCharAt(4, 'w');  // w
-        if (kr.contains("<CAS<FOR>>"))      msd.setCharAt(4, 'f');  // f
-        if (kr.contains("<CAS<TEM>>"))      msd.setCharAt(4, 'm');  // m
-        if (kr.contains("<CAS<CAU>>"))      msd.setCharAt(4, 'c');  // c
-        if (kr.contains("[COM]"))           msd.setCharAt(4, 'q');  // q
-        if (kr.contains("<CAS<TRA>>"))      msd.setCharAt(4, 'y');  // y
-        if (kr.contains("[PERIOD1]"))       msd.setCharAt(4, 'u');  // u
-        if (kr.contains("[MULTIPL-ITER]"))  msd.setCharAt(4, '6');  // 6
-
-        /* birtokos száma/személye */
-
-        if (ans.contains("<POSS>"))          { msd.setCharAt(10, 's'); msd.setCharAt(11, '3'); }
-        if (ans.contains("<POSS<1>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '1'); }
-        if (ans.contains("<POSS<2>>"))       { msd.setCharAt(10, 's'); msd.setCharAt(11, '2'); }
-        if (ans.contains("<POSS<1><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '1'); }
-        if (ans.contains("<POSS<2><PLUR>>")) { msd.setCharAt(10, 'p'); msd.setCharAt(11, '2'); }
-        if (ans.contains("<POSS<PLUR>>"))    { msd.setCharAt(10, 'p'); msd.setCharAt(11, '3'); }
-
-        /* birtok(olt) száma */
-
-        if (ans.contains("<ANP>"))          msd.setCharAt(12, 's');
-        if (ans.contains("<ANP<PLUR>>"))    msd.setCharAt(12, 'p');
-
-        return cleanMsd(msd.toString());
-    }
-
-    public static String convertAdverb(String kr)
-    {
-        StringBuilder msd = new StringBuilder("Rx----");
-
-        if (kr.contains("[COMPAR]"))        msd.setCharAt(2, 'c');  // c
-        if (kr.contains("[SUPERLAT]"))      msd.setCharAt(2, 's');  // s
-        if (kr.contains("[SUPERSUPERLAT]")) msd.setCharAt(2, 'e');  // e
-
-        return cleanMsd(msd.toString());
-    }
-
-    public static Set<MorAna> getMSD(String krAns)
-    {
-        Set<MorAna> ans = new TreeSet<MorAna>();
-
-        String krRoot = KRTools.getRoot(krAns);
-        String lemma = krRoot.substring(1, krRoot.indexOf("/"));
-
-        // $forog(-.)/VERB[CAUS](at)/VERB[FREQ](gat)/VERB<PAST><PERS<1>>
-
-        String stem;
-
-        if (krAns.contains("(") && krAns.indexOf("(") < krAns.indexOf("/"))
-        {
-            stem = krAns.substring(1, krAns.indexOf("("));
-        }
-        else if (krAns.contains("+"))
-        {
-            stem = lemma;
-        }
-        else
-        {
-            stem = krAns.substring(1, krAns.indexOf("/"));
-        }
-
-        String krCode = krRoot.substring(krRoot.indexOf("/") + 1);
-
-        if (krCode.startsWith("NOUN"))
-        {
-            String msd = convertNoun(lemma, krCode);
-
-            // pronoun
-            if (msd.startsWith("P"))
-            {
-                lemma = getPostPLemma(krAns);
-
-                // dative
-                if (msd.charAt(5) == 'd')
-                {
-                    ans.add(new MorAna(lemma, msd.replace('d', 'g')));
-                }
-            }
-
-            ans.add(new MorAna(lemma, msd));
-
-            // dative
-            if (msd.charAt(4) == 'd')
-            {
-                ans.add(new MorAna(lemma, msd.replace('d', 'g')));
-            }
-        }
-
-        if (krCode.startsWith("ADJ"))
-        {
-            String msd;
-
-            // melléknévi igenév
-            if (isParticiple(krAns))
-            {
-                msd = convertAdjective(krAns);
-                ans.add(new MorAna(lemma, msd));
-            }
-            else
-            {
-                msd = convertAdjective(krCode);
-                ans.add(new MorAna(lemma, msd));
-            }
-
-            // dative
-            if (msd.charAt(5) == 'd')
-            {
-                ans.add(new MorAna(lemma, msd.replace('d', 'g')));
-            }
-        }
-
-        if (krCode.startsWith("VERB"))
-        {
-            // határozói igenév
-            if (krCode.contains("VERB[PERF_PART]") || krCode.contains("VERB[PART]"))
-            {
-                ans.add(new MorAna(lemma, "Rv"));
-            }
-            else if (krAns.contains("[FREQ]") || krAns.contains("[CAUS]") || krAns.contains("<MODAL>"))
-            {
-                ans.add(new MorAna(stem, convertVerb(krAns)));
-            }
-            else
-            {
-                ans.add(new MorAna(lemma, convertVerb(krCode)));
-            }
-        }
-
-        if (krCode.startsWith("NUM"))
-        {
-            String msd = convertNumber(krCode, krAns);
-            ans.add(new MorAna(lemma, msd));
-
-            // dative
-            if (msd.charAt(4) == 'd')
-                ans.add(new MorAna(lemma, msd.replace('d', 'g')));
-        }
-
-        if (krCode.startsWith("ART"))     ans.add(new MorAna(lemma, "T"));  // definite/indefinte
-        if (krCode.startsWith("ADV"))     ans.add(new MorAna(lemma, convertAdverb(krCode)));
-        if (krCode.startsWith("POSTP"))   ans.add(new MorAna(lemma, "St"));
-        if (krCode.startsWith("CONJ"))    ans.add(new MorAna(lemma, "Ccsp"));
-        if (krCode.startsWith("UTT-INT")) ans.add(new MorAna(lemma, "I"));
-        if (krCode.startsWith("PREV"))    ans.add(new MorAna(lemma, "Rp"));
-        if (krCode.startsWith("DET"))     ans.add(new MorAna(lemma, "Pd3-sn"));
-        if (krCode.startsWith("ONO"))     ans.add(new MorAna(lemma, "X"));
-        if (krCode.startsWith("E"))       ans.add(new MorAna(lemma, "Rq-y"));
-        if (krCode.startsWith("ABBR"))    ans.add(new MorAna(lemma, "Y"));
-        if (krCode.startsWith("TYPO"))    ans.add(new MorAna(lemma, "Z"));
-
-        if (ans.isEmpty())
-            ans.add(new MorAna(lemma, "X"));
-
-        return ans;
-    }
-
-    public static String cleanMsd(String msd)
-    {
-        StringBuilder sb = new StringBuilder(msd.trim());
-
-        for (int i = sb.length() - 1; sb.charAt(i) == '-'; --i)
-        {
-            sb.deleteCharAt(i);
-        }
-
-        return sb.toString();
-    }
-
-    public static enum KRPOS
-    {
-        VERB, NOUN, ADJ, NUM, ADV, PREV, ART, POSTP, UTT_INT, DET, CONJ, ONO, PREP, X;
-    }
-
-    private static String findPattern(String text, String pattern, int group)
-    {
-        Matcher m = Pattern.compile(pattern).matcher(text);
-        m.find();
-
-        return m.group(group);
-    }
-
-    private static String findPattern(String text, String pattern)
-    {
-        return findPattern(text, pattern, 1);
-    }
-
-    private static List<String> findPatterns(String text, String pattern)
-    {
-        List<String> found = new LinkedList<String>();
-
-        for (Matcher m = Pattern.compile(pattern).matcher(text); m.find(); )
-        {
-            found.add(m.group(1));
-        }
-
-        return found;
-    }
-
-    public static String getRoot(String morph)
-    {
-        // több
-        if (morph.startsWith("$sok/NUM[COMPAR]/NUM<CAS<"))
-            return "$több/NUM<CAS<ACC>>";
-
-        // legtöbb
-        if (morph.startsWith("$sok/NUM[SUPERLAT]/NUM<CAS<"))
-            return "$legtöbb/NUM<CAS<ACC>>";
-
-        // legeslegtöbb
-        if (morph.startsWith("$sok/NUM[SUPER-SUPERLAT]/NUM<CAS<"))
-            return "$legeslegtöbb/NUM<CAS<ACC>>";
-
-        String root = null;
-
-        if (!morph.contains("/"))
-        {
-            return morph;
-        }
-        else
-        {
-            String igekoto = "";
-
-            // igekötő
-            if (morph.contains("/PREV+"))
-            {
-                igekoto = morph.split("/PREV\\+")[0];
-                morph = morph.split("/PREV\\+")[1];
-            }
-
-            String[] tovek = preProcess(morph.split("/"));
-
-            String vegsoto = findPatterns(tovek[0], "^([^\\(\\/]*)").get(0);
-            boolean ikes = false;
-
-            if (tovek.length > 2)
-            {
-                for (int i = 0; i < tovek.length - 1; i++)
-                {
-                    if (tovek[i].matches(".*\\(.*\\).*"))
-                    {
-                        int backValue = 0;
-
-                        for (String feladat : findPatterns(tovek[i], "\\((.*?)\\)"))
-                        {
-                            if (feladat.matches("^\\-\\d.*"))
-                            {
-                                // -1 -2ik
-                                backValue = Integer.parseInt(findPattern(feladat, "^\\-(\\d)"));
-                                vegsoto = vegsoto.substring(0, vegsoto.length() - backValue);
-                                ikes = false;
-                                if (feladat.matches(".*ik$"))
-                                {
-                                    ikes = true;
-                                }
-                                // feladat.matches("^\\-\\.[\\d]"
-                            }
-                            else if (feladat.matches("^\\-\\."))
-                            {
-                                // -.
-
-                                String firsPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 1);
-                                String secondPart = findPattern(vegsoto, "^(.*?).([bcdfghjklmnpqrstvwxyz!]*)$", 2);
-                                vegsoto = firsPart + "!" + secondPart;
-                            }
-                            else if (feladat.matches("^\\.(.*)"))
-                            {
-                                // .a .e .i .o .� .u .�
-                                String csere = findPattern(feladat, "^\\.(.*)", 1);
-                                if (vegsoto.contains("!"))
-                                {
-                                    vegsoto = vegsoto.replace("!", csere);
-                                }
-                                else
-                                {
-                                    // TODO ez mikor van?
-                                }
-                                ikes = false;
-                            }
-                            else if (feladat.matches("^\\%.*"))
-                            {
-                                // TODO nem találtam ilyet
-                            }
-                            else if (feladat.matches("^[^\\.\\-\\%].*"))
-                            {
-                                // a, abb, ad, al, an, ank�nt, anta, askodik, astul, ast�l, at,
-                                // az, azik, bb, beli, b�li, e, ebb, ed, eget, el, en, enk�nt,
-                                // ente, eskedik, est�l, est�l, et, ett, ez, ezik, gat, get,
-                                // hetn�k, i, kedik, k�pp, k�ppen, lag, leg, n, nk�nt, nta, nte,
-                                // nyi, od, odik, ogat, ol, on, onk�nt, onta, oskodik, ostul,
-                                // ost�l, ott, ov, oz, ozik, sodik, st�l, st�l, st�l, sul, szer,
-                                // szerez, szeri, szerte, szor, szori, szoroz, szorta, sz�r,
-                                // sz�ri, sz�rte, sz�r�z, s�t, s�dik, tat, tet, tt, ul, v, va,
-                                // ve, v�n, v�n, z, zik, �, �, �t, �, �dik, �dik, �get, �l,
-                                // �nk�nt, �sk�dik, �st�l, �st�l, �tt, �v, �z, �zik, �l, �dik
-                                vegsoto = vegsoto + findPattern(feladat, "^([^\\.\\-\\%].*)", 1);
-                                ikes = false;
-                            }
-                            else
-                            {
-                                // System.err.println("HIBA: " + feladat);
-                            }
-                        }
-                    }
-                }
-            }
-
-            String ikveg = ikes ? "ik" : "";
-            root = igekoto + vegsoto + ikveg + "/" + tovek[tovek.length - 1];
-
-            for (String rep : findPatterns(root, "(\\([^\\)]*\\))"))
-            {
-                root = root.replace(rep, "");
-            }
-        }
-
-        root = root.replace("!", "");
-        root = root.replace("@", "");
-        root = root.replace("$", "");
-
-        return "$" + root;
-    }
-
-    private static String[] preProcess(String[] tovek)
-    {
-        for (int i = 0; i < tovek.length; i++)
-        {
-            // gyorsan -> gyors
-            // hallgatólag -> hallgató
-            if (tovek[i].contains("ADJ[MANNER]"))
-            {
-                tovek[tovek.length - 1] = tovek[i];
-            }
-
-            // mindenképp -> minden
-            // mindenképpen -> minden
-            if (tovek[i].contains("NOUN[ESS_FOR]"))
-            {
-                tovek[tovek.length - 1] = tovek[i];
-            }
-
-            // apástul -> apa
-            if (tovek[i].contains("NOUN") && tovek[i].contains("[COM]"))
-            {
-                tovek[tovek.length - 1] = tovek[i];
-            }
-
-            // fejenként -> fej
-            if (tovek[i].contains("NOUN[PERIOD1]"))
-            {
-                tovek[tovek.length - 1] = tovek[i];
-            }
-
-            /*
-             * számnevek, amik KRben /ADV
-             */
-            if (tovek[i].contains("NUM") && tovek[i].contains("["))
-            {
-                tovek[tovek.length - 1] = tovek[i];
-            }
-
-            // rosszabb -> rossz
-            // legrosszabb -> rossz
-            // legeslegrosszabb -> rossz
-            // rosszabbik -> rossz
-            // legrosszabbik -> rossz
-            // legeslegrosszabbik -> rossz
-
-            if (tovek[i].contains("ADJ"))
-            {
-                if (tovek[i].contains("[COMPAR") || tovek[i].contains("[SUPERLAT") || tovek[i].contains("[SUPERSUPERLAT"))
-                {
-                    tovek[tovek.length - 1] = tovek[i];
-                }
-            }
-
-            // futva, futván -> fut
-            if (tovek[i].contains("VERB[PART](va)")
-             || tovek[i].contains("VERB[PART](ve)")
-             || tovek[i].contains("VERB[PERF_PART](ván)")
-             || tovek[i].contains("VERB[PERF_PART](vén)"))
-            {
-                tovek[tovek.length - 1] = tovek[i];
-            }
-        }
-
-        return tovek;
-    }
-
-    /*
-     * "$fut/VERB[GERUND](�s)/NOUN<PLUR><POSS<1>><CAS<INS>>"
-     */
-    public static KRPOS getPOS(String code)
-    {
-        int end1 = Integer.MAX_VALUE;
-        int end2 = Integer.MAX_VALUE;
-
-        int end = 0;
-
-        if (code.contains("@"))
-        {
-            end = code.lastIndexOf("@");
-        }
-
-        int start = code.lastIndexOf("/");
-
-        if (code.indexOf("<", start) > 0)
-        {
-            end1 = (code.indexOf("<", start));
-        }
-
-        if (code.indexOf("[", start) > 0)
-        {
-            end2 = (code.indexOf("[", start));
-        }
-
-        end = (end1 < end2) ? end1 : end2;
-
-        if (end > code.length())
-        {
-            end = code.length();
-        }
-
-        switch (code.substring(start, end))
-        {
-            case "VERB":    return KRPOS.VERB;
-            case "NOUN":    return KRPOS.NOUN;
-        }
-
-        switch (code.substring(start + 1, end))
-        {
-            case "ADJ":     return KRPOS.ADJ;
-            case "NUM":     return KRPOS.NUM;
-            case "ADV":     return KRPOS.ADV;
-            case "PREV":    return KRPOS.PREV;
-            case "ART":     return KRPOS.ART;
-            case "POSTP":   return KRPOS.POSTP;
-            case "UTT-INT": return KRPOS.UTT_INT;
-            case "DET":     return KRPOS.DET;
-            case "CONJ":    return KRPOS.CONJ;
-            case "ONO":     return KRPOS.ONO;
-            case "PREP":    return KRPOS.PREP;
-        }
-
-        return KRPOS.X;
-    }
-
-    public static String[] getAbsoluteLemma(String form)
-    {
-        List<String> lemma = new ArrayList<String>();
-
-        for (String s : Magyarlanc.getRFSA().analyse(form))
-        {
-            // igekötők leválasztása
-            s = s.substring(s.indexOf("$") + 1);
-
-            if (s.contains("(") && s.indexOf("(") < s.indexOf("/"))
-                lemma.add(s.substring(0, s.indexOf("(")));
-            else
-                lemma.add(s.substring(0, s.indexOf("/")));
-        }
-
-        return lemma.toArray(new String[lemma.size()]);
-    }
-
-    public static void main(String args[])
-    {
-        System.out.println(Magyarlanc.getRFSA().analyse("utánam"));
-
-        System.out.println(getMSD("$én/NOUN<POSTP<UTÁN>><PERS<1>>"));
-
-        // System.out.println(getRoot("$fut/VERB[GERUND](�s)/NOUN<PLUR><POSS<1>><CAS<INS>>"));
-
-        System.out.println(getPOS("$árapály/NOUN"));
     }
 }
 EOF
@@ -4376,7 +4601,7 @@ public class MSDTools
             return "_";
 
         // relevant punctation
-        if (Magyarlanc.getPunctations().contains(lemma))
+        if (Morphology.getPunctations().contains(lemma))
             return "_";
 
         // non relevant punctation
@@ -4598,493 +4823,9 @@ public class MSDTools
     }
 }
 EOF
-mkdir -p magyarlanc && cat > magyarlanc/HunSplitter.java <<'EOF'
-package magyarlanc;
-
-import java.util.List;
-
-import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.DefaultSentenceSplitter;
-import edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter.SentenceSplitter;
-import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.DefaultWordTokenizer;
-import edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer.WordTokenizer;
-
-public class HunSplitter
-{
-    public static final char[] HYPHENS = new char[] { '-', '­', '–', '—', '―', '−', '─' };
-    public static final char DEFAULT_HYPHEN = '-';
-
-    public static final char[] QUOTES = new char[] { '"', '\'', '`', '´', '‘', '’', '“', '”', '„' };
-    public static final char DEFAULT_QUOTE = '"';
-
-    public static final char[] FORCE_TOKEN_SEPARATORS = new char[] { ',', '.', ':' };
-
-    private static SentenceSplitter splitter = new DefaultSentenceSplitter();
-    private static WordTokenizer tokenizer = new DefaultWordTokenizer();
-
-    public static List<String> tokenize(String sentence)
-    {
-        sentence = cleanString(sentence);
-
-        List<String> splitted = tokenizer.extractWords(sentence);
-
-        splitted = reSplit2Sentence(splitted);
-        splitted = reTokenizeSentence(splitted);
-
-        return splitted;
-    }
-
-    public static String[] tokenizeToArray(String sentence)
-    {
-        List<String> tokenized = tokenize(sentence);
-
-        return tokenized.toArray(new String[tokenized.size()]);
-    }
-
-    public static List<List<String>> split(String text)
-    {
-        text = cleanString(text);
-
-        // text = normalizeQuotes(text);
-        // text = normalizeHyphans(text);
-
-        // text = addSpaces(text);
-
-        List<List<String>> splitted = splitter.extractSentences(text, tokenizer);
-
-        splitted = reSplit1(splitted, text);
-        splitted = reSplit2(splitted);
-        splitted = reTokenize(splitted);
-
-        return splitted;
-    }
-
-    public static final int[] getSentenceOffsets(String text)
-    {
-        return getSentenceOffsets(text, null);
-    }
-
-    public static int[] getSentenceOffsets(String text, List<List<String>> splitted)
-    {
-        if (splitted == null)
-            splitted = split(text);
-
-        return splitter.findSentenceOffsets(text, splitted);
-    }
-
-    public static final int[] getTokenOffsets(String text)
-    {
-        return getTokenOffsets(text, null);
-    }
-
-    public static int[] getTokenOffsets(String text, List<List<String>> splitted)
-    {
-        if (splitted == null)
-            splitted = split(text);
-
-        int[] sentenceOffsets = getSentenceOffsets(text, splitted);
-
-        int counter = 0;
-
-        for (int i = 0; i < splitted.size(); ++i)
-        {
-            for (int j = 0; j < splitted.get(i).size(); ++j)
-            {
-                ++counter;
-            }
-        }
-
-        int[] ret = new int[counter + 1];
-
-        counter = 0;
-
-        for (int i = 0; i < splitted.size(); ++i)
-        {
-            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
-            int[] tokenOffsets = tokenizer.findWordOffsets(sentence, splitted.get(i));
-
-            for (int j = 0; j < splitted.get(i).size(); ++j)
-            {
-                ret[counter] = sentenceOffsets[i] + tokenOffsets[j];
-                ++counter;
-            }
-        }
-
-        ret[counter] = text.length();
-
-        return ret;
-    }
-
-    /*
-     * Separate ' 'm 's 'd 're 've 'll n't endings into apart tokens.
-     */
-    private static List<String> reTokenizeSentence(List<String> sentence)
-    {
-        for (int i = 0; i < sentence.size(); ++i)
-        {
-            String token = sentence.get(i);
-            String tlc = token.toLowerCase();
-
-            if (tlc.endsWith("'") && tlc.length() > 1)
-            {
-                sentence.set(i, token.substring(0, token.length() - 1));
-                sentence.add(i + 1, token.substring(token.length() - 1));
-                ++i;
-            }
-            if ((tlc.endsWith("'m") || tlc.endsWith("'s") || tlc.endsWith("'d")) && tlc.length() > 2)
-            {
-                sentence.set(i, token.substring(0, token.length() - 2));
-                sentence.add(i + 1, token.substring(token.length() - 2));
-                ++i;
-            }
-            if ((tlc.endsWith("'re") || tlc.endsWith("'ve") || tlc.endsWith("'ll") || tlc.endsWith("n't")) && tlc.length() > 3)
-            {
-                sentence.set(i, token.substring(0, token.length() - 3));
-                sentence.add(i + 1, token.substring(token.length() - 3));
-                ++i;
-            }
-        }
-
-        return sentence;
-    }
-
-    private static List<List<String>> reTokenize(List<List<String>> sentences)
-    {
-        for (List<String> sentence : sentences)
-        {
-            reSplit2Sentence(sentence);
-        }
-
-        return sentences;
-    }
-
-    private static List<List<String>> reSplit1(List<List<String>> sentences, String text)
-    {
-        int tokenNumber = 0;
-
-        int[] tokenOffsets = getTokenOffsets(text, sentences);
-
-        for (int i = 0; i < sentences.size(); i++)
-        {
-            List<String> sentence = sentences.get(i);
-
-            // nem lehet üres mondat
-            if (sentence.size() > 0)
-            {
-                /*
-                 * 1 betűs rövidítés pl.: George W. Bush
-                 */
-
-                // utolsó token pl. (W.)
-                String lastToken = sentence.get(sentence.size() - 1);
-                // nem lehet üres token
-                if (lastToken.length() > 0)
-                {
-                    // ha az utolsó karkter '.'
-                    if (lastToken.charAt(lastToken.length() - 1) == '.')
-                    {
-                        // ha a token hossza 2 (W.)
-                        if (lastToken.length() == 2)
-                        {
-                            // ha betű nagybetű ('W.', de 'i.' nem)
-                            if (Character.isUpperCase(lastToken.charAt(lastToken.length() - 2)))
-                            {
-                                // ha nem az utolsó mondat
-                                if (sentences.size() > i + 1)
-                                {
-                                    sentences.get(i).addAll(sentences.get(i + 1));
-                                    sentences.remove(i + 1);
-                                    // ha nem az első mondat
-                                    if (i > -1)
-                                    {
-                                        --i;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    /*
-                     * 2 betűs pl.: Sz.
-                     */
-
-                    if (lastToken.length() == 3)
-                    {
-                        // az első betű nagybetű (Sz. de 'az.' nem jó)
-                        if (Character.isUpperCase(lastToken.charAt(lastToken.length() - 3)))
-                        {
-                            // ha nem az utolsó mondat
-                            if (sentences.size() > i + 1)
-                            {
-                                sentences.get(i).addAll(sentences.get(i + 1));
-                                sentences.remove(i + 1);
-                                // ha nem az első mondat
-                                if (i > -1)
-                                {
-                                    i--;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            tokenNumber += sentence.size();
-            if (tokenNumber + 1 < tokenOffsets.length)
-            {
-                if (tokenOffsets[tokenNumber] + 1 == tokenOffsets[tokenNumber + 1])
-                {
-                    if ((sentences.size() > i + 1 && (i > -1)))
-                    {
-                        sentences.get(i).addAll(sentences.get(i + 1));
-                        sentences.remove(i + 1);
-                        // ha nem az első mondat
-                        if (i > 0)
-                        {
-                            i--;
-                        }
-                    }
-                }
-            }
-
-            if ((i < sentences.size() - 1) && (i > 0))
-            {
-                String firstToken = sentences.get(i + 1).get(0);
-
-                if (Magyarlanc.getHunAbbrev().contains(firstToken.toLowerCase()))
-                {
-                    if (sentences.size() > i + 1)
-                    {
-                        sentences.get(i).addAll(sentences.get(i + 1));
-                        sentences.remove(i + 1);
-                        if (i > 0)
-                        {
-                            i--;
-                        }
-                    }
-                }
-            }
-        }
-
-        return sentences;
-    }
-
-    private static List<List<String>> reSplit2(List<List<String>> sentences)
-    {
-        for (List<String> sentence : sentences)
-        {
-            reSplit2Sentence(sentence);
-        }
-
-        return sentences;
-    }
-
-    private static List<String> reSplit2Sentence(List<String> sentence)
-    {
-        // nem lehet üres mondat
-        if (sentence.size() > 0)
-        {
-            /*
-             * mondtavégi írásjelek külön tokenek legyenek (.?!:;)
-             */
-            // utolsó token pl.: '1999.'
-            String lastToken = sentence.get(sentence.size() - 1);
-            // ha hosszabb mint egy karakter '9.'
-            if (lastToken.length() > 1)
-            {
-                // utolsó karakter
-                char lastChar = lastToken.charAt(lastToken.length() - 1);
-                // írásjelre végződik
-                if (!Character.isLetterOrDigit(lastChar))
-                {
-                    // írásjel levágása
-                    lastToken = lastToken.substring(0, lastToken.length() - 1);
-                    // utolsó token törlése
-                    sentence.remove(sentence.size() - 1);
-                    // új utolsó előtti token hozzáadása '1999'
-                    sentence.add(sentence.size(), lastToken);
-                    // új utolsó karaktertoken hozzáadása
-                    sentence.add(String.valueOf(lastChar));
-                }
-            }
-        }
-
-        return sentence;
-    }
-
-    public static String[][] splitToArray(String text)
-    {
-        List<List<String>> splitted = split(text);
-        String[][] sentences = new String[splitted.size()][];
-
-        for (int i = 0; i < sentences.length; ++i)
-        {
-            sentences[i] = splitted.get(i).toArray(new String[splitted.get(i).size()]);
-        }
-
-        return sentences;
-    }
-
-    /**
-     * Normalizes the quote sings. Replace them to the regular " sign.
-     *
-     * @param text
-     *          raw text
-     * @return text wiht only regular " quote sings
-     */
-    private static String normalizeQuotes(String text)
-    {
-        for (char c : HunSplitter.QUOTES)
-        {
-            text = text.replaceAll(String.valueOf(c), String.valueOf(HunSplitter.DEFAULT_QUOTE));
-        }
-
-        return text;
-    }
-
-    /**
-     * Normalizes the hyphen sings. Replace them to the regular - sign.
-     *
-     * @param text
-     *          raw text
-     * @return text wiht only regular - hyphen sings
-     */
-    private static String normalizeHyphans(String text)
-    {
-        for (char c : HunSplitter.HYPHENS)
-        {
-            text = text.replaceAll(String.valueOf(c), String.valueOf(HunSplitter.DEFAULT_HYPHEN));
-        }
-
-        return text;
-    }
-
-    /**
-     * Add the missing space characters via the defined FORCE_TOKEN_SEPARATORS
-     *
-     * @param text
-     *          raw text
-     * @return text with added missing space cahracters
-     */
-    private static String addSpaces(String text)
-    {
-        StringBuilder sb = new StringBuilder(String.valueOf(text));
-
-        for (char c : HunSplitter.FORCE_TOKEN_SEPARATORS)
-        {
-            int index = sb.indexOf(String.valueOf(c));
-
-            while (index > 1 && index < sb.length() - 1)
-            {
-                if (sb.charAt(index - 1) != ' ')
-                {
-                    sb.insert(index + 1, ' ');
-                }
-                index = sb.indexOf(String.valueOf(c), index + 1);
-            }
-        }
-
-        return sb.toString();
-    }
-
-    public static String cleanString(String text)
-    {
-        StringBuilder sb = new StringBuilder(text);
-
-        for (int i = 0; i < sb.length(); ++i)
-        {
-            switch ((int) sb.charAt(i))
-            {
-                case 11: case 12:
-                case 28: case 29: case 30: case 31:
-                case 5760:
-                case 6158:
-                case 8192: case 8193: case 8194: case 8195: case 8196: case 8197: case 8198:
-                case 8200: case 8201: case 8202: case 8203: case 8232: case 8233: case 8287:
-                case 12288:
-                case 65547: case 65564: case 65565: case 65566: case 65567:
-                    sb.setCharAt(i, ' '); break;
-
-                case 733: sb.setCharAt(i, '"'); break;
-                case 768:
-                case 769: sb.setCharAt(i, '\''); break;
-                case 771: sb.setCharAt(i, '"'); break;
-                case 803: sb.setCharAt(i, '.'); break;
-                case 900: sb.setCharAt(i, '\''); break;
-                case 1475: sb.setCharAt(i, ':'); break;
-                case 1523: sb.setCharAt(i, '\''); break;
-                case 1524: sb.setCharAt(i, '"'); break;
-                case 1614: sb.setCharAt(i, '\''); break;
-                case 1643: sb.setCharAt(i, ','); break;
-                case 1648: sb.setCharAt(i, '\''); break;
-                case 1764: sb.setCharAt(i, '"'); break;
-                case 8211:
-                case 8212: sb.setCharAt(i, '-'); break;
-                case 8216:
-                case 8217:
-                case 8218:
-                case 8219: sb.setCharAt(i, '\''); break;
-                case 8220:
-                case 8221:
-                case 8243: sb.setCharAt(i, '"'); break;
-                case 8722: sb.setCharAt(i, '-'); break;
-                case 61448:
-                case 61449: sb.setCharAt(i, '\''); break;
-                case 61472:
-                case 61474:
-                case 61475:
-                case 61476:
-                case 61477:
-                case 61480:
-                case 61481:
-                case 61482:
-                case 61483:
-                case 61484: sb.setCharAt(i, '.'); break;
-                case 61485:
-                case 61486:
-                case 61487:
-                case 61488: sb.setCharAt(i, '"'); break;
-                case 65533: sb.setCharAt(i, '-'); break;
-            }
-        }
-
-        return sb.toString();
-    }
-
-    public static void main(String[] args)
-    {
-        String text = "A 2014-es választások előtt túl jó lehetőséget adna az ellenzék kezébe a dohányboltok profitját nyirbáló kezdeményezés.";
-
-        for (List<String> sentence : HunSplitter.split(text))
-        {
-            for (String token : sentence)
-            {
-                System.out.println(token);
-            }
-            System.out.println();
-        }
-
-        int[] sentenceOffsets = HunSplitter.getSentenceOffsets(text);
-
-        for (int i = 0; i < sentenceOffsets.length - 1; ++i)
-        {
-            String sentence = text.substring(sentenceOffsets[i], sentenceOffsets[i + 1]);
-
-            System.out.println(sentence);
-
-            int[] tokenOffsets = HunSplitter.getTokenOffsets(sentence);
-            for (int j = 0; j < tokenOffsets.length - 1; ++j)
-            {
-                String token = sentence.substring(tokenOffsets[j], tokenOffsets[j + 1]);
-                System.out.println(token);
-            }
-        }
-    }
-}
-EOF
 mkdir -p magyarlanc && cat > magyarlanc/RFSA.java <<'EOF'
 package magyarlanc;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -5092,85 +4833,45 @@ import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
+
+import data.Data;
 
 public class RFSA
 {
-    public static class Pair<A, B>
+    private static RFSA rfsa;
+
+    public static List<String> analyse(String word)
     {
-        protected A a;
-        protected B b;
-
-        public Pair(A a, B b)
+        if (rfsa == null)
         {
-            this.a = a;
-            this.b = b;
-        }
-
-        public A getA()
-        {
-            return a;
-        }
-
-        public B getB()
-        {
-            return b;
-        }
-
-        private static boolean myEq(Object o1, Object o2)
-        {
-            if (o1 == null)
-                return (o2 == null);
-
-            return o1.equals(o2);
-        }
-
-        public boolean equals(Object o)
-        {
-            if (o instanceof Pair)
+            try
             {
-                Pair p = (Pair) o;
-                return myEq(a, p.a) && myEq(b, p.b);
+                rfsa = read(Data.class.getResourceAsStream("rfsa.txt"));
             }
-
-            return false;
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
         }
 
-        private static int myHash(Object o)
-        {
-            return (o != null) ? o.hashCode() : 0;
-        }
+        List<String> ans = new ArrayList<String>();
 
-        public int hashCode()
-        {
-            return 31 * myHash(a) + myHash(b);
-        }
+        rfsa.analyse(rfsa.startingState, word, 0, "", ans);
 
-        public String toString()
-        {
-            return "(" + a + "; " + b + ")";
-        }
+        return ans;
     }
 
-    protected int stateCount, edgeCount, startingState;
+    private int startingState, stateCount, edgeCount;
 
-    protected boolean[] ab;
+    private boolean[] accepts;
 
-    protected int[] indices;
-    protected int[] targets;
+    private char[] chars;
+    private String[] symbols;
+    private int[] targets;
 
-    protected String[] symbols; // input char + output
-
-    protected char[] charsymbols;
-
-    // where we are in states, cf. addEdge
-    protected int a;
-
-    // where we are in targets
-    protected int at;
+    private int[] indices;
 
     public RFSA(int startingState, int stateCount, int edgeCount)
     {
@@ -5178,271 +4879,338 @@ public class RFSA
         this.stateCount = stateCount;
         this.edgeCount = edgeCount;
 
-        ab = new boolean[stateCount];
+        accepts = new boolean[stateCount];
 
-        targets = new int[edgeCount];
+        chars = new char[edgeCount];
         symbols = new String[edgeCount];
-        charsymbols = new char[edgeCount];
+        targets = new int[edgeCount];
 
         indices = new int[stateCount + 1];
-
         Arrays.fill(indices, -1);
         indices[stateCount] = edgeCount;
     }
 
-    // assume sorted!
-    public List<String> analyse(String s)
-    {
-        return analyse(s.toLowerCase().toCharArray());
-    }
-
-    public List<String> analyse(char[] ac)
-    {
-        List<String> ans = new ArrayList<String>();
-
-        analyse(startingState, ac, 0, "", ans);
-
-        return ans;
-    }
-
     // binary search
-    public void analyse(int q, char[] ac, int pos, String symbol, List<String> ans)
+    private void analyse(int state, String word, int pos, String symbol, List<String> ans)
     {
-        if (pos == ac.length)
+        if (pos == word.length())
         {
-            if (ab[q])
+            if (accepts[state])
                 ans.add(symbol);
 
             return;
         }
 
-        char c = ac[pos];
-        int i = indices[q];
-        int j = indices[q + 1];
+        char ch = Character.toLowerCase(word.charAt(pos));
 
-        int low = i;
-        int high = j - 1;
-        int mid;
-        while (low <= high)
+        int from = indices[state], over = indices[state + 1];
+
+        for (int low = from, high = over - 1; low <= high; )
         {
-            mid = (low + high) >> 1;
-            int cmp = charsymbols[mid] - c;
+            int mid = (low + high) >> 1;
+            int cmp = chars[mid] - ch;
 
             if (cmp == 0)
             {
-                int l = mid;
-                while (++mid < j && charsymbols[mid] == c)
+                int n = mid;
+                while (++mid < over && chars[mid] == ch)
                     ;
-                while (--l >= i && charsymbols[l] == c)
+                while (from <= --n && chars[n] == ch)
                     ;
 
-                for (int next = l + 1; next < mid; next++)
-                {
-                    analyse(targets[next], ac, pos + 1, symbol + symbols[next], ans);
-                }
-                break;
+                for (++n; n < mid; n++)
+                    analyse(targets[n], word, pos + 1, symbol + symbols[n], ans);
+
+                return;
             }
-            else if (cmp < 0)
-            {
+
+            if (cmp < 0)
                 low = mid + 1;
-            }
             else if (cmp > 0)
-            {
                 high = mid - 1;
-            }
         }
     }
 
-    public void addState(int s, boolean accepting)
+    private void addState(int state, boolean accept)
     {
-        ab[s] = accepting;
+        accepts[state] = accept;
     }
 
-    public void addEdge(int source, String label, int target)
+    private void addEdge(int state, String label, int target, int ti)
     {
-        if (source < a)
-            throw new IllegalArgumentException();
+        if (indices[state] == -1)
+            indices[state] = ti;
 
-        if (indices[source] == -1)
-        {
-            indices[source] = at;
-        }
-
-        char input = label.charAt(0);
-        charsymbols[at] = input;
-        symbols[at] = label.substring(1);
-        targets[at] = target;
-        a = source;
-        at++;
+        chars[ti] = label.charAt(0);
+        symbols[ti] = label.substring(1);
+        targets[ti] = target;
     }
 
-    public void noedge(int source)
+    private void noEdge(int state, int ti)
     {
-        if (source < a)
-            throw new IllegalArgumentException();
-
-        indices[source] = at;
-        a = source;
+        indices[state] = ti;
     }
 
-    public void setAccepting(int state, boolean b)
-    {
-        ab[state] = b;
-    }
-
-    public int startingState()
-    {
-        return startingState;
-    }
-
-    public boolean isAccepting(int state)
-    {
-        return ab[state];
-    }
-
-    // edges of state s are enlisted in [targets[indices[i]], targets[indices[i+1]])
-    public int size(int s)
-    {
-        if (stateCount <= s)
-            throw new IllegalArgumentException(stateCount + " <= " + s);
-
-        return indices[s + 1] - indices[s];
-    }
-
-    public int stateCount()
-    {
-        return stateCount;
-    }
-
-    public String toString()
-    {
-        return getClass().getSimpleName() + "[" + stateCount + ", " + edgeCount + "]";
-    }
-
-    public void sort()
+    private RFSA sort()
     {
         for (int state = 0; state < stateCount; state++)
         {
             if (indices[state] == indices[state + 1])
                 continue;
 
-            new Sorter(state).sort();
+            sort(state);
         }
+
+        return this;
     }
 
-    public class Sorter
+    private void sort(int state)
     {
-        protected int state;
-        protected int length;
+        int length = indices[state + 1] - indices[state];
 
-        public Sorter(int state)
+        char[] ac = new char[length];
+        String[] as = new String[length];
+        int[] at = new int[length];
+
+        System.arraycopy(chars, indices[state], ac, 0, length);
+        System.arraycopy(symbols, indices[state], as, 0, length);
+        System.arraycopy(targets, indices[state], at, 0, length);
+
+        Integer[] ai = new Integer[length];
+        for (int i = 0; i < length; i++)
         {
-            this.state = state;
+            ai[i] = i + indices[state];
         }
 
-        public void sort()
+        Arrays.sort(ai, new Comparator<Integer>()
         {
-            length = indices[state + 1] - indices[state];
-
-            String[] as = new String[length];
-            char[] ac = new char[length];
-            int[] at = new int[length];
-
-            System.arraycopy(charsymbols, indices[state], ac, 0, length);
-            System.arraycopy(symbols, indices[state], as, 0, length);
-            System.arraycopy(targets, indices[state], at, 0, length);
-
-            Integer[] ai = new Integer[length];
-            for (int i = 0; i < length; i++)
+            public int compare(Integer i0, Integer i1)
             {
-                ai[i] = i + indices[state];
+                return chars[i0] - chars[i1];
             }
+        });
 
-            Arrays.sort(ai, new Comparator<Integer>()
-            {
-                public int compare(Integer arg0, Integer arg1)
-                {
-                    return charsymbols[arg0] - charsymbols[arg1];
-                }
-            });
+        for (int i = 0; i < length; i++)
+        {
+            int n = indices[state], m = ai[i] - n;
 
-            for (int i = 0; i < length; i++)
-            {
-                int j = ai[i] - indices[state];
-                charsymbols[i + indices[state]] = ac[j];
-                symbols[i + indices[state]] = as[j];
-                targets[i + indices[state]] = at[j];
-            }
+            chars[i + n] = ac[m];
+            symbols[i + n] = as[m];
+            targets[i + n] = at[m];
         }
     }
 
-    public int getA()
-    {
-        return a;
-    }
-
-    public static RFSA read(String file)
+    private static RFSA read(InputStream is)
         throws IOException
     {
-        return read(new FileInputStream(file));
-    }
+        LineNumberReader reader = new LineNumberReader(new InputStreamReader(is, "UTF-8"));
 
-    public static RFSA read(InputStream rfsaStream)
-        throws IOException
-    {
-        Map<String, String> labelMap = new HashMap<String, String>();
+        StringTokenizer st = new StringTokenizer(reader.readLine());
 
-        LineNumberReader reader = new LineNumberReader(new InputStreamReader(rfsaStream, "UTF-8"));
-
-        String line = reader.readLine();
-        StringTokenizer st = new StringTokenizer(line);
-
-        int startIndex = Integer.parseInt(st.nextToken());
+        int startingState = Integer.parseInt(st.nextToken());
         int stateCount = Integer.parseInt(st.nextToken());
         int edgeCount = Integer.parseInt(st.nextToken());
 
-        RFSA rfsa = new RFSA(startIndex, stateCount, edgeCount);
+        RFSA rfsa = new RFSA(startingState, stateCount, edgeCount);
+
+        int si = 0; // where we are in states
+        int ti = 0; // where we are in targets
+
         for (int i = 0; i < stateCount; i++)
         {
             // state line with state number and accepting
-            line = reader.readLine();
-            st = new StringTokenizer(line, "\t");
+            st = new StringTokenizer(reader.readLine(), "\t");
             int state = Integer.parseInt(st.nextToken());
-            boolean accepting = new Boolean(st.nextToken());
+            boolean accept = new Boolean(st.nextToken());
 
-            rfsa.addState(state, accepting);
+            if (state < si)
+                throw new IllegalArgumentException();
+
+            rfsa.addState(state, accept);
+
+            si = state;
 
             // line with edgecount
-            line = reader.readLine();
-            st = new StringTokenizer(line);
+            st = new StringTokenizer(reader.readLine());
             int edges = Integer.parseInt(st.nextToken());
             if (edges == 0)
             {
-                rfsa.noedge(state);
+                rfsa.noEdge(state, ti);
+                continue;
             }
 
             // lines with edges
             for (int j = 0; j < edges; j++)
             {
-                line = reader.readLine();
-                int index = line.indexOf('\t');
-                String s = line.substring(0, index);
-                if (s.length() == 0)
-                {
+                String line = reader.readLine();
+                int tab = line.indexOf('\t');
+                if (tab == 0)
                     throw new IllegalStateException();
-                }
-                int target = Integer.parseInt(line.substring(index + 1));
-                String label = labelMap.get(s);
-                if (label == null)
-                {
-                    labelMap.put(s, label = s);
-                }
-                rfsa.addEdge(state, label, target);
+
+                String label = line.substring(0, tab);
+                int target = Integer.parseInt(line.substring(tab + 1));
+
+                rfsa.addEdge(state, label, target, ti);
+
+                ti++;
             }
         }
+
         reader.close();
-        rfsa.sort();
-        return rfsa;
+
+        return rfsa.sort();
+    }
+}
+EOF
+mkdir -p magyarlanc && cat > magyarlanc/WhatsWrong.java <<'EOF'
+package magyarlanc;
+
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.imageio.ImageIO;
+
+import com.googlecode.whatswrong.NLPInstance;
+import com.googlecode.whatswrong.SingleSentenceRenderer;
+import com.googlecode.whatswrong.io.CoNLL2009;
+
+public class WhatsWrong
+{
+    private static SingleSentenceRenderer renderer;
+    private static CoNLL2009 coNLL2009;
+
+    /**
+     * converts the magyarlanc output to CoNLL2009 format
+     *
+     * @param array
+     *          magyarlanc output; two dimensional array,
+     *          which contains the tokens of the a parsed sentence
+     * @return
+     */
+    private static List<List<String>> arrayToList(String[][] array)
+    {
+        List<List<String>> list = new ArrayList<List<String>>();
+
+        for (String[] a : array)
+        {
+            String[] s = new String[14];
+
+            s[0] = a[0]; // id
+            s[1] = a[1]; // form
+            s[2] = a[2]; // lemma
+            s[4] = "_"; // plemma
+            s[3] = a[4]; // POS
+            s[5] = "_"; // pPOS
+         // s[6] = a[5]; // feat
+            s[6] = "_"; // feat
+            s[7] = "_"; // pfeat
+            s[8] = a[6]; // head
+            s[9] = "_"; // phead
+            s[10] = a[7]; // rel
+            s[11] = "_"; // prel
+            s[12] = "_";
+            s[13] = "_";
+
+            list.add(Arrays.asList(s));
+        }
+
+        return list;
+    }
+
+    /**
+     * Builds a buffered image from the given NLPInstance via the SentenceRenderer.
+     *
+     * @param instance
+     * @return
+     */
+    private static BufferedImage createImage(NLPInstance instance)
+    {
+        if (renderer == null)
+            renderer = new SingleSentenceRenderer();
+
+        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_4BYTE_ABGR);
+        Graphics2D g = image.createGraphics();
+        Dimension dim = renderer.render(instance, g);
+
+        image = new BufferedImage((int) dim.getWidth() + 5, (int) dim.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
+        g = image.createGraphics();
+        renderer.render(instance, g);
+
+        return image;
+    }
+
+    /**
+     * Exports the given sentence to the specified PNG imgage.
+     *
+     * @param sentence
+     *          dep. parsed sentence (magyarlanc output)
+     * @param file
+     *          the PNG
+     */
+    public static void exportToPNG(String[][] sentence, String file)
+    {
+        if (coNLL2009 == null)
+            coNLL2009 = new CoNLL2009();
+
+        try
+        {
+            FileOutputStream fos = new FileOutputStream(file);
+            ImageIO.write(createImage(coNLL2009.create(arrayToList(sentence))), "PNG", fos);
+            fos.flush();
+            fos.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Exports the given sentence to a ByteArray.
+     *
+     * @param sentence
+     *          dep. parsed sentence (magyarlanc output)
+     */
+    public static byte[] exportToByteArray(String[][] sentence)
+    {
+        if (coNLL2009 == null)
+            coNLL2009 = new CoNLL2009();
+
+        ByteArrayOutputStream baos = null;
+
+        try
+        {
+            baos = new ByteArrayOutputStream();
+            ImageIO.write(createImage(coNLL2009.create(arrayToList(sentence))), "PNG", baos);
+            baos.flush();
+            baos.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return baos.toByteArray();
+    }
+
+    public static void main(String[] args)
+    {
+        String[][] depParsedSentence =
+        {
+            { "1", "A", "a", "Rx", "R", "SubPOS=x|Deg=none", "2", "DET" },
+            { "2", "ház", "ház", "Rx", "R", "SubPOS=x|Deg=none", "3", "ROOT-VAN-SUBJ" },
+            { "3", "nagy", "nagy", "Afp-sn", "A", "SubPOS=f|Deg=p|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none", "0", "ROOT-VAN-PRED" },
+            { "4", ".", ".", ".", ".", "_", "0", "PUNCT" }
+        };
+
+        exportToPNG(depParsedSentence, "whatswrong.png");
     }
 }
 EOF
