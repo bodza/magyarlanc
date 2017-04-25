@@ -1,6 +1,7 @@
 (ns magyarlanc
-    (:require [clojure.java.io :as io] [clojure.string :as str] [magyarlanc.gui :as gui])
-    (:import [magyarlanc Dependency Morphology])
+    (:require [clojure.java.io :as io] [clojure.string :as str]
+              [magyarlanc.dependency :as dep] [magyarlanc.gui :as gui] [magyarlanc.morphology :as mor])
+    (:import [magyarlanc Morphology])
     (:gen-class))
 
 (defn- in* [file]
@@ -31,9 +32,9 @@
                 (case (argm "-mode")
                     "gui"        (gui/-main)
                     "morana"     (doseq [line (lines-in in)] (println (str (Morphology/getMorphologicalAnalyses line))))
-                    "morphparse" (text-out (Morphology/morphParse (lines-in in)) out)
-                    "tokenized"  (text-out (Morphology/morphParse (tokens-in in)) out)
-                    "depparse"   (text-out (Dependency/depParse (lines-in in)) out)
+                    "morphparse" (text-out (mapcat mor/morphParse (lines-in in)) out)
+                    "tokenized"  (text-out (map mor/morphParseTokens (tokens-in in)) out)
+                    "depparse"   (text-out (mapcat dep/depParse (lines-in in)) out)
 
                     (.println *err* usage)))
             (.println *err* usage))))

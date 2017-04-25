@@ -1,4 +1,5 @@
 (ns magyarlanc.gui
+    (:require [magyarlanc.dependency :as dep])
     (:import [java.awt BorderLayout Dimension Insets Toolkit]
              [java.awt.event ActionListener]
              [java.awt.image BufferedImage]
@@ -6,11 +7,10 @@
              [javax.swing.border EmptyBorder])
     (:import [com.googlecode.whatswrong SingleSentenceRenderer]
              [com.googlecode.whatswrong.io CoNLL2009])
-    (:import [magyarlanc Dependency HunSplitter])
     (:gen-class))
 
 (defn- conll [lines]
-    (map #(let [[a b c _ e _ g h] % _ "_"] (list a b c e _ _ _ _ g _ h _ _ _)) lines))
+    (map #(let [[a b c _ e _ g h] % _ "_"] (list (str a) b c e _ _ _ _ g _ h _ _ _)) lines))
 
 (defn- whats-wrong [lines]
     (let [renderer (SingleSentenceRenderer.)
@@ -53,7 +53,7 @@
         (.addActionListener button (reify ActionListener (actionPerformed [_ actionEvent]
             (let [sentence (.getText input)]
                 (if-not (empty? sentence)
-                    (let [lines (Dependency/depParseSentence (first (HunSplitter/splitToArray sentence)))]
+                    (let [lines (first (dep/depParse sentence))]
 
                         (doto label (.setIcon (ImageIcon. (whats-wrong lines))) (.setVisible true))
                         (doto output (.setText (pretty lines)) (.setVisible true))
