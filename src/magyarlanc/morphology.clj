@@ -360,7 +360,7 @@
             [10 12] ; birtok(olt) száma
         ]]
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
-        (KRTools/cleanMsd (.toString sb))))
+        (KRTools/chopMSD (.toString sb))))
 
 (defn- nounToOther [noun other]
     (let [sb (StringBuilder. other) n (.length noun)]
@@ -373,7 +373,7 @@
             [10 11] ; birtok(olt) száma
         ]]
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
-        (KRTools/cleanMsd (.toString sb))))
+        (KRTools/chopMSD (.toString sb))))
 
 (defn- nounToNoun [noun other]
     (let [sb (StringBuilder. other) n (.length noun)]
@@ -383,7 +383,7 @@
             [4 4] ; eset
         ]]
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
-        (KRTools/cleanMsd (.toString sb))))
+        (KRTools/chopMSD (.toString sb))))
 
 (def ^:private romans* (delay (into {} (map vector "IVXLCDM" [1 5 10 50 100 500 1000]))))
 

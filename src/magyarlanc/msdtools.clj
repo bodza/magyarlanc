@@ -342,12 +342,12 @@
 
         ; főnévi igenevek: ha csak simán 'nézni' van, akkor nem kell, de ha 'néznie', akkor igen
         (if (and (= pos \V) (= (.charAt sb 3) \-))
-            (do (.setCharAt sb 3 \p) (let [msd (KRTools/cleanMsd (.toString sb))]
+            (do (.setCharAt sb 3 \p) (let [msd (KRTools/chopMSD (.toString sb))]
                 (if (== (.length msd) 4)
                     (.substring msd 0 3)
                     msd)))
 
-            (KRTools/cleanMsd (.toString sb)))))
+            (KRTools/chopMSD (.toString sb)))))
 
 ; Convert the POS character and feature to MSD code eg. the POS character can be 'N' and the feature
 ; that belongs to the POS character can be "SubPOS=c|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none".

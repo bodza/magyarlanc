@@ -12,3 +12,5 @@
                 (doseq [[[a & z] n] (partition 2 (if accept (rest state) state))]
                     (if (= a c) (analyse word n (apply conj syms z) ans))))
             (if accept (conj! ans (apply str syms)))))))
+
+(defn -main [] (println (analyse "utánam")))
