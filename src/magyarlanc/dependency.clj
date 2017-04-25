@@ -1,9 +1,8 @@
 (ns magyarlanc.dependency
-    (:require [magyarlanc.morphology :as mor])
+    (:require [magyarlanc.morphology :as mor] [magyarlanc.msdtools :as msd])
     (:import [is2.data SentenceData09]
              [is2.parser Options Parser])
-    (:import [magyarlanc MSDTools])
-    (:gen-class))
+  #_(:gen-class))
 
 (def ^:private parser* (delay (Parser. (Options. (into-array ["-model" "./data/szeged.dep.model" "-cores" "1"])))))
 
@@ -13,7 +12,7 @@
              lemma (map #(nth % 1) morph)
                msd (map #(nth % 2) morph)
                pos (map #(str (first (nth % 2))) morph)
-             conll (map #(MSDTools/msdToConllFeatures (nth % 1) (nth % 2)) morph)]
+             conll (map #(msd/msdToConllFeatures (nth % 1) (nth % 2)) morph)]
             (parseSentence word lemma msd pos conll)))
 
     ([word lemma msd pos conll]

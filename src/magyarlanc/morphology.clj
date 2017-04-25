@@ -1,11 +1,11 @@
 (ns magyarlanc.morphology
     (:require [clojure.java.io :as io] [clojure.string :as str]
-              [magyarlanc.hunsplitter :as hspl] [magyarlanc.rfsa :as rfsa])
+              [magyarlanc.hunsplitter :as hspl] [magyarlanc.msdtools :as msd] [magyarlanc.rfsa :as rfsa])
     (:import [java.util HashSet List Set])
     (:import [edu.stanford.nlp.ling TaggedWord]
              [edu.stanford.nlp.tagger.maxent SzteMaxentTagger])
     (:import [magyarlanc KRTools KRTools$KRPOS Morphology$MorAna])
-    (:gen-class))
+  #_(:gen-class))
 
 (defn- morAna
     ([tuple] #_(assert-args (== (count tuple) 2) "[lemma msd]") (apply morAna tuple))
@@ -106,7 +106,7 @@
 (defn- punctation? [spelling]
     (not-any? #(Character/isLetterOrDigit %) spelling))
 
-(def punctations* (delay (into #{} (map str "!,-.:;?–"))))
+(def ^:private punctations* (delay (into #{} (map str "!,-.:;?–"))))	; red!
 
 (defn- puncs [word]
     (if (punctation? word) #{(morAna word (cond (@punctations* word) word (= word "§") "Nn-sn" :default "K"))}))
@@ -160,7 +160,7 @@
 
 ;           for (MorAna morAna : morAnas)
 ;           {
-;               String reduced = MSDTools.reduceMSD(morAna.getMsd());
+;               String reduced = msd/reduceMSD(morAna.getMsd());
 ;               if (possibleTags.contains(reduced))
 ;               {
 ;                   tags.add(reduced);
@@ -188,7 +188,7 @@
 
 ;                   if (!morAna.getMsd().equals(null))
 ;                   {
-;                       if (MSDTools.reduceMSD(morAna.getMsd()).equals(tw.tag()) && (max < freq))
+;                       if (msd/reduceMSD(morAna.getMsd()).equals(tw.tag()) && (max < freq))
 ;                       {
 ;                           argmax = morAna;
 ;                           max = freq;

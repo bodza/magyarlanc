@@ -2,7 +2,7 @@
     (:require [clojure.java.io :as io])
     (:import [edu.northwestern.at.morphadorner.corpuslinguistics.sentencesplitter DefaultSentenceSplitter]
              [edu.northwestern.at.morphadorner.corpuslinguistics.tokenizer DefaultWordTokenizer])
-    (:gen-class))
+  #_(:gen-class))
 
 (defn- readSet [file] (with-open [reader (io/reader (io/resource file))] (into #{} (line-seq reader))))
 

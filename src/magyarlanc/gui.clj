@@ -7,7 +7,7 @@
              [javax.swing.border EmptyBorder])
     (:import [com.googlecode.whatswrong SingleSentenceRenderer]
              [com.googlecode.whatswrong.io CoNLL2009])
-    (:gen-class))
+  #_(:gen-class))
 
 (defn- conll [lines]
     (map #(let [[a b c _ e _ g h] % _ "_"] (list (str a) b c e _ _ _ _ g _ h _ _ _)) lines))

@@ -1,6 +1,6 @@
 (ns magyarlanc.rfsa
     (:require [clojure.java.io :as io])
-    (:gen-class))
+  #_(:gen-class))
 
 (def ^:private rfsa* (delay (into [] (map read-string (line-seq (io/reader (io/resource "data/rfsa.seq")))))))
 
