@@ -1,10 +1,10 @@
 (ns magyarlanc.morphology
-    (:require [clojure.java.io :as io] #_[clojure.set :as set] [clojure.string :as str]
-              [magyarlanc.rfsa :as rfsa])
+    (:require [clojure.java.io :as io] [clojure.string :as str]
+              [magyarlanc.hunsplitter :as hspl] [magyarlanc.rfsa :as rfsa])
     (:import [java.util HashSet List Set])
     (:import [edu.stanford.nlp.ling TaggedWord]
              [edu.stanford.nlp.tagger.maxent SzteMaxentTagger])
-    (:import [magyarlanc HunSplitter KRTools KRTools$KRPOS Morphology$MorAna])
+    (:import [magyarlanc KRTools KRTools$KRPOS Morphology$MorAna])
     (:gen-class))
 
 (defn- morAna
@@ -29,10 +29,10 @@
     (.morphSentence @tagger* (into-array tokens)))
 
 (defn morphParseSentence [sentence]
-    (morphParseTokens (HunSplitter/tokenize sentence)))
+    (morphParseTokens (hspl/tokenize sentence)))
 
 (defn morphParse [text]
-    (map morphParseTokens (HunSplitter/split text)))
+    (map morphParseTokens (hspl/split text)))
 
 ;       public static class MorAna implements Comparable<MorAna>
 ;       {
@@ -74,6 +74,32 @@
 ;           {
 ;               return (compareTo(morAna) == 0);
 ;           }
+
+; user=> (deftype Pair [a b])
+; user.Pair
+; user=> (= (Pair. 0 0) (Pair. 0 0))
+; false
+; user=> (into #{} [(Pair. 0 0) (Pair. 1 1) (Pair. 0 0)])
+; #{#<Pair user.Pair@5de3182> #<Pair user.Pair@6497d63> #<Pair user.Pair@38eed810>}
+
+; user=> (deftype Tuple [a b]
+;          Object
+;          (equals [this other]
+;            (and (= (.a this) (.a other))
+;                 (= (.b this) (.b other))))
+;          (toString [this]
+;            (str "<" (.a this) "," (.b this) ">"))
+;          (hashCode [this]
+;            (hash {:a (.a this) :b (.b this)}))
+;          Comparable
+;          (compareTo [this that]
+;            (compare [(.a this) (.b this)]
+;                     [(.a that) (.b that)])))
+; user.Tuple
+; user=> (= (Tuple. 0 0) (Tuple. 0 0))
+; true
+; user=> (into #{} [(Tuple. 0 0) (Tuple. 1 1) (Tuple. 0 0)])
+; #{#<Tuple <0,0>> #<Tuple <1,1>>}
 ;       }
 
 ; adott szó csak írásjeleket tartalmaz-e
@@ -107,19 +133,19 @@
                 ; rfsa
                 (reduce conj! ans (mapcat #(KRTools/getMSD %) (rfsa/analyse word)))
 
-                (if (empty? ans)
+                (if (zero? (count ans))
                     ; (kötőjeles) összetett szó
                     (let [i (.indexOf word "-")
                           cs (if (< 1 i) (analyseHyphenicCompoundWord word) (analyseCompoundWord (.toLowerCase word)))]
                         (reduce conj! ans (mapcat #(KRTools/getMSD %) cs))))
 
-                (if (empty? ans)
+                (if (zero? (count ans))
                     ; guess (Bush-nak, Bush-kormányhoz)
                     (let [i (.lastIndexOf word "-")]
                         (if (< 1 i)
                             (reduce conj! ans (hyphenicGuess (.substring word 0 i) (.substring word (inc i)))))))
 
-                (if (empty? ans)
+                (if (zero? (count ans))
                     ; téves szavak
                     (when-let [corr (or (@errata* word) (@errata* (.toLowerCase word)) nil)]
                         (if-not (= corr word)
@@ -383,7 +409,7 @@
                             (let [msd (.getMsd stem)]
                                 (conj! stems (morAna root msd))
                                 (conj! stems (morAna root (.replace msd (.substring "Nn-sn" 0 2) "Afp"))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna root "Afp-sn"))
                         (conj! stems (morAna root "Nn-sn")))
                     stems)
@@ -399,7 +425,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (str "Afp-" (.. stem getMsd (substring 3)))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna root "Afp-sn")))
                     stems)
 
@@ -408,7 +434,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (nounToOther (.getMsd stem) "Ons----------")))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Ons-sn")))
                     stems)
 
@@ -418,7 +444,7 @@
                         (when (seq suffix)
                             (doseq [stem (morPhonGuess root suffix)]
                                 (conj! stems (morAna root (nounToOther (.getMsd stem) "Ont---------")))))
-                        (when (empty? stems)
+                        (when (zero? (count stems))
                             (conj! stems (morAna number "Ont-sn"))))
                     stems)
 
@@ -430,7 +456,7 @@
                                 (conj! stems (morAna root (nounToOther msd "Onr---------")))
                                 (conj! stems (morAna root (nounToOther msd "Onf----------")))
                                 (conj! stems (morAna root (nounToNumeral msd "Mc---d-------"))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Onr-sn"))
                         (conj! stems (morAna number "Onf-sn"))
                         (conj! stems (morAna number "Mc-snd")))
@@ -441,7 +467,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (nounToNumeral (.getMsd stem) "Mf---d-------")))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Mf-snd")))
                     stems)
 
@@ -450,7 +476,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (nounToOther (.getMsd stem) "Ond---------")))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Ond-sn")))
                     stems)
 
@@ -462,7 +488,7 @@
                                 (conj! stems (morAna root (nounToOther msd "Onf---------")))
                                 (conj! stems (morAna root (nounToOther msd "Onq---------")))
                                 (conj! stems (morAna root (nounToOther msd "Onr---------"))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Onf-sn"))
                         (conj! stems (morAna number "Onq-sn"))
                         (conj! stems (morAna number "Onr-sn")))
@@ -475,7 +501,7 @@
                             (let [msd (.getMsd stem)]
                                 (conj! stems (morAna root (nounToOther msd "Oi----------")))
                                 (conj! stems (morAna root (nounToOther msd "Ond---------"))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Oi--sn"))
                         (conj! stems (morAna number "Ond-sn")))
                     stems)
@@ -490,7 +516,7 @@
                                     (conj! stems (morAna (str root ".") (nounToNoun msd (str (.substring "Nn-sn" 0 2) "------s3-")))))
                                 (if (= miez "�")
                                     (conj! stems (morAna root (nounToNumeral msd "Mc---d------s")))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna root "Mc-snd----s3"))
                         (when (isDate root)
                             (conj! stems (morAna (str root ".") (str "Nn-sn" "---s3")))))
@@ -501,7 +527,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (nounToOther (.getMsd stem) "Onp---------")))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna root "Onp-sn")))
                     stems)
 
@@ -510,7 +536,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (nounToNumeral (.getMsd stem) "Mf---d-------")))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Mf-snd")))
                     stems)
 
@@ -519,7 +545,7 @@
                     (when (seq suffix)
                         (doseq [stem (morPhonGuess root suffix)]
                             (conj! stems (morAna root (nounToNumeral (.getMsd stem) "Mc---d-------")))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Mc-snd")))
                     stems)
 
@@ -531,7 +557,7 @@
                                 (conj! stems (morAna root (nounToNumeral msd "Mo---d-------")))
                                 (if (isDate day)
                                     (conj! stems (morAna root msd))))))
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Mo-snd"))
                         (when (isDate day)
                             (conj! stems (morAna number "Nn-sn"))
@@ -539,7 +565,7 @@
                     stems)
 
                 (do
-                    (when (empty? stems)
+                    (when (zero? (count stems))
                         (conj! stems (morAna number "Oi--sn")))
                     stems)))
 
