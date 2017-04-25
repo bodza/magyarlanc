@@ -1,6 +1,6 @@
 (ns magyarlanc.krtools
     (:require [clojure.string :as str])
-    (:import [magyarlanc Morphology$MorAna])
+    (:import [magyarlanc KRTools$KRPOS Morphology$MorAna])
   #_(:gen-class))
 
 (defn- morAna [lemma msd] (Morphology$MorAna. lemma msd))
@@ -24,6 +24,9 @@
                         (str (first lemma) affix "i"))
                     (str lemma affix)))
             (.substring kr 1 (.indexOf kr "/")))))
+
+(defn ^String chopMSD [^CharSequence msd]
+    (loop [n (.length msd)] (if (zero? n) "" (if (= (.charAt msd (dec n)) \-) (recur (dec n)) (.. msd (subSequence 0 n) toString)))))
 
 (defn- msd-
     ([kr s msd i ch] (if (.contains kr s) (.setCharAt msd i ch)))
@@ -245,6 +248,8 @@
         (msd- kr "[SUPERSUPERLAT]" msd 2 \e)
         (chopMSD (.toString msd))))
 
+(declare getRoot)
+
 (defn getMSD [kr]
     (let [ans (transient #{})
           root (getRoot kr) i (.indexOf root "/") lemma (.substring root 1 i) code (.substring root (inc i))
@@ -310,14 +315,6 @@
 
         (persistent! ans)))
 
-(defn ^String chopMSD [^CharSequence msd]
-    (loop [n (.length msd)] (if (zero? n) "" (if (= (.charAt msd (dec n)) \-) (recur (dec n)) (.. (subSequence 0 n) toString)))))
-
-;       public static enum KRPOS
-;       {
-;           VERB, NOUN, ADJ, NUM, ADV, PREV, ART, POSTP, UTT_INT, DET, CONJ, ONO, PREP, X
-;       }
-
 (defn- preProcess [stems]
     (let [stems (transient (vec stems)) n (count stems)]
         (doseq [stem stems]
@@ -356,25 +353,19 @@
         :default
             (let [[igekötő morph] (if-let [m (re-matches #"(.*?)/PREV\+(.*)" morph)] [(m 1) (m 2)] ["" morph])
                   stems (preProcess (str/split morph #"/")) n (dec (count stems))
-                  v! (transient {:végsőtő (re-find #"^[^\(/]*" (first stems)) :ikes false})]
+                  végsőtő (atom (re-find #"^[^\(/]*" (first stems))) ikes (atom false)]
 
                 (when (< 1 n) (doseq [stem (take n stems) todo (map #(% 1) (re-seq #"\((.*?)\)" stem))]
                     (condp re-matches todo
                         ; -1 -2ik
                         #"-(\d+).*"
-                        :>> #(let [i (Integer/parseInt (% 1))]
-                                (assoc! v! :végsőtő (let [v (v! :végsőtő)] (.substring v 0 (- (.length v) i))))
-                                (assoc! v! :ikes (.endsWith todo "ik")))
+                        :>> (fn [m] (swap! végsőtő #(.substring % 0 (- (.length %) (Integer/parseInt (m 1)))))
+                                    (reset! ikes (.endsWith todo "ik")))
                         #"-\."
-                        (let [v (v! :végsőtő) [_ _1 _2] (re-matches #"(.*?).([bcdfghjklmnpqrstvwxyz!]*)" v)]
-                            (assoc! v! :végsőtő (str _1 "!" _2)))
+                        (swap! végsőtő #(let [[_ a b] (re-matches #"(.*?).([bcdfghjklmnpqrstvwxyz!]*)" %)] (str a "!" b)))
                         ; .a .e .i .o .ö .u .ü
                         #"\.(.*)"
-                        :>> #(let [v (v! :végsőtő)]
-                                (if (.contains v "!")
-                                    (assoc! v! :végsőtő (.replace v "!" (% 1)))
-                                    (comment "TODO ez mikor van?"))
-                                (assoc! v! :ikes false))
+                        :>> (fn [m] (swap! végsőtő #(.replace % "!" (m 1))) (reset! ikes false))
                         ; %leg %legesleg
                         #"%.*"
                         (comment "TODO nem találtam ilyet, de.")
@@ -389,89 +380,34 @@
                         ; ve, ván, vén, z, zik, á, é, ít, ó, ödik, ődik, öget, öl,
                         ; önként, ösködik, östől, östül, ött, öv, öz, özik, ül, ódik
                         #"[^\-\.%].*"
-                        :>> #(let [v (v! :végsőtő)]
-                                (assoc! v! :végsőtő (str v %))
-                                (assoc! v! :ikes false))
+                        :>> (fn [m] (swap! végsőtő #(str % m)) (reset! ikes false))
                         nil)))
 
-                (let [root (str igekötő (v! :végsőtő) (if (v! :ikes) "ik" "") "/" (stems n))]
+                (let [root (str igekötő @végsőtő (if @ikes "ik" "") "/" (stems n))]
                     (str "$" (str/replace root #"\([^\(\)]*\)|[!@\$]" ""))))))
+
+;       public static enum KRPOS
+;       {
+;           VERB, NOUN, ADJ, NUM, ADV, PREV, ART, POSTP, UTT_INT, DET, CONJ, ONO, PREP, X
+;       }
 
 ; "$fut/VERB[GERUND](�s)/NOUN<PLUR><POSS<1>><CAS<INS>>"
 (defn getPOS [code]
-;       {
-;           int end1 = Integer.MAX_VALUE
-;           int end2 = Integer.MAX_VALUE
-
-;           int end = 0
-
-;           if (.contains code "@")
-;           {
-;               end = (.lastIndexOf code "@")
-;           }
-
-;           int start = (.lastIndexOf code "/")
-
-;           if (0 < (.indexOf code "<" start))
-;           {
-;               end1 = (.indexOf code "<" start)
-;           }
-
-;           if (0 < (.indexOf code "[" start))
-;           {
-;               end2 = (.indexOf code "[" start)
-;           }
-
-;           end = (end1 < end2) ? end1 : end2
-
-;           if ((.length code) < end)
-;           {
-;               end = (.length code)
-;           }
-
-;           switch (.substring code start end)
-;           {
-;               case "VERB":    return KRPOS.VERB
-;               case "NOUN":    return KRPOS.NOUN
-;           }
-
-;           switch (.substring code (inc start) end)
-;           {
-;               case "ADJ":     return KRPOS.ADJ
-;               case "NUM":     return KRPOS.NUM
-;               case "ADV":     return KRPOS.ADV
-;               case "PREV":    return KRPOS.PREV
-;               case "ART":     return KRPOS.ART
-;               case "POSTP":   return KRPOS.POSTP
-;               case "UTT-INT": return KRPOS.UTT_INT
-;               case "DET":     return KRPOS.DET
-;               case "CONJ":    return KRPOS.CONJ
-;               case "ONO":     return KRPOS.ONO
-;               case "PREP":    return KRPOS.PREP
-;           }
-
-;           return KRPOS.X
-;       }
-    )
-
-(defn- getAbsoluteLemma [form]
-;       {
-;           List<String> lemma = new ArrayList<String>()
-
-;           for (String s : RFSA.analyse(form))
-;           {
-                ; igekötők leválasztása
-;               s = (.substring s (inc (.indexOf s "$")))
-
-;               if (and (.contains s "(") (< (.indexOf s "(") (.indexOf s "/")))
-;                   lemma.add(.substring s 0 (.indexOf s "("))
-;               else
-;                   lemma.add(.substring s 0 (.indexOf s "/"))
-;           }
-
-;           return lemma.toArray(new String[lemma.size()])
-;       }
-    )
+    (case (if-let [m (re-find #"/([^/<\[]+)(?:[<\[][^/]*)?$" code)] (m 1))
+        "VERB"    KRTools$KRPOS/VERB
+        "NOUN"    KRTools$KRPOS/NOUN
+        "ADJ"     KRTools$KRPOS/ADJ
+        "NUM"     KRTools$KRPOS/NUM
+        "ADV"     KRTools$KRPOS/ADV
+        "PREV"    KRTools$KRPOS/PREV
+        "ART"     KRTools$KRPOS/ART
+        "POSTP"   KRTools$KRPOS/POSTP
+        "UTT-INT" KRTools$KRPOS/UTT_INT
+        "DET"     KRTools$KRPOS/DET
+        "CONJ"    KRTools$KRPOS/CONJ
+        "ONO"     KRTools$KRPOS/ONO
+        "PREP"    KRTools$KRPOS/PREP
+        KRTools$KRPOS/X))
 
 (comment
     (getMSD "$én/NOUN<POSTP<UTÁN>><PERS<1>>")

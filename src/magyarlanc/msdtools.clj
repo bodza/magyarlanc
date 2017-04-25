@@ -1,6 +1,6 @@
 (ns magyarlanc.msdtools
-    (:require [clojure.string :as str])
-    (:import [magyarlanc KRTools])
+    (:require [clojure.string :as str]
+              [magyarlanc.krtools :as kr])
   #_(:gen-class))
 
 ; reduce noun
@@ -342,12 +342,12 @@
 
         ; főnévi igenevek: ha csak simán 'nézni' van, akkor nem kell, de ha 'néznie', akkor igen
         (if (and (= pos \V) (= (.charAt sb 3) \-))
-            (do (.setCharAt sb 3 \p) (let [msd (KRTools/chopMSD (.toString sb))]
+            (do (.setCharAt sb 3 \p) (let [msd (kr/chopMSD (.toString sb))]
                 (if (== (.length msd) 4)
                     (.substring msd 0 3)
                     msd)))
 
-            (KRTools/chopMSD (.toString sb)))))
+            (kr/chopMSD (.toString sb)))))
 
 ; Convert the POS character and feature to MSD code eg. the POS character can be 'N' and the feature
 ; that belongs to the POS character can be "SubPOS=c|Num=s|Cas=n|NumP=none|PerP=none|NumPd=none".

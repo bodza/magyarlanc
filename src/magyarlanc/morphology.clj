@@ -1,10 +1,10 @@
 (ns magyarlanc.morphology
     (:require [clojure.java.io :as io] [clojure.string :as str]
-              [magyarlanc.hunsplitter :as hspl] [magyarlanc.msdtools :as msd] [magyarlanc.rfsa :as rfsa])
+              [magyarlanc.hunsplitter :as hspl] [magyarlanc.krtools :as kr] [magyarlanc.msdtools :as msd] [magyarlanc.rfsa :as rfsa])
     (:import [java.util HashSet List Set])
     (:import [edu.stanford.nlp.ling TaggedWord]
              [edu.stanford.nlp.tagger.maxent SzteMaxentTagger])
-    (:import [magyarlanc KRTools KRTools$KRPOS Morphology$MorAna])
+    (:import [magyarlanc KRTools$KRPOS Morphology$MorAna])
   #_(:gen-class))
 
 (defn- morAna
@@ -131,13 +131,13 @@
             (let [ans (transient (guessRomanNumber word))]
 
                 ; rfsa
-                (reduce conj! ans (mapcat #(KRTools/getMSD %) (rfsa/analyse word)))
+                (reduce conj! ans (mapcat #(kr/getMSD %) (rfsa/analyse word)))
 
                 (if (zero? (count ans))
                     ; (kötőjeles) összetett szó
                     (let [i (.indexOf word "-")
                           cs (if (< 1 i) (analyseHyphenicCompoundWord word) (analyseCompoundWord (.toLowerCase word)))]
-                        (reduce conj! ans (mapcat #(KRTools/getMSD %) cs))))
+                        (reduce conj! ans (mapcat #(kr/getMSD %) cs))))
 
                 (if (zero? (count ans))
                     ; guess (Bush-nak, Bush-kormányhoz)
@@ -213,7 +213,7 @@
 (dorun (map #(intern *ns* % (KRTools$KRPOS/valueOf (name %))) '(UTT_INT ART NUM PREV NOUN VERB ADJ ADV)))	; ^:private
 
 (defn- isCompatibleAnalyises [kr1 kr2]
-    (let [pos1 (KRTools/getPOS kr1) pos2 (KRTools/getPOS kr2)]
+    (let [pos1 (kr/getPOS kr1) pos2 (kr/getPOS kr2)]
         (not (or
             (= pos2 UTT_INT)                    ; UTT-INT nem lehet a második rész
             (= pos2 ART)                        ; ART nem lehet a második rész
@@ -247,7 +247,7 @@
     ([part1 part2 hyphenic]
         (into #{} (remove nil?
             (for [a1 (rfsa/analyse part1) a2 (rfsa/analyse part2)]
-                (let [kr1 (KRTools/getRoot a1) kr2 (KRTools/getRoot a2)]
+                (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
                     (if (isCompatibleAnalyises kr1 kr2)
                         (.replace kr2 "$" (str "$" part1 (if hyphenic "-"))))))))))
 
@@ -264,7 +264,7 @@
                                 (let [part2 (.substring word i) bi (bisectIndex part2)]
                                     (if (< 0 bi)
                                         (doseq [a1 ans1 a2 (getCompatibleAnalises (.substring part2 0 bi) (.substring part2 bi))]
-                                            (let [kr1 (KRTools/getRoot a1) kr2 (KRTools/getRoot a2)]
+                                            (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
                                                 (if (isCompatibleAnalyises kr1 kr2)
                                                     (conj! ans (.replace kr2 "$" (str "$" part1)))))))))
                             (recur (inc i)))))))))
@@ -280,14 +280,14 @@
                         (if (and (seq ans1) (< 0 bi))
                             ; a kötőjel előtti résznek van elemzése, a kötőjel utáni rész két részre bontható
                             (doseq [a1 ans1 a2 (getCompatibleAnalises (.substring part2 0 bi) (.substring part2 bi))]
-                                (let [kr1 (KRTools/getRoot a1) kr2 (KRTools/getRoot a2)]
+                                (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
                                     (if (isCompatibleAnalyises kr1 kr2)
                                         (conj! ans (.replace kr2 "$" (str "$" part1 "-"))))))
                             (let [bi (bisectIndex part1) ans2 (rfsa/analyse part2)]
                                 (if (and (< 0 bi) (seq ans2))
                                     ; a kötőjel előtti rész két részre bontható, a kötőjel utáni résznek van elemzése
                                     (doseq [a1 (getCompatibleAnalises (.substring part1 0 bi) (.substring part1 bi)) a2 ans2]
-                                        (let [kr1 (KRTools/getRoot a1) kr2 (KRTools/getRoot a2)]
+                                        (let [kr1 (kr/getRoot a1) kr2 (kr/getRoot a2)]
                                             (if (isCompatibleAnalyises kr1 kr2)
                                                 (conj! ans (.replace kr2 "$" (str "$" part1 "-")))))))))))))
         (persistent! ans)))
@@ -304,7 +304,7 @@
 
 (defn morPhonGuess [root suffix]
     (let [ans (transient #{})]
-        (doseq [guess morPhonDir kr (rfsa/analyse (str guess suffix)) stem (KRTools/getMSD kr)]
+        (doseq [guess morPhonDir kr (rfsa/analyse (str guess suffix)) stem (kr/getMSD kr)]
             (let [msd (.getMsd stem)]
                 (if (.startsWith msd "N") ; csak főnevi elemzesek
                     (conj! ans (morAna root msd)))))
@@ -312,7 +312,7 @@
 
 (defn hyphenicGuess [root suffix]
     (let [ans (transient (morPhonGuess root suffix))] ; kötőjeles suffix (pl.: Bush-hoz)
-        (doseq [kr (rfsa/analyse suffix) stem (KRTools/getMSD kr)] ; suffix főnév (pl.: Bush-kormánnyal)
+        (doseq [kr (rfsa/analyse suffix) stem (kr/getMSD kr)] ; suffix főnév (pl.: Bush-kormánnyal)
             (let [msd (.getMsd stem)]
                 (if (.startsWith msd "N") ; csak főnevi elemzesek
                     (conj! ans (morAna (str root "-" (.getLemma stem)) msd)))))
@@ -360,7 +360,7 @@
             [10 12] ; birtok(olt) száma
         ]]
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
-        (KRTools/chopMSD (.toString sb))))
+        (kr/chopMSD (.toString sb))))
 
 (defn- nounToOther [noun other]
     (let [sb (StringBuilder. other) n (.length noun)]
@@ -373,7 +373,7 @@
             [10 11] ; birtok(olt) száma
         ]]
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
-        (KRTools/chopMSD (.toString sb))))
+        (kr/chopMSD (.toString sb))))
 
 (defn- nounToNoun [noun other]
     (let [sb (StringBuilder. other) n (.length noun)]
@@ -383,7 +383,7 @@
             [4 4] ; eset
         ]]
             (if (a < n) (.setCharAt sb b (.charAt noun a))))
-        (KRTools/chopMSD (.toString sb))))
+        (kr/chopMSD (.toString sb))))
 
 (def ^:private romans* (delay (into {} (map vector "IVXLCDM" [1 5 10 50 100 500 1000]))))
 
