@@ -2,7 +2,7 @@
     (:require [clojure.java.io :as io])
   #_(:gen-class))
 
-(def ^:private rfsa* (delay (into [] (map read-string (line-seq (io/reader (io/resource "data/rfsa.seq")))))))
+(def ^:private rfsa* (delay (into [] (map read-string (line-seq (io/reader (io/resource "data/rfsa.edn")))))))
 
 (defn analyse
     ([word] (let [ans (transient [])] (analyse word 0 [] ans) (persistent! ans)))
