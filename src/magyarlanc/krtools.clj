@@ -1,9 +1,7 @@
 (ns magyarlanc.krtools
-    (:require [clojure.string :as str])
-    (:import [magyarlanc KRTools$KRPOS Morphology$MorAna])
+    (:require [clojure.string :as str]
+              [magyarlanc.new :as new])
   #_(:gen-class))
-
-(defn- morAna [lemma msd] (Morphology$MorAna. lemma msd))
 
 ; melléknévi igenevek
 (defn- participle? [kr] (let [verb (.indexOf kr "/VERB") adj (.indexOf kr "/ADJ")] (< -1 verb adj)))
@@ -268,55 +266,55 @@
                     (if pro
                         ; dative
                         (if (= (.charAt msd 5) \d)
-                            (conj! ans (morAna lemma (.replace msd \d \g)))))
+                            (conj! ans (new/morAna lemma (.replace msd \d \g)))))
 
-                    (conj! ans (morAna lemma msd))
+                    (conj! ans (new/morAna lemma msd))
                     ; dative
                     (if (= (.charAt msd 4) \d)
-                        (conj! ans (morAna lemma (.replace msd \d \g)))))
+                        (conj! ans (new/morAna lemma (.replace msd \d \g)))))
 
             (.startsWith code "ADJ")
                 (let [msd (convertAdjective (if (participle? kr) kr code))]
-                    (conj! ans (morAna lemma msd))
+                    (conj! ans (new/morAna lemma msd))
                     ; dative
                     (if (= (.charAt msd 5) \d)
-                        (conj! ans (morAna lemma (.replace msd \d \g)))))
+                        (conj! ans (new/morAna lemma (.replace msd \d \g)))))
 
             (.startsWith code "VERB")
                 (cond
                     (or (.contains code "VERB[PERF_PART]") (.contains code "VERB[PART]")) ; határozói igenév
-                        (conj! ans (morAna lemma "Rv"))
+                        (conj! ans (new/morAna lemma "Rv"))
                     (or (.contains kr "[FREQ]") (.contains kr "[CAUS]") (.contains kr "<MODAL>"))
-                        (conj! ans (morAna stem (convertVerb kr)))
+                        (conj! ans (new/morAna stem (convertVerb kr)))
                     :default
-                        (conj! ans (morAna lemma (convertVerb code))))
+                        (conj! ans (new/morAna lemma (convertVerb code))))
 
             (.startsWith code "NUM")
                 (let [msd (convertNumber code kr)]
-                    (conj! ans (morAna lemma msd))
+                    (conj! ans (new/morAna lemma msd))
                     ; dative
                     (if (= (.charAt msd 4) \d)
-                        (conj! ans (morAna lemma (.replace msd \d \g)))))
+                        (conj! ans (new/morAna lemma (.replace msd \d \g)))))
 
-            (.startsWith code "ART")     (conj! ans (morAna lemma "T")) ; definite/indefinte
-            (.startsWith code "ADV")     (conj! ans (morAna lemma (convertAdverb code)))
-            (.startsWith code "POSTP")   (conj! ans (morAna lemma "St"))
-            (.startsWith code "CONJ")    (conj! ans (morAna lemma "Ccsp"))
-            (.startsWith code "UTT-INT") (conj! ans (morAna lemma "I"))
-            (.startsWith code "PREV")    (conj! ans (morAna lemma "Rp"))
-            (.startsWith code "DET")     (conj! ans (morAna lemma "Pd3-sn"))
-            (.startsWith code "ONO")     (conj! ans (morAna lemma "X"))
-            (.startsWith code "E")       (conj! ans (morAna lemma "Rq-y"))
-            (.startsWith code "ABBR")    (conj! ans (morAna lemma "Y"))
-            (.startsWith code "TYPO")    (conj! ans (morAna lemma "Z")))
+            (.startsWith code "ART")     (conj! ans (new/morAna lemma "T")) ; definite/indefinte
+            (.startsWith code "ADV")     (conj! ans (new/morAna lemma (convertAdverb code)))
+            (.startsWith code "POSTP")   (conj! ans (new/morAna lemma "St"))
+            (.startsWith code "CONJ")    (conj! ans (new/morAna lemma "Ccsp"))
+            (.startsWith code "UTT-INT") (conj! ans (new/morAna lemma "I"))
+            (.startsWith code "PREV")    (conj! ans (new/morAna lemma "Rp"))
+            (.startsWith code "DET")     (conj! ans (new/morAna lemma "Pd3-sn"))
+            (.startsWith code "ONO")     (conj! ans (new/morAna lemma "X"))
+            (.startsWith code "E")       (conj! ans (new/morAna lemma "Rq-y"))
+            (.startsWith code "ABBR")    (conj! ans (new/morAna lemma "Y"))
+            (.startsWith code "TYPO")    (conj! ans (new/morAna lemma "Z")))
 
         (if (zero? (count ans))
-            (conj! ans (morAna lemma "X")))
+            (conj! ans (new/morAna lemma "X")))
 
         (persistent! ans)))
 
 (defn- preProcess [stems]
-    (let [stems (transient (vec stems)) n (count stems)]
+    (let [stems (into-array stems) n (dec (count stems))]
         (doseq [stem stems]
             (if (or ; gyorsan -> gyors ; hallgatólag -> hallgató
                     (.contains stem "ADJ[MANNER]")
@@ -337,9 +335,8 @@
                         (.contains stem "VERB[PART](ve)")
                         (.contains stem "VERB[PERF_PART](ván)")
                         (.contains stem "VERB[PERF_PART](vén)")))
-                (assoc! stems (dec n) stem)))
-        persistent! stems)
-    )
+                (aset stems n stem)))
+        stems))
 
 (defn getRoot [morph]
     (cond
@@ -383,31 +380,28 @@
                         :>> (fn [m] (swap! végsőtő #(str % m)) (reset! ikes false))
                         nil)))
 
-                (let [root (str igekötő @végsőtő (if @ikes "ik" "") "/" (stems n))]
+                (let [root (str igekötő @végsőtő (if @ikes "ik" "") "/" (aget stems n))]
                     (str "$" (str/replace root #"\([^\(\)]*\)|[!@\$]" ""))))))
 
-;       public static enum KRPOS
-;       {
-;           VERB, NOUN, ADJ, NUM, ADV, PREV, ART, POSTP, UTT_INT, DET, CONJ, ONO, PREP, X
-;       }
+(def KRPOS #{:VERB :NOUN :ADJ :NUM :ADV :PREV :ART :POSTP :UTT-INT :DET :CONJ :ONO :PREP :X})
 
 ; "$fut/VERB[GERUND](�s)/NOUN<PLUR><POSS<1>><CAS<INS>>"
 (defn getPOS [code]
     (case (if-let [m (re-find #"/([^/<\[]+)(?:[<\[][^/]*)?$" code)] (m 1))
-        "VERB"    KRTools$KRPOS/VERB
-        "NOUN"    KRTools$KRPOS/NOUN
-        "ADJ"     KRTools$KRPOS/ADJ
-        "NUM"     KRTools$KRPOS/NUM
-        "ADV"     KRTools$KRPOS/ADV
-        "PREV"    KRTools$KRPOS/PREV
-        "ART"     KRTools$KRPOS/ART
-        "POSTP"   KRTools$KRPOS/POSTP
-        "UTT-INT" KRTools$KRPOS/UTT_INT
-        "DET"     KRTools$KRPOS/DET
-        "CONJ"    KRTools$KRPOS/CONJ
-        "ONO"     KRTools$KRPOS/ONO
-        "PREP"    KRTools$KRPOS/PREP
-        KRTools$KRPOS/X))
+        "VERB"    :VERB
+        "NOUN"    :NOUN
+        "ADJ"     :ADJ
+        "NUM"     :NUM
+        "ADV"     :ADV
+        "PREV"    :PREV
+        "ART"     :ART
+        "POSTP"   :POSTP
+        "UTT-INT" :UTT-INT
+        "DET"     :DET
+        "CONJ"    :CONJ
+        "ONO"     :ONO
+        "PREP"    :PREP
+        :X))
 
 (comment
     (getMSD "$én/NOUN<POSTP<UTÁN>><PERS<1>>")
