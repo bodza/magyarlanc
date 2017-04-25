@@ -12,4 +12,6 @@
     :jvm-opts ["-Xmx2g"]
 ;   :javac-options ["-g"]
     :source-paths ["src"] :java-source-paths ["src"] :resource-paths ["src"] :test-paths ["src"]
-    :repositories [["alt.cache" "file:///alt/apa/lingua/repository"]])
+    :repositories [["alt.cache" "file:///alt/apa/lingua/repository"]]
+    :main magyarlanc
+    :aliases {"magyarlanc" ["run" "-m" "magyarlanc"]})
